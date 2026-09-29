@@ -22,7 +22,7 @@ public class UserDAO {
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             cn = DBContext.getConnection();
-            ps = cn.prepareStatement("SELECT role_id, role_code, role_name FROM AppRole ORDER BY role_id");
+            ps = cn.prepareStatement("SELECT role_id, role_code, role_name FROM AppRole ORDER BY role_id ");
             rs = ps.executeQuery();
             while (rs.next()) {
                 model.AppRole r = new model.AppRole();
@@ -77,7 +77,7 @@ public class UserDAO {
         } else if ("ACTIVE".equals(lockState)) {
             sql.append("AND u.is_locked = 0 ");
         }
-        sql.append("ORDER BY u.user_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        sql.append("ORDER BY u.user_id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
