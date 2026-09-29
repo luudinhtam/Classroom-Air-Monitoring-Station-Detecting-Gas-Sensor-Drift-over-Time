@@ -1,0 +1,14 @@
+Dat tep sqljdbc4.jar vao dung thu muc nay.
+
+Duong dan day du phai la:
+    UserManagement/web/WEB-INF/lib/sqljdbc4.jar
+
+Day la thu vien duy nhat cua du an. Khong them bat ky tep jar nao khac.
+Dat o day thi mot ban sao dung cho ca luc bien dich lan luc chay, vi
+nbproject/project.properties da tro toi dung duong dan nay.
+
+Sau khi chep jar vao, trong NetBeans bam chuot phai vao du an, chon
+Properties, muc Libraries, kiem tra thay sqljdbc4.jar trong danh sach.
+Neu chua thay thi bam Add JAR/Folder roi chon dung tep vua chep.
+
+Xoa tep ghi chu nay sau khi da dat jar vao.

@@ -1,0 +1,102 @@
+/* One stylesheet, no framework loaded from the internet, so the pages render
+   the same on a machine with no network. */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Segoe UI, Arial, sans-serif; font-size: 14px;
+       color: #222; background: #f5f6f8; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center;
+          padding: 10px 18px; background: #2b3a55; color: #fff; }
+.brand { font-size: 17px; font-weight: 600; }
+.brand .sem { font-size: 12px; font-weight: 400; background: #4a5b7a;
+              padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+.who { font-size: 13px; }
+.who .out { color: #fff; margin-left: 14px; text-decoration: underline; }
+
+.menu { background: #3d4f6e; padding: 0 18px; }
+.menu a { display: inline-block; color: #dfe6f2; padding: 9px 14px;
+          text-decoration: none; font-size: 13px; }
+.menu a:hover { background: #4a5b7a; color: #fff; }
+
+.wrap { max-width: 1120px; margin: 18px auto; padding: 0 18px; }
+h2 { margin: 6px 0 14px; font-size: 20px; }
+h3 { margin: 22px 0 10px; font-size: 16px; }
+p { line-height: 1.55; }
+
+.flash { max-width: 1120px; margin: 12px auto 0; padding: 9px 14px;
+         background: #e8f3e8; border: 1px solid #b7d7b7; border-radius: 4px; }
+.error { padding: 9px 14px; background: #fbeaea; border: 1px solid #e0b4b4;
+         border-radius: 4px; margin-bottom: 12px; }
+.hint { font-size: 12px; color: #666; }
+.muted { color: #999; font-size: 12px; }
+
+.cards { display: flex; gap: 12px; flex-wrap: wrap; }
+.card { flex: 1 1 190px; background: #fff; border: 1px solid #dcdfe4;
+        border-radius: 5px; padding: 14px; }
+.card .num { font-size: 26px; font-weight: 600; }
+.card .cap { font-size: 12px; color: #667; margin-top: 3px; }
+
+table.grid { width: 100%; border-collapse: collapse; background: #fff;
+             border: 1px solid #dcdfe4; }
+table.grid th, table.grid td { border: 1px solid #e3e5e9; padding: 7px 9px;
+                               text-align: left; vertical-align: top; }
+table.grid th { background: #eceef2; font-weight: 600; font-size: 13px; }
+table.grid td.c, table.grid th.c { text-align: center; }
+table.grid tr.locked td { background: #fdf3f3; }
+table.grid tr.current td { background: #f2f8f2; }
+table.grid tr.group td { background: #eceef2; font-weight: 600; }
+
+.tag { display: inline-block; background: #e6ebf3; border: 1px solid #ccd5e2;
+       border-radius: 3px; padding: 1px 6px; font-size: 12px; }
+code { background: #f1f2f4; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+
+.filter { margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filter input[type=text], .filter select { padding: 6px 8px; border: 1px solid #c6cad2;
+                                           border-radius: 4px; font-size: 13px; }
+
+button, .btn { display: inline-block; padding: 6px 13px; border: 1px solid #2b3a55;
+               background: #2b3a55; color: #fff; border-radius: 4px; cursor: pointer;
+               font-size: 13px; text-decoration: none; }
+.btn.ghost { background: #fff; color: #2b3a55; }
+button.link { background: none; border: none; color: #1a5fa8; padding: 0;
+              text-decoration: underline; font-size: 13px; }
+button.link.danger { color: #b33; }
+
+.ops { white-space: nowrap; }
+.ops a, .ops form { display: inline-block; margin-right: 8px; }
+.ops form { margin: 0; }
+
+.form { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px;
+        padding: 16px; max-width: 620px; }
+.form.narrow { max-width: 460px; }
+.form label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; }
+.form label.inline { font-weight: 400; margin-top: 14px; }
+.form input[type=text], .form input[type=password], .form input[type=date],
+.form input[type=number], .form select { width: 100%; padding: 7px 9px;
+        border: 1px solid #c6cad2; border-radius: 4px; font-size: 13px; }
+.form label.inline input { width: auto; margin-right: 6px; }
+.actions { margin-top: 16px; display: flex; gap: 8px; }
+
+.pager { margin: 14px 0; }
+.pager a, .pager b { display: inline-block; padding: 4px 9px; margin-right: 4px;
+                     border: 1px solid #ccd0d8; border-radius: 3px;
+                     text-decoration: none; background: #fff; }
+.pager b { background: #2b3a55; color: #fff; border-color: #2b3a55; }
+
+.tabs { margin: 10px 0; }
+.tabs a { display: inline-block; padding: 7px 14px; margin-right: 4px;
+          border: 1px solid #ccd0d8; border-bottom: none; background: #eceef2;
+          text-decoration: none; color: #334; border-radius: 4px 4px 0 0; }
+.tabs a.on { background: #fff; font-weight: 600; }
+
+canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
+
+.login-page { display: flex; align-items: center; justify-content: center;
+              min-height: 100vh; }
+.login-box { background: #fff; border: 1px solid #dcdfe4; border-radius: 6px;
+             padding: 26px 28px; width: 340px; }
+.login-box h1 { margin: 0; font-size: 20px; }
+.login-box .sub { margin: 4px 0 16px; color: #667; font-size: 13px; }
+.login-box label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; }
+.login-box input { width: 100%; padding: 8px 9px; border: 1px solid #c6cad2;
+                   border-radius: 4px; font-size: 14px; }
+.login-box button { width: 100%; margin-top: 16px; padding: 9px; font-size: 14px; }
