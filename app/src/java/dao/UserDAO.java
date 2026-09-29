@@ -209,4 +209,22 @@ public class UserDAO {
         try { if (ps != null) ps.close(); } catch (Exception e) {}
         try { if (cn != null) cn.close(); } catch (Exception e) {}
     }
+
+
+    public boolean delete(String user_id) throws SQLException, ClassNotFoundException {
+        String sql = "DELETE FROM AppUser WHERE user_id = ?";
+        boolean check = false;
+        Connection conn = null;
+        PreparedStatement ptm = null;
+        try {
+            conn = DBContext.getConnection();
+            if (conn != null) {
+                ptm = conn.prepareStatement(sql);
+                ptm.setString(1, user_id);
+                check = ptm.executeUpdate() > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { close(null, ptm, conn); }
+        return false;
+    }
 }
