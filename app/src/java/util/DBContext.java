@@ -11,7 +11,7 @@ import java.sql.SQLException;
  */
 public class DBContext {
 
-    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=AirroomDB;encrypt=false";
+    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=AirRoomDB;encrypt=false";
     private static final String USER = "sa";
     private static final String PASS = "12345";
 
