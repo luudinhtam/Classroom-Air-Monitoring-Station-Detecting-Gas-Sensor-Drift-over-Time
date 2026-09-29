@@ -1,3 +1,10 @@
+IF DB_ID('AirRoomDB') IS NULL
+    CREATE DATABASE AirRoomDB;
+GO
+
+USE AirRoomDB;
+GO
+
 -- ===== 1. Nguoi dung va vai tro =====
 CREATE TABLE AppRole (
     role_id   INT IDENTITY(1,1) PRIMARY KEY,
