@@ -1,6 +1,2 @@
-build/
-dist/
-
-nbproject/private/
-
-*.class
+/app/build/
+/app/dist/
