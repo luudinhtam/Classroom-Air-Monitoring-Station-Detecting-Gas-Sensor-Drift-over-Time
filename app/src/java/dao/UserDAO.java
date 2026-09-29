@@ -189,6 +189,23 @@ public class UserDAO {
         finally { close(null, ps, cn); }
         return false;
     }
+    
+    public boolean delete(int id) {
+        String sql = "DELETE FROM AppUser WHERE user_id = ?";
+        boolean check = false;
+        Connection conn = null;
+        PreparedStatement ptm = null;
+        try {
+            conn = DBContext.getConnection();
+            if (conn != null) {
+                ptm = conn.prepareStatement(sql);
+                ptm.setInt(1, id);
+                check = ptm.executeUpdate() > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { close(null, ptm, conn); }
+        return check;
+    }
 
     private AppUser map(ResultSet rs) throws SQLException {
         AppUser u = new AppUser();

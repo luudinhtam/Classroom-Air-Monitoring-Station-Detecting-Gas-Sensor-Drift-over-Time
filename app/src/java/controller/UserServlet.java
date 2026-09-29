@@ -110,7 +110,7 @@ public class UserServlet extends HttpServlet {
                 Web.flash(req, "Da dat lai mat khau thanh cong");
             }
         }
-              else if ("/delete".equals(action)) {
+        else if ("/delete".equals(action)) {
             int id = Web.intParam(req, "id", 0);
             if (users.delete(id)) {
                 Web.flash(req, "Da xoa nguoi dung");

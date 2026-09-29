@@ -26,7 +26,11 @@
 
         <label>Ten dang nhap</label>
         <input type="text" name="username" required minlength="3"
-               value="<%= item == null ? "" : Web.esc(item.getUsername()) %>">
+                <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
+                value="<%= item == null ? "" : Web.esc(item.getUsername()) %>">
+            <% if (!isNew) { %>
+            <small style="color:#888">Ten dang nhap khong the thay doi sau khi tao.</small>
+            <% } %>
 
         <label>Ho ten</label>
         <input type="text" name="fullName" required
