@@ -54,7 +54,7 @@
 
     <table class="grid">
         <tr>
-            <th>#</th><th>Ten dang nhap</th><th>Ho ten</th>
+            <th>ID</th><th>Ten dang nhap</th><th>Ho ten</th>
             <th>Vai tro</th><th class="c">Trang thai</th><th>Thao tac</th>
         </tr>
         <% for (AppUser u : rows) { %>
