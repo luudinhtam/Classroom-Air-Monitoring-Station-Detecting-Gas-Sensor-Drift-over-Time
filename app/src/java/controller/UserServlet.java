@@ -13,8 +13,13 @@ import model.AppUser;
 import util.PasswordUtil;
 import util.Web;
 
-@WebServlet(urlPatterns = { "/admin/users", "/admin/users/create", "/admin/users/edit", "/admin/users/save",
-                            "/admin/users/delete", "/admin/users/lock", "/admin/users/reset" })
+@WebServlet(urlPatterns = { "/admin/users", 
+                            "/admin/users/create", 
+                            "/admin/users/edit", 
+                            "/admin/users/save",
+                            "/admin/users/delete", 
+                            "/admin/users/lock", 
+                            "/admin/users/reset"})
 public class UserServlet extends HttpServlet {
 
     private static final int PAGE_SIZE = 10;
@@ -26,7 +31,11 @@ public class UserServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = action(req);
-        if ("/create".equals(action)) { showForm(req, resp, null); return; }
+        if ("/create".equals(action)) { 
+            showForm(req, resp, null); 
+            return; 
+        }
+        
         if ("/edit".equals(action)) {
             AppUser u = users.findById(Web.intParam(req, "id", 0));
             if (u == null) {
