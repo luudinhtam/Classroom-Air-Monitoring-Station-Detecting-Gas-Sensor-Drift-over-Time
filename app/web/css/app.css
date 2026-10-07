@@ -6,10 +6,11 @@ body { margin: 0; font-family: Segoe UI, Arial, sans-serif; font-size: 14px;
 
 .topbar { display: flex; justify-content: space-between; align-items: center;
           padding: 10px 18px; background: #2b3a55; color: #fff; }
+
 .brand { font-size: 17px; font-weight: 600; }
 .brand .sem { font-size: 12px; font-weight: 400; background: #4a5b7a;
               padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
-.who { font-size: 13px; }
+.who { font-size: 13px;}
 .who .out { color: #fff; margin-left: 14px; text-decoration: underline; }
 
 .menu { background: #3d4f6e; padding: 0 18px; }
@@ -46,7 +47,7 @@ table.grid tr.current td { background: #f2f8f2; }
 table.grid tr.group td { background: #eceef2; font-weight: 600; }
 
 .tag { display: inline-block; background: #e6ebf3; border: 1px solid #ccd5e2;
-       border-radius: 3px; padding: 1px 6px; font-size: 12px; }
+       border-radius: 3px; padding: 1px 6px; font-size: 12px;  color: #000000 !important;}
 code { background: #f1f2f4; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
 
 .filter { margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
