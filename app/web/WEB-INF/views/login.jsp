@@ -26,8 +26,8 @@
     <button type="submit">Sign in</button>
 
     <p class="hint">
-        Tai khoan mau: admin, station_mgr, operator, reviewer, viewer.
-        Mat khau deu la 123456.
+        Tai khoan mau: admin, station_manager, operator, reviewer, viewer <br>
+        Mat khau deu la 123456
     </p>
 </form>
 </body>

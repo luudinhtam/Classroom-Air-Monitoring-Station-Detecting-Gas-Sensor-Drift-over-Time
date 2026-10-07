@@ -73,9 +73,46 @@
     </table>
 
     <div class="pager">
-        <% for (int p = 1; p <= totalPages; p++) { %>
-            <% if (p == currentPage) { %><b><%= p %></b>
-            <% } else { %><a href="?label=<%= Web.esc(labelFilter) %>&page=<%= p %>"><%= p %></a><% } %>
+        <%-- Nút Trang Đầu & Trang Trước --%>
+        <% if (currentPage > 1) { %>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">« Đầu</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage - 1 %>">‹ Trước</a>
+        <% } %>
+
+        <%-- Thu gọn danh sách trang (Hiển thị khoảng 2 trang trước và 2 trang sau trang hiện tại) --%>
+        <%
+            int startPage = Math.max(1, currentPage - 2);
+            int endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+        %>
+                <a href="?label=<%= Web.esc(labelFilter) %>&page=1">1</a>
+                <% if (startPage > 2) { %><span class="dots">...</span><% } %>
+        <%
+            }
+
+            for (int p = startPage; p <= endPage; p++) {
+                if (p == currentPage) {
+        %>
+                    <b><%= p %></b>
+        <%      } else { %>
+                    <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= p %>"><%= p %></a>
+        <%
+                }
+            }
+
+            if (endPage < totalPages) {
+        %>
+                <% if (endPage < totalPages - 1) { %><span class="dots">...</span><% } %>
+                <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>"><%= totalPages %></a>
+        <%
+            }
+        %>
+
+        <%-- Nút Trang Sau & Trang Cuối --%>
+        <% if (currentPage < totalPages) { %>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Sau ›</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Cuối »</a>
         <% } %>
     </div>
 </div>

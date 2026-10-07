@@ -78,10 +78,11 @@ button.link.danger { color: #b33; }
 .actions { margin-top: 16px; display: flex; gap: 8px; }
 
 .pager { margin: 14px 0; }
-.pager a, .pager b { display: inline-block; padding: 4px 9px; margin-right: 4px;
+.pager a, .pager b, .pager .dots { display: inline-block; padding: 4px 9px; margin-right: 4px;
                      border: 1px solid #ccd0d8; border-radius: 3px;
                      text-decoration: none; background: #fff; }
 .pager b { background: #2b3a55; color: #fff; border-color: #2b3a55; }
+.pager .dots { border: none; background: transparent; padding: 4px 4px; color: #666; }
 
 .tabs { margin: 10px 0; }
 .tabs a { display: inline-block; padding: 7px 14px; margin-right: 4px;
