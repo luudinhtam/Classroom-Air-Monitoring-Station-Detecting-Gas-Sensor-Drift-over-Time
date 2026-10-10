@@ -10,7 +10,7 @@
     <div class="brand">Airroom <span class="sem">FALL2026</span></div>
     <div class="who">
         <%= Web.esc(me.getFullName()) %>
-        <span class="tag"><%= Web.esc(me.getRoleCode()) %></span>
+        <span class="tag" style="color: black"><%= Web.esc(me.getRoleCode()) %></span>
         <a class="out" href="<%= ctx %>/logout">Logout</a>
     </div>
 </div>
