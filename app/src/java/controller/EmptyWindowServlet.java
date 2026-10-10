@@ -18,10 +18,7 @@ import model.AppUser;
 import model.EmptyWindow;
 import util.Web;
 
-/**
- *
- * @author Welcome
- */
+
 @WebServlet(name = "EmptyWindowServlet", 
         urlPatterns = {"/admin/emptyWindows", 
                        "/admin/emptyWindows/create", 
@@ -46,6 +43,44 @@ public class EmptyWindowServlet extends HttpServlet {
             showForm(request, response, null, stationId);
             return; 
         }
+        
+        if ("/edit".equals(action)) {
+
+            int emptyWindowId = Web.intParam(request, "id", 0);
+
+            if (emptyWindowId <= 0 || stationId <= 0) {
+                Web.flash(request,
+                        "Thong tin khoang phong trong khong hop le");
+                response.sendRedirect(
+                        request.getContextPath() + "/admin/stations");
+                return;
+            }
+
+            EmptyWindow ew = emptyWindows.findById(emptyWindowId);
+
+            if (ew == null) {
+                Web.flash(request,
+                        "Khong tim thay khoang phong trong");
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/admin/emptyWindows?stationId=" + stationId);
+                return;
+            }
+
+            // Kiểm tra EmptyWindow có thuộc station này không
+            if (ew.getStationId() != stationId) {
+                Web.flash(request,
+                        "Khoang phong trong khong thuoc tram nay");
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/admin/emptyWindows?stationId=" + stationId);
+                return;
+            }
+
+            showForm(request, response, ew, stationId);
+            return;
+        }
+        
         
         showList(request, response);
     }
@@ -153,14 +188,32 @@ public class EmptyWindowServlet extends HttpServlet {
                     }
                 }
 
-            } catch (DateTimeParseException e) {
+            } catch (DateTimeParseException e) { 
                 Web.flash(request, "Dinh dang thoi gian khong hop le");
+            }
+            
+        } 
+        else if ("/delete".equals(action)) {
+
+            int emptyWindowId = Web.intParam(request, "emptyWindowId", 0);
+
+            if (emptyWindowId > 0 && stationId > 0) {
+                if (emptyWindows.delete(emptyWindowId, stationId)) {
+                    Web.flash(request, "Da xoa khoang phong trong");
+                } else {
+                    Web.flash(request,
+                            "Khong tim thay khoang phong trong cua tram nay");
+                }
+            } else {
+                Web.flash(request, "Thong tin xoa khong hop le");
             }
         }
         
+        
+        
         response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?stationId=" + stationId);
         
-    }
+    } 
 
     private String action(HttpServletRequest request) {
 

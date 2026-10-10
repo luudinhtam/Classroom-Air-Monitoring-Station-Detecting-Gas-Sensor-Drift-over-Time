@@ -159,6 +159,31 @@ public class EmptyWindowDAO {
         }
     }
     
+    public boolean delete(int emptyWindowId, int stationId) {
+        String sql = "DELETE FROM Air_EmptyWindow "
+                + "WHERE empty_window_id = ? "
+                + "AND station_id = ?";
+
+        Connection cn = null;
+        PreparedStatement ps = null;
+
+        try {
+            cn = DBContext.getConnection();
+            ps = cn.prepareStatement(sql);
+
+            ps.setInt(1, emptyWindowId);
+            ps.setInt(2, stationId);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            close(null, ps, cn);
+        }
+    }
+    
     private EmptyWindow map(ResultSet rs) throws SQLException {
 
         EmptyWindow ew = new EmptyWindow();
