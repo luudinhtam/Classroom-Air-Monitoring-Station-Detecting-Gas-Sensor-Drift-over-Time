@@ -19,6 +19,7 @@
     <a href="<%= ctx %>/sessions">Sessions</a>
     <% if ("ADMIN".equals(me.getRoleCode())) { %>
         <a href="<%= ctx %>/admin/users">Users</a>
+        <a href="<%= ctx %>/admin/devices">Devices</a>
         <a href="<%= ctx %>/admin/stations">Stations</a>
     <% } %>
 </div>
