@@ -49,7 +49,8 @@
                 </tr>
                 
                 <% for (AirStation a : rows) { %>
-                <tr class="<%= a.isActive() ? "Active" : "Inactive" %>">
+                    <tr class="<%= a.isActive() ? "Active" : "Inactive" %>"
+                            style="<%= a.isActive() ? "" : "background-color: #fdf3f3;" %>">
                     <td><%= a.getStationId() %></td>
                     <td><%= Web.esc(a.getCode()) %></td>
                     <td><%= Web.esc(a.getName()) %></td>
@@ -57,26 +58,50 @@
                     <td><%= Web.esc(a.getNote()) %></td>
                     
                     <td class="c"><%= a.isActive() ? "Active" : "Inactive" %></td>
+                    
                     <td class="ops">
-                        <a href="<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>">Sua</a>
+                        <button type="button" class="btn ghost"
+                                onclick="window.location.href='<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>'">
+                            Sua
+                        </button>
 
-                        
                         <form method="post" action="<%= ctx %>/admin/stations/lock">
                             <input type="hidden" name="id" value="<%= a.getStationId() %>">
-                            <button type="submit" class="link"><%= a.isActive() ? "Tat" : "Mo" %></button>
+
+                            <button type="submit"
+                                    style="<%= a.isActive()
+                                        ? "background-color: #fee2e2; color: #b91c1c;"
+                                        : "background-color: #dcfce7; color: #166534;" %>">
+                                <%= a.isActive() ? "Tat" : "Mo" %>
+                            </button>
                         </form>
 
-                        <a href="<%= ctx %>/admin/stations/detail?id=<%= a.getStationId() %>">Chi tiet</a>
-                        
-                        <form method="post" action="<%= ctx %>/admin/stations/delete"
-                                onsubmit="return confirm('Xoa tram nay?');">
+                        <button type="button" class="btn ghost"
+                                onclick="window.location.href='<%= ctx %>/admin/stations/detail?id=<%= a.getStationId() %>'">
+                            Chi tiet
+                        </button>
+
+                        <form method="post"
+                              action="<%= ctx %>/admin/stations/delete"
+                              onsubmit="return confirm('Xoa tram nay?');">
+
                             <input type="hidden" name="id" value="<%= a.getStationId() %>">
-                            <button type="submit" class="link danger">Xoa</button>
+
+                            <button type="submit" class="btn" style="background-color: red; color: white">
+                                Xoa
+                            </button>
                         </form>
-                            
-                        <a href="<%= ctx %>/admin/calibrations?stationId=<%= a.getStationId() %>">Hieu chuan</a>
-                        <a href="<%= ctx %>/admin/emptyWindows?stationId=<%= a.getStationId() %>">Khoang trong</a>
-                        
+
+                        <button type="button" class="btn"
+                                onclick="window.location.href='<%= ctx %>/admin/calibrations?stationId=<%= a.getStationId() %>'">
+                            Hieu chuan
+                        </button>
+
+                        <button type="button" class="btn"
+                                onclick="window.location.href='<%= ctx %>/admin/emptyWindows?stationId=<%= a.getStationId() %>'">
+                            Khoang trong
+                        </button>
+
                     </td>
                 </tr>
                 <% } %>

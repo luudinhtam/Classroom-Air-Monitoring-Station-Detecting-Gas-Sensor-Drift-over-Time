@@ -38,7 +38,7 @@
 
                 <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">Them hieu chuan</a>
                 
-                <a class="btn ghost" href="<%= ctx %>/admin/stations">Tro ve danh sach cac tram</a>
+                <a class="btn ghost" href="<%= ctx %>/admin/stations" style="background-color: pink;">Click to go back</a>
             </form>
             
             
@@ -67,16 +67,32 @@
                     <td><%= c.getCalibratedAt() %></td>
                     <td><%= Web.esc(c.getNote()) %></td>
                     
+                    
                     <td class="ops">
-                        <a href="<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= stationId %>">Sua</a>
-                        
-                        <form method="post" action="<%= ctx %>/admin/calibrations/delete"
-                                onsubmit="return confirm('Xoa tram nay?');">
-                            <input type="hidden" name="calibrationId" value="<%= c.getCalibrationId() %>">
-                            <input type="hidden" name="stationId" value="<%= stationId %>">
-                            <button type="submit" class="link danger">Xoa</button>
+
+                        <button type="button" class="btn ghost"
+                                onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= stationId %>'">
+                            Sua
+                        </button>
+
+                        <form method="post"
+                              action="<%= ctx %>/admin/calibrations/delete"
+                              onsubmit="return confirm('Xoa tram nay?');">
+
+                            <input type="hidden" name="calibrationId"
+                                   value="<%= c.getCalibrationId() %>">
+
+                            <input type="hidden" name="stationId"
+                                   value="<%= stationId %>">
+
+                            <button type="submit" class="btn"
+                                    style="background-color: red; color: white;">
+                                Xoa
+                            </button>
                         </form>
+
                     </td>
+
                 </tr>
                 <% } %>
                 

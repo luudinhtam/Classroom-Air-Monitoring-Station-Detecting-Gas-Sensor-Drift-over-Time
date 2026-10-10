@@ -51,8 +51,8 @@
                     Them khoang phong trong
                 </a>
 
-                <a class="btn ghost" href="<%= ctx %>/admin/stations">
-                    Tro ve danh sach cac tram
+                <a class="btn ghost" href="<%= ctx %>/admin/stations" style="background-color: pink;">
+                    Click to go back
                 </a>
             </form>
 
@@ -89,20 +89,31 @@
 
                     <td class="ops">
 
-                        <a href="<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>">
+                        <button type="button" class="btn ghost"
+                                onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
                             Sua
-                        </a>
+                        </button>
 
-                        <form method="post" action="<%= ctx %>/admin/emptyWindows/delete"
+                        <form method="post"
+                              action="<%= ctx %>/admin/emptyWindows/delete"
                               onsubmit="return confirm('Xoa khoang phong trong nay?');">
 
-                            <input type="hidden" name="emptyWindowId" value="<%= ew.getEmptyWindowId() %>">
+                            <input type="hidden" name="emptyWindowId"
+                                   value="<%= ew.getEmptyWindowId() %>">
 
-                            <input type="hidden" name="stationId" value="<%= stationId %>">
+                            <input type="hidden" name="stationId"
+                                   value="<%= stationId %>">
 
-                            <button type="submit" class="link danger">Xoa</button>
-
+                            <button type="submit" class="btn danger" style="background-color: red; color: white">
+                                Xoa
+                            </button>
                         </form>
+
+                        <button type="button" class="btn"
+                                onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
+                            Tinh muc nen
+                        </button>
+
                     </td>
                 </tr>
                 <% } %>
