@@ -16,7 +16,31 @@ public class UserDAO {
         "       r.role_code, r.role_name " +
         "FROM AppUser u " +
         "JOIN AppRole r ON r.role_id = u.role_id ";
+    
+    
+    public List<AppUser> findCalibrationUser() {
+        List<AppUser> out = new ArrayList<>();
 
+        Connection cn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            cn = DBContext.getConnection();
+            ps = cn.prepareStatement(SELECT_BASE + "WHERE u.role_id IN (1, 2, 3)");
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                out.add(map(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(rs, ps, cn);
+        }
+        return out;
+    }
+    
     public List<model.AppRole> listRoles() {
         List<model.AppRole> roles = new ArrayList<>();
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
