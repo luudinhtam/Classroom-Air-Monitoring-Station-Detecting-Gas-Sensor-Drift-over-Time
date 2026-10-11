@@ -87,39 +87,94 @@ public class AirSessionDAO {
         }
         return null;
     }
+    
+    public List<model.Device> listDevices() {
+    List<model.Device> list = new ArrayList<>();
+    String sql = "SELECT device_id, device_code, location FROM Device";
+    try (java.sql.Connection cn = util.DBContext.getConnection();
+         java.sql.PreparedStatement ps = cn.prepareStatement(sql);
+         java.sql.ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            model.Device d = new model.Device();
+            d.setDeviceId(rs.getInt("device_id"));
+            d.setDeviceCode(rs.getString("device_code"));
+            d.setLocation(rs.getString("location"));
+            list.add(d);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return list;
+      }
+    
+    
 
     /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
+    /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
     public int insert(AirSession o) {
-        String sql = "INSERT INTO Air_Session(device_id, device_seq, measured_at, gas_a_raw, gas_b_raw, gas_a_base, "
-                   + "gas_a_delta, temp_c, humid_pct, base_shift, warm) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
+        // Đã bổ sung is_sample và note vào lệnh INSERT để đồng bộ với DB
+        String sqlSession = "INSERT INTO Air_Session(device_id, device_seq, measured_at, is_sample, gas_a_raw, gas_b_raw, gas_a_base, "
+                   + "gas_a_delta, temp_c, humid_pct, base_shift, warm, note) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                   
+        String sqlLabel = "INSERT INTO Air_Label(session_id, label_code) VALUES (?, ?)";
+
+        java.sql.Connection cn = null; 
+        java.sql.PreparedStatement ps = null; 
+        java.sql.ResultSet rs = null;
         try {
-            cn = DBContext.getConnection();
-            ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            cn = util.DBContext.getConnection();
+            cn.setAutoCommit(false); // Bật Transaction
+
+            // 1. Insert vào bảng Air_Session
+            ps = cn.prepareStatement(sqlSession, java.sql.Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, o.getDeviceId());
-            ps.setInt(2, o.getDeviceSeq());
+            ps.setInt(2, o.getDeviceSeq()); 
             ps.setTimestamp(3, o.getMeasuredAt());
-            ps.setInt(4, o.getGasARaw());
-            ps.setInt(5, o.getGasBRaw());
-            ps.setInt(6, o.getGasABase());
-            ps.setDouble(7, o.getGasADelta());
-            ps.setDouble(8, o.getTempC());
-            ps.setDouble(9, o.getHumidPct());
-            ps.setDouble(10, o.getBaseShift());
-            ps.setBoolean(11, o.isWarm());
+            ps.setBoolean(4, o.isSample()); // <--- Đã thêm is_sample
+            ps.setInt(5, o.getGasARaw());
+            ps.setInt(6, o.getGasBRaw());
+            ps.setInt(7, o.getGasABase());
+            ps.setDouble(8, o.getGasADelta());
+            ps.setDouble(9, o.getTempC());
+            ps.setDouble(10, o.getHumidPct());
+            ps.setDouble(11, o.getBaseShift());
+            ps.setBoolean(12, o.isWarm());
+            ps.setString(13, o.getNote()); // <--- Đã thêm note
             ps.executeUpdate();
+            
+            // Lấy ID vừa được tạo
             rs = ps.getGeneratedKeys();
-            if (rs.next()) return rs.getInt(1);
-        } catch (SQLIntegrityConstraintViolationException dup) {
-            return -1; // the unique key rejected a resent packet
-        } catch (SQLException e) {
-            if (e.getMessage() != null && e.getMessage().contains("UQ_Air_Session_seq")) return -1;
+            int newSessionId = -1;
+            if (rs.next()) {
+                newSessionId = rs.getInt(1);
+            }
+            rs.close();
+            ps.close();
+
+            // 2. Insert nhãn
+            if (newSessionId > 0 && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
+                ps = cn.prepareStatement(sqlLabel);
+                ps.setInt(1, newSessionId);
+                ps.setString(2, o.getLabelCode());
+                ps.executeUpdate();
+                ps.close();
+            }
+
+            cn.commit(); // Lưu thay đổi
+            return newSessionId;
+
+        } catch (Exception e) {
+            try { if (cn != null) cn.rollback(); } catch (Exception ignored) {}
+            System.out.println("====== LỖI KHI THÊM MỚI PHIÊN ĐO ======");
             e.printStackTrace();
         } finally {
-            close(rs, ps, cn);
+            // Đóng tài nguyên
+            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
+            try { if (ps != null) ps.close(); } catch (Exception ignored) {}
+            try { if (cn != null) cn.close(); } catch (Exception ignored) {}
         }
-        return 0;
+        return -1;
     }
 
     /** UPDATE, used by the screens that let a staff member fix a reading. */
@@ -167,6 +222,10 @@ public class AirSessionDAO {
         }
         return false;
     }
+    
+    
+    
+    
 
     private void exec(Connection cn, String sql, int id) throws SQLException {
         PreparedStatement ps = cn.prepareStatement(sql);
