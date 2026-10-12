@@ -34,6 +34,7 @@
         </select>
         <button type="submit">Loc</button>
         <a class="btn ghost" href="<%= ctx %>/sessions">Bo loc</a>
+        <a class="btn" href="<%= ctx %>/sessions/create">+ Them phien do</a>
     </form>
 
     <table class="grid">
@@ -48,6 +49,8 @@
             <th>Humid (%)</th>
             <th>Base Shift</th>
             <th>Nhan</th>
+            <th>Ma thiet bi</th>
+            <th>Thao tac</th>
         </tr>
         <% if (rows != null) {
             for (AirSession r : rows) {
@@ -65,55 +68,72 @@
             <td><%= r.getHumidPct() %></td>
             <td><%= r.getBaseShift() %></td>
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
+            <td><%= r.getDeviceId() %></td>
+            <td class="ops">
+                <a href="<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>">Sua</a>
+                
+                <form method="post" action="<%= ctx %>/sessions/delete"
+                      onsubmit="return confirm('Xoa phien do nay?');">
+                    <input type="hidden" name="id" value="<%= r.getSessionId() %>">
+                    <button type="submit" class="link danger">Xoa</button>
+                </form>
+            </td>
         </tr>
         <% } } %>
         <% if (rows == null || rows.isEmpty()) { %>
-        <tr><td colspan="10" class="c">Khong co phien nao khop bo loc</td></tr>
+        <tr><td colspan="12" class="c">Khong co phien nao khop bo loc</td></tr>
         <% } %>
     </table>
 
     <div class="pager">
-        <%-- Nút Trang Đầu & Trang Trước --%>
         <% if (currentPage > 1) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">« Đầu</a>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage - 1 %>">‹ Trước</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">&laquo; Đầu</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage - 1 %>">&lsaquo; Trước</a>
         <% } %>
 
-        <%-- Thu gọn danh sách trang (Hiển thị khoảng 2 trang trước và 2 trang sau trang hiện tại) --%>
         <%
-            int startPage = Math.max(1, currentPage - 2);
-            int endPage = Math.min(totalPages, currentPage + 2);
+            int startPage = currentPage - 1;
+            int endPage = currentPage + 1;
 
-            if (startPage > 1) {
-        %>
-                <a href="?label=<%= Web.esc(labelFilter) %>&page=1">1</a>
-                <% if (startPage > 2) { %><span class="dots">...</span><% } %>
-        <%
-            }
-
-            for (int p = startPage; p <= endPage; p++) {
-                if (p == currentPage) {
-        %>
-                    <b><%= p %></b>
-        <%      } else { %>
-                    <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= p %>"><%= p %></a>
-        <%
-                }
-            }
-
-            if (endPage < totalPages) {
-        %>
-                <% if (endPage < totalPages - 1) { %><span class="dots">...</span><% } %>
-                <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>"><%= totalPages %></a>
-        <%
-            }
+            if (currentPage == 1) endPage = 3;
+            else if (currentPage == totalPages) startPage = totalPages - 2;
+            
+            if (startPage < 1) startPage = 1;
+            if (endPage > totalPages) endPage = totalPages;
         %>
 
-        <%-- Nút Trang Sau & Trang Cuối --%>
+        <% if (startPage > 1) { %>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">1</a>
+            <% if (startPage > 2) { %>
+                <span>...</span>
+            <% } %>
+        <% } %>
+
+        <% for (int p = startPage; p <= endPage; p++) { %>
+            <% if (p == currentPage) { %>
+                <b><%= p %></b>
+            <% } else { %>
+                <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= p %>"><%= p %></a>
+            <% } %>
+        <% } %>
+
+        <% if (endPage < totalPages) { %>
+            <% if (endPage < totalPages - 1) { %>
+                <span>...</span>
+            <% } %>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>"><%= totalPages %></a>
+        <% } %>
+
         <% if (currentPage < totalPages) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Sau ›</a>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Cuối »</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Sau &rsaquo;</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Cuối &raquo;</a>
         <% } %>
+
+        <form method="get" action="<%= ctx %>/sessions" style="display: inline-block; margin-left: 15px;">
+            <input type="hidden" name="label" value="<%= Web.esc(labelFilter) %>">
+            <input type="number" name="page" min="1" max="<%= totalPages %>" placeholder="Trang..." required style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;">
+            <button type="submit" style="padding: 4px 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; background: #eee; color: black;">Đi</button>
+        </form>
     </div>
 </div>
 </body>
