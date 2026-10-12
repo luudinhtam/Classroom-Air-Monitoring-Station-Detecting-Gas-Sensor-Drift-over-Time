@@ -38,7 +38,7 @@ SELECT
     0.00 AS base_shift,
     1 AS warm,
     1 AS is_sample
-FROM Tenp_AirQuality
+FROM Temp_AirQuality
 -- LỌC BỎ DÒNG LỖI -200 THEO ĐÚNG YÊU CẦU ĐỀ TÀI
 WHERE [Date] IS NOT NULL 
   AND TRY_CAST(REPLACE(CAST([PT08_S1_CO] AS VARCHAR(50)), ',', '.') AS FLOAT) <> -200 

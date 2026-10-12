@@ -10,7 +10,7 @@ public class AirSessionDAO {
 
     private static final String SELECT_BASE = 
         "SELECT s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, " +
-        "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, " +
+        "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, " +
         "(SELECT TOP 1 l.label_code FROM Air_Label l " +
         " WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code " +
         "FROM Air_Session s ";
@@ -105,7 +105,31 @@ public class AirSessionDAO {
         e.printStackTrace();
     }
     return list;
-      }
+    }
+
+    public List<AirSession> findTimeline(int deviceId, int limit) {
+        List<AirSession> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, "
+                   + "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, "
+                   + "(SELECT TOP 1 l.label_code FROM Air_Label l WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code "
+                   + "FROM Air_Session s WHERE s.device_id = ? ORDER BY s.measured_at DESC";
+        Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
+        try {
+            cn = DBContext.getConnection();
+            ps = cn.prepareStatement(sql);
+            ps.setInt(1, limit);
+            ps.setInt(2, deviceId);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(0, map(rs)); // prepend to sort ascending by time
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(rs, ps, cn);
+        }
+        return list;
+    }
     
     
 
@@ -117,7 +141,7 @@ public class AirSessionDAO {
                    + "gas_a_delta, temp_c, humid_pct, base_shift, warm, note) "
                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                    
-        String sqlLabel = "INSERT INTO Air_Label(session_id, label_code) VALUES (?, ?)";
+        String sqlLabel = "INSERT INTO Air_Label(session_id, label_code, source) VALUES (?, ?, 'RULE')";
 
         java.sql.Connection cn = null; 
         java.sql.PreparedStatement ps = null; 
@@ -180,7 +204,7 @@ public class AirSessionDAO {
     /** UPDATE, used by the screens that let a staff member fix a reading. */
     public boolean update(AirSession o) {
         String sql = "UPDATE Air_Session SET gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
-                   + "humid_pct = ?, base_shift = ?, warm = ? WHERE session_id = ?";
+                   + "humid_pct = ?, base_shift = ?, warm = ?, note = ? WHERE session_id = ?";
         Connection cn = null; PreparedStatement ps = null;
         try {
             cn = DBContext.getConnection();
@@ -193,8 +217,43 @@ public class AirSessionDAO {
             ps.setDouble(6, o.getHumidPct());
             ps.setDouble(7, o.getBaseShift());
             ps.setBoolean(8, o.isWarm());
-            ps.setInt(9, o.getSessionId());
-            return ps.executeUpdate() > 0;
+            ps.setString(9, o.getNote());
+            ps.setInt(10, o.getSessionId());
+            boolean ok = ps.executeUpdate() > 0;
+            ps.close();
+
+            if (ok && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
+                String checkSql = "SELECT TOP 1 label_code FROM Air_Label WHERE session_id = ? ORDER BY label_id DESC";
+                PreparedStatement psCheck = cn.prepareStatement(checkSql);
+                psCheck.setInt(1, o.getSessionId());
+                ResultSet rsCheck = psCheck.executeQuery();
+                String currentLabel = null;
+                if (rsCheck.next()) {
+                    currentLabel = rsCheck.getString(1);
+                }
+                rsCheck.close();
+                psCheck.close();
+
+                if (currentLabel == null || !currentLabel.trim().equals(o.getLabelCode().trim())) {
+                    String sqlLabel = "INSERT INTO Air_Label(session_id, label_code, source, reason) VALUES (?, ?, 'REVIEWER', ?)";
+                    ps = cn.prepareStatement(sqlLabel);
+                    ps.setInt(1, o.getSessionId());
+                    ps.setString(2, o.getLabelCode());
+                    
+                    String labelReason = o.getNote();
+                    if (labelReason != null) {
+                        if (labelReason.contains("----------------")) {
+                            labelReason = labelReason.split("----------------")[0];
+                        }
+                        labelReason = labelReason.replaceFirst("^\\[[^\\]]+\\]\\s*", "");
+                        labelReason = labelReason.replace("\r", "").replace("\n", " ").trim();
+                        labelReason = labelReason.replaceAll("[-=]+$", "").trim();
+                    }
+                    ps.setString(3, labelReason);
+                    ps.executeUpdate();
+                }
+            }
+            return ok;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -251,6 +310,7 @@ public class AirSessionDAO {
         o.setHumidPct(rs.getDouble("humid_pct"));
         o.setBaseShift(rs.getDouble("base_shift"));
         o.setWarm(rs.getBoolean("warm"));
+        o.setNote(rs.getString("note"));
         return o;
     }
 

@@ -19,17 +19,27 @@ import util.Web;
                             "/sessions/create", 
                             "/sessions/edit", 
                             "/sessions/save",
-                            "/sessions/delete" })
+                            "/sessions/delete",
+                            "/sessions/detail",
+                            "/session/detail" })
 
 
 public class AirSessionListServlet extends HttpServlet {
 
     private static final int PAGE_SIZE = 20;
     private final AirSessionDAO dao = new AirSessionDAO();
+    private final dao.DeviceDAO deviceDAO = new dao.DeviceDAO();
+    private final dao.LabelDAO labelDAO = new dao.LabelDAO();
     
     private String action(HttpServletRequest req) {
-    String path = req.getRequestURI().substring(req.getContextPath().length());
-    return path.substring("/sessions".length());
+        String path = req.getRequestURI().substring(req.getContextPath().length());
+        if (path.startsWith("/sessions")) {
+            return path.substring("/sessions".length());
+        }
+        if (path.startsWith("/session")) {
+            return path.substring("/session".length());
+        }
+        return path;
     }
     
     private void showForm(HttpServletRequest req, HttpServletResponse resp, AirSession session)
@@ -37,6 +47,15 @@ public class AirSessionListServlet extends HttpServlet {
     req.setAttribute("editSession", session);
     req.setAttribute("devices", dao.listDevices());
     req.getRequestDispatcher("/WEB-INF/views/sessionForm.jsp").forward(req, resp);
+    }
+    
+    private void showDetail(HttpServletRequest req, HttpServletResponse resp, AirSession session)
+        throws ServletException, IOException {
+    req.setAttribute("detail", session);
+    req.setAttribute("device", deviceDAO.findById(session.getDeviceId()));
+    req.setAttribute("timeline", dao.findTimeline(session.getDeviceId(), 15));
+    req.setAttribute("labelHistory", labelDAO.findBySessionId(session.getSessionId()));
+    req.getRequestDispatcher("/WEB-INF/views/sessionDetail.jsp").forward(req, resp);
     }
     
     
@@ -83,6 +102,18 @@ public class AirSessionListServlet extends HttpServlet {
                 return;
             }
             showForm(req, resp, session);
+            return;
+        }
+
+        if("/detail".equals(action)){
+            int id = Web.intParam(req, "id", 0);
+            AirSession session = dao.findById(id);
+            if (session == null){
+                Web.flash(req, "Khong tim thay phien do #" + id);
+                resp.sendRedirect(req.getContextPath() + "/sessions");
+                return;
+            }
+            showDetail(req, resp, session);
             return;
         }
         showList(req, resp);

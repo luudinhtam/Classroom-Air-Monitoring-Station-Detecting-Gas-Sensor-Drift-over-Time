@@ -55,6 +55,7 @@ CREATE TABLE Air_Session (
     humid_pct DECIMAL(9,2) NULL,
     base_shift DECIMAL(9,2) NULL,
     warm BIT NULL,
+    note NVARCHAR(1000) NULL,
     is_sample   BIT NOT NULL DEFAULT 0,   -- 1 for seeded rows, 0 for rows from the device
     CONSTRAINT UQ_Air_Session_seq UNIQUE (device_id, device_seq)
 );
@@ -106,7 +107,6 @@ CREATE TABLE Air_Station (
     created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
-DROP TABLE Air_Station;
  
 CREATE TABLE Air_Calibration (
     calibration_id      INT IDENTITY(1,1) PRIMARY KEY,
@@ -131,9 +131,8 @@ ADD CONSTRAINT FK_Air_Calibration_Station
 ALTER TABLE Air_Calibration
 ADD CONSTRAINT FK_Air_Calibration_User
         FOREIGN KEY (performed_by)
-        REFERENCES AppUser(user_id)
+        REFERENCES AppUser(user_id);
 
-DROP TABLE Air_Calibration;
  
 CREATE TABLE Air_EmptyWindow (
     empty_window_id INT IDENTITY(1,1) PRIMARY KEY,
@@ -160,13 +159,13 @@ CREATE TABLE Air_EmptyWindow (
 ALTER TABLE Air_EmptyWindow
 ADD CONSTRAINT FK_Air_EmptyWindow_Station
         FOREIGN KEY (station_id)
-        REFERENCES Air_Station(station_id)
+        REFERENCES Air_Station(station_id);
 
 ALTER TABLE Air_EmptyWindow
-ADD CONSTRAINT CK_Air_EmptyWindow_Time
-        CHECK (end_at > start_at)
+ADD CONSTRAINT FK_Air_EmptyWindow_User
+        FOREIGN KEY (marked_by)
+        REFERENCES AppUser(user_id);
 
-DROP TABLE Air_EmptyWindow;
  
 -- ===== 7. Du lieu khoi tao =====
 INSERT INTO AppRole(role_code, role_name) VALUES

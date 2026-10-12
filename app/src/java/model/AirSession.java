@@ -64,4 +64,8 @@ public class AirSession {
 
     public boolean isWarm() { return warm; }
     public void setWarm(boolean v) { this.warm = v; }
+
+    private String note;
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 }

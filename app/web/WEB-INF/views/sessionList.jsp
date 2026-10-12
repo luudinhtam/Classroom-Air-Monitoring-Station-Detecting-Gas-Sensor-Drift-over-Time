@@ -70,7 +70,8 @@
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
             <td><%= r.getDeviceId() %></td>
             <td class="ops">
-                <a href="<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>">Sua</a>
+                <a href="<%= ctx %>/sessions/detail?id=<%= r.getSessionId() %>">Chi tiết</a>
+                <a href="<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>">Sửa</a>
                 
                 <form method="post" action="<%= ctx %>/sessions/delete"
                       onsubmit="return confirm('Xoa phien do nay?');">
