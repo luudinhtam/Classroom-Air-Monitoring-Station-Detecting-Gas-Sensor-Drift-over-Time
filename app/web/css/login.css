@@ -1,0 +1,215 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* Thanh nhỏ phía trên giống giao diện mẫu */
+body::before {
+    content: "";
+    display: block;
+    height: 6px;
+    background: #463c50;
+}
+
+.login-page {
+    min-height: calc(100vh - 6px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-box {
+    width: 405px;
+    min-height: auto;
+    background: #ffffff;
+    border: 1px solid #c8c8c8;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.15);
+    padding: 29px 29px 28px;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.logo-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+    position: relative;
+}
+
+.logo-icon .blue {
+    position: absolute;
+    width: 21px;
+    height: 11px;
+    background: #0076b9;
+    transform: skew(-30deg) rotate(30deg);
+    top: 9px;
+    left: 0;
+}
+
+.logo-icon .orange {
+    position: absolute;
+    width: 17px;
+    height: 10px;
+    background: #f58220;
+    transform: skew(-30deg) rotate(-30deg);
+    top: 7px;
+    left: 9px;
+}
+
+.logo-icon .red {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #e31b23;
+    transform: rotate(45deg);
+    top: 3px;
+    left: 15px;
+}
+
+.logo-text {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 24px;
+    color: #1475b8;
+    letter-spacing: -0.5px;
+}
+
+.logo-text span {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    vertical-align: top;
+    margin-left: 2px;
+}
+
+/* Title */
+h1 {
+    margin: 0 0 25px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #171717;
+}
+
+.sub {
+    display: none;
+}
+
+/* Error Alert (Image 2 style) */
+.error-alert {
+    background: #fdf2f2;
+    border: 1px solid #d9534f;
+    border-radius: 2px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-icon {
+    width: 24px;
+    height: 24px;
+    background: #c9302c;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.error-text {
+    color: #222222;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Input */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    height: 32px;
+    padding: 5px 9px;
+    border: 1px solid #999;
+    border-radius: 2px;
+    background: #fff;
+    color: #222;
+    font-size: 14px;
+    outline: none;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: #1683b8;
+    box-shadow: 0 0 2px rgba(22, 131, 184, 0.4);
+}
+
+.password-group {
+    margin-top: 16px;
+}
+
+/* Bottom area */
+.login-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 28px;
+}
+
+button {
+    min-width: 70px;
+    height: 32px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 3px;
+    background: #087eb3;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #066d9b;
+}
+
+button:active {
+    background: #055c83;
+}
+
+@media (max-width: 600px) {
+    .login-page {
+        padding-top: 80px;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .login-box {
+        width: 100%;
+        max-width: 405px;
+    }
+}

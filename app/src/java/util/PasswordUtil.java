@@ -55,7 +55,7 @@ public class PasswordUtil {
     private static String toHex(byte[] b) {
         StringBuilder sb = new StringBuilder(b.length * 2);
         for (int i = 0; i < b.length; i++) {
-            String h = Integer.toHexString(b[i] & 0xff);
+            String h = Integer.toHexString( b[i] & 0xff);
             if (h.length() == 1) sb.append('0');
             sb.append(h);
         }

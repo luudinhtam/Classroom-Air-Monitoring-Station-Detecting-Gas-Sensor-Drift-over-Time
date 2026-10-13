@@ -90,30 +90,83 @@ CREATE TABLE Air_Alert (
 -- ===== 6. Cac bang rieng cua de tai =====
 CREATE TABLE Air_Station (
     station_id INT IDENTITY(1,1) PRIMARY KEY,
-    code       NVARCHAR(32)  NOT NULL UNIQUE,
-    name       NVARCHAR(150) NOT NULL,
-    note       NVARCHAR(400) NULL,
-    is_active  BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+    code                    NVARCHAR(32)  NOT NULL UNIQUE,
+    name                    NVARCHAR(150) NOT NULL,
+    location                NVARCHAR(250) NOT NULL,
+
+    co_warning_threshold    DECIMAL(10,2) NOT NULL DEFAULT 0,
+    co2_warning_threshold   DECIMAL(10,2) NOT NULL DEFAULT 0,
+    max_baseline_drift      DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    -- QUAN TRONG: device_key phai la UNIQUE, de phuc vu testing thi hien tai chua sua. Se sua trong tuong lai.
+    device_key              NVARCHAR(128) NOT NULL DEFAULT N'123456',
+
+    note                    NVARCHAR(400) NULL,
+    is_active               BIT NOT NULL DEFAULT 1,
+    created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
+
+DROP TABLE Air_Station;
  
 CREATE TABLE Air_Calibration (
-    calibration_id INT IDENTITY(1,1) PRIMARY KEY,
-    code       NVARCHAR(32)  NOT NULL UNIQUE,
-    name       NVARCHAR(150) NOT NULL,
-    note       NVARCHAR(400) NULL,
-    is_active  BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+    calibration_id      INT IDENTITY(1,1) PRIMARY KEY,
+    code                NVARCHAR(32)  NOT NULL UNIQUE,
+    name                NVARCHAR(150) NOT NULL,
+    note                NVARCHAR(400) NULL,
+
+    station_id          INT NOT NULL,
+    co_baseline         DECIMAL(10,2) NOT NULL DEFAULT 0,
+    co2_baseline        DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    performed_by        INT NOT NULL,
+    calibrated_at       DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+
 );
+
+ALTER TABLE Air_Calibration
+ADD CONSTRAINT FK_Air_Calibration_Station
+        FOREIGN KEY (station_id)
+        REFERENCES Air_Station(station_id)
+
+ALTER TABLE Air_Calibration
+ADD CONSTRAINT FK_Air_Calibration_User
+        FOREIGN KEY (performed_by)
+        REFERENCES AppUser(user_id)
+
+DROP TABLE Air_Calibration;
  
 CREATE TABLE Air_EmptyWindow (
     empty_window_id INT IDENTITY(1,1) PRIMARY KEY,
-    code       NVARCHAR(32)  NOT NULL UNIQUE,
-    name       NVARCHAR(150) NOT NULL,
-    note       NVARCHAR(400) NULL,
-    is_active  BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+    code            NVARCHAR(32) NOT NULL UNIQUE,
+    name            NVARCHAR(150) NOT NULL,
+
+    station_id      INT NOT NULL,
+
+    start_at        DATETIME2(0) NOT NULL,
+    end_at          DATETIME2(0) NOT NULL,
+
+    marked_by       INT NOT NULL,
+
+    note            NVARCHAR(400) NULL,
+
+    created_at      DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
+
+    
+
+    CONSTRAINT CK_Air_EmptyWindow_Time
+        CHECK (end_at > start_at)
 );
+
+ALTER TABLE Air_EmptyWindow
+ADD CONSTRAINT FK_Air_EmptyWindow_Station
+        FOREIGN KEY (station_id)
+        REFERENCES Air_Station(station_id)
+
+ALTER TABLE Air_EmptyWindow
+ADD CONSTRAINT CK_Air_EmptyWindow_Time
+        CHECK (end_at > start_at)
+
+DROP TABLE Air_EmptyWindow;
  
 -- ===== 7. Du lieu khoi tao =====
 INSERT INTO AppRole(role_code, role_name) VALUES

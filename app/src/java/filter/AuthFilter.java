@@ -41,7 +41,7 @@ public class AuthFilter implements Filter {
         // the device endpoint and the public files carry their own check
         if (path.startsWith("/api/") || path.startsWith("/login")
                 || path.startsWith("/css/") || path.startsWith("/js/")) {
-            chain.doFilter(rq, rp);
+                chain.doFilter(rq, rp);
             return;
         }
 
@@ -55,7 +55,7 @@ public class AuthFilter implements Filter {
             if (path.startsWith(e.getKey())) {
                 if (!e.getValue().contains(me.getRoleCode())) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN,
-                            "Vai tro " + me.getRoleCode() + " khong duoc vao trang nay");
+                            me.getRoleCode() + " không có quyền truy cập trang này!");
                     return;
                 }
                 break;

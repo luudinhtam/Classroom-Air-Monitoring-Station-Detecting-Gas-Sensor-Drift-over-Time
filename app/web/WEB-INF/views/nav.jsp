@@ -10,7 +10,7 @@
     <div class="brand">Airroom <span class="sem">FALL2026</span></div>
     <div class="who">
         <%= Web.esc(me.getFullName()) %>
-        <span class="tag"><%= Web.esc(me.getRoleCode()) %></span>
+        <span class="tag" style="color: black"><%= Web.esc(me.getRoleCode()) %></span>
         <a class="out" href="<%= ctx %>/logout">Logout</a>
     </div>
 </div>
@@ -19,6 +19,7 @@
     <a href="<%= ctx %>/sessions">Sessions</a>
     <% if ("ADMIN".equals(me.getRoleCode())) { %>
         <a href="<%= ctx %>/admin/users">Users</a>
+        <a href="<%= ctx %>/admin/devices">Devices</a>
         <a href="<%= ctx %>/admin/stations">Stations</a>
     <% } %>
 </div>

@@ -15,7 +15,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Airroom – Sessions</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -35,6 +35,10 @@
         <button type="submit">Loc</button>
         <a class="btn ghost" href="<%= ctx %>/sessions">Bo loc</a>
         <a class="btn" href="<%= ctx %>/sessions/create">+ Them phien do</a>
+
+        <a class="btn btn-export" href="<%= ctx %>/sessions/export?label=<%= Web.esc(labelFilter) %>">
+            Xuat file
+        </a>
     </form>
 
     <table class="grid">
@@ -68,14 +72,17 @@
             <td><%= r.getHumidPct() %></td>
             <td><%= r.getBaseShift() %></td>
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
-            <td><%= r.getDeviceId() %></td>
-            <td class="ops">
-                <a href="<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>">Sua</a>
+            <td><%= r.getDeviceCode()%></td>
+            <td class="ops ops-group">
+                <button type="button" class="btn-block btn-blue"
+                        onclick="window.location.href='<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>'">
+                    Sửa
+                </button>
                 
                 <form method="post" action="<%= ctx %>/sessions/delete"
-                      onsubmit="return confirm('Xoa phien do nay?');">
+                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiên đo này?');">
                     <input type="hidden" name="id" value="<%= r.getSessionId() %>">
-                    <button type="submit" class="link danger">Xoa</button>
+                    <button type="submit" class="btn-block btn-red">Xóa</button>
                 </form>
             </td>
         </tr>

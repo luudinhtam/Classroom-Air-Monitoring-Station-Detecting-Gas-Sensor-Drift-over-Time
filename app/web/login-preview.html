@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AirRoom – Login</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="login-page">
+<form class="login-box" id="loginForm" method="post" action="#" autocomplete="on">
+    <div class="login-brand">AirRoom</div>
+
+    <div id="stepUser" class="login-step">
+        <h1>Login</h1>
+        <input type="text" id="username" name="username" placeholder="Username" autofocus required>
+        <div class="login-actions">
+            <button type="button" class="login-primary" id="nextBtn">Next</button>
+        </div>
+    </div>
+
+    <div id="stepPass" class="login-step" hidden>
+        <button type="button" class="login-back" id="backBtn">
+            <span class="login-back-arrow" aria-hidden="true">&#8592;</span>
+            <span id="shownUser"></span>
+        </button>
+        <h1>Enter Password</h1>
+        <input type="password" id="password" name="password" placeholder="Enter Password">
+        <p class="login-invalid" id="invalidMsg" hidden>Invalid username or password.</p>
+        <div class="login-actions">
+            <button type="submit" class="login-primary">Sign In</button>
+        </div>
+    </div>
+</form>
+<script>
+(function () {
+    var stepUser = document.getElementById("stepUser");
+    var stepPass = document.getElementById("stepPass");
+    var username = document.getElementById("username");
+    var password = document.getElementById("password");
+    var shownUser = document.getElementById("shownUser");
+    var nextBtn = document.getElementById("nextBtn");
+    var backBtn = document.getElementById("backBtn");
+    var form = document.getElementById("loginForm");
+    var invalid = document.getElementById("invalidMsg");
+
+    function goPassword() {
+        if (!username.value.trim()) {
+            username.focus();
+            return;
+        }
+        shownUser.textContent = username.value.trim();
+        stepUser.hidden = true;
+        stepPass.hidden = false;
+        password.focus();
+    }
+
+    function goUsername() {
+        stepPass.hidden = true;
+        stepUser.hidden = false;
+        password.value = "";
+        password.classList.remove("is-invalid");
+        invalid.hidden = true;
+        username.focus();
+        username.select();
+    }
+
+    nextBtn.addEventListener("click", goPassword);
+    backBtn.addEventListener("click", goUsername);
+
+    username.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            goPassword();
+        }
+    });
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (stepPass.hidden) {
+            goPassword();
+            return;
+        }
+        if (!password.value) {
+            password.focus();
+            return;
+        }
+        password.classList.add("is-invalid");
+        invalid.hidden = false;
+    });
+})();
+</script>
+</body>
+</html>
