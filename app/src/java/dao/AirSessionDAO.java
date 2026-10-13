@@ -179,8 +179,9 @@ public class AirSessionDAO {
 
     /** UPDATE, used by the screens that let a staff member fix a reading. */
     public boolean update(AirSession o) {
+        
         String sqlSession = "UPDATE Air_Session SET device_id = ?, gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
-                          + "humid_pct = ?, base_shift = ?, warm = ?, note = ? WHERE session_id = ?";
+                          + "humid_pct = ?, base_shift = ?, warm = ?, note = ?, device_seq = ? WHERE session_id = ?";
         
         Connection cn = null; 
         PreparedStatement psSession = null;
@@ -190,7 +191,6 @@ public class AirSessionDAO {
             cn = DBContext.getConnection();
             cn.setAutoCommit(false); 
             
-            // --- 1. Cập nhật bảng Phiên đo ---
             psSession = cn.prepareStatement(sqlSession);
             psSession.setInt(1, o.getDeviceId());
             psSession.setInt(2, o.getGasARaw());
@@ -202,10 +202,11 @@ public class AirSessionDAO {
             psSession.setDouble(8, o.getBaseShift());
             psSession.setBoolean(9, o.isWarm());
             psSession.setString(10, o.getNote());
-            psSession.setInt(11, o.getSessionId());
+            psSession.setInt(11, o.getDeviceSeq()); 
+            psSession.setInt(12, o.getSessionId()); 
             int updated = psSession.executeUpdate();
             
-            // --- 2. Cập nhật bảng Nhãn mới (Nếu có đổi) ---
+            // --- Cập nhật bảng Nhãn ---
             if (o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
                 String currentLabel = "";
                 try (PreparedStatement psCheck = cn.prepareStatement("SELECT TOP 1 label_code FROM Air_Label WHERE session_id = ? ORDER BY label_id DESC")) {
@@ -216,7 +217,7 @@ public class AirSessionDAO {
                 }
                 
                 if (!o.getLabelCode().equals(currentLabel)) {
-                    psLabel = cn.prepareStatement("INSERT INTO Air_Label(session_id, label_code) VALUES (?, ?)");
+                    psLabel = cn.prepareStatement("INSERT INTO Air_Label(session_id, label_code, source) VALUES (?, ?, 'REVIEWER')");
                     psLabel.setInt(1, o.getSessionId());
                     psLabel.setString(2, o.getLabelCode());
                     psLabel.executeUpdate();
@@ -228,7 +229,7 @@ public class AirSessionDAO {
             
         } catch (SQLException e) {
             try { if (cn != null) cn.rollback(); } catch (Exception ex) {}
-            e.printStackTrace(); // In lỗi ra Output của NetBeans
+            e.printStackTrace(); 
             return false;
         } finally {
             try { if (psLabel != null) psLabel.close(); } catch (Exception ex) {}

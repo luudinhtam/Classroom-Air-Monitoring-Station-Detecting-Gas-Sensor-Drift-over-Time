@@ -19,7 +19,8 @@ import util.Web;
                             "/sessions/create", 
                             "/sessions/edit", 
                             "/sessions/save",
-                            "/sessions/delete" })
+                            "/sessions/delete",
+                            "/sessions/export" })
 
 
 public class AirSessionListServlet extends HttpServlet {
@@ -85,6 +86,10 @@ public class AirSessionListServlet extends HttpServlet {
             showForm(req, resp, session);
             return;
         }
+        if ("/export".equals(action)) {
+            exportCsv(req, resp);
+            return;
+        }
         showList(req, resp);
         
     }   
@@ -147,6 +152,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             } else {
                 // --- THAO TÁC CHỈNH SỬA ---
                 AirSession oldSession = dao.findById(sessionId);
+                session.setDeviceSeq((int) (System.currentTimeMillis() % Integer.MAX_VALUE));
                 String oldLabel = (oldSession != null && oldSession.getLabelCode() != null) ? oldSession.getLabelCode().trim() : "";
 
                 // CHỈ kiểm tra lý do KHI VÀ CHỈ KHI nhãn mới khác nhãn cũ
@@ -195,9 +201,56 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
         resp.sendRedirect(req.getContextPath() + "/sessions");
         return;
     }
-}
-
     }
+
+
+
+    private void exportCsv(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String label = Web.trimmed(req, "label");
+        Integer deviceId = Web.optionalInt(req, "device");
+        
+        // Lấy toàn bộ dữ liệu (Để size là 999999 để lấy hết mà không cần viết hàm mới trong DAO)
+        List<AirSession> list = dao.search(label, deviceId, 1, 999999);
+        
+        // Thiết lập header để trình duyệt hiểu đây là file tải về
+        resp.setContentType("text/csv; charset=UTF-8");
+        resp.setHeader("Content-Disposition", "attachment; filename=\"sessions_export.csv\"");
+        
+        // Ghi mã BOM (Byte Order Mark) để Microsoft Excel hiển thị tiếng Việt có dấu chuẩn xác
+        resp.getOutputStream().write(239); // 0xEF
+        resp.getOutputStream().write(187); // 0xBB
+        resp.getOutputStream().write(191); // 0xBF
+        
+        java.io.PrintWriter out = new java.io.PrintWriter(new java.io.OutputStreamWriter(resp.getOutputStream(), "UTF-8"));
+        
+        // 1. In dòng Tiêu đề (Header) của file CSV
+        out.println("ID,Thoi gian do,Gas A (raw),Gas B (raw),Gas A (base),Delta,Temp (C),Humid (%),Base Shift,Nhan,Ma thiet bi");
+        
+        // 2. Duyệt danh sách và in từng dòng dữ liệu
+        for (AirSession r : list) {
+            String lbl = r.getLabelCode() != null ? r.getLabelCode() : "";
+            String dev = r.getDeviceCode() != null ? r.getDeviceCode() : String.valueOf(r.getDeviceId());
+            String time = r.getMeasuredAt() != null ? r.getMeasuredAt().toString() : "";
+            
+            // Format từng cột cách nhau bằng dấu phẩy
+            out.printf("%d,%s,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%s,%s\n",
+                r.getSessionId(),
+                time,
+                r.getGasARaw(),
+                r.getGasBRaw(),
+                r.getGasABase(),
+                r.getGasADelta(),
+                r.getTempC(),
+                r.getHumidPct(),
+                r.getBaseShift(),
+                lbl,
+                dev
+            );
+        }
+        out.flush();
+    }
+
+ }
     
     
     
