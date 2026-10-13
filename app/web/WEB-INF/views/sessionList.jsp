@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.List, model.AirSession, util.Web" %>
+<%@ page import="java.util.List, model.AirSession, model.AppUser, util.Web" %>
 <%
     List<AirSession> rows = (List<AirSession>) request.getAttribute("rows");
     String labelFilter = (String) request.getAttribute("label");
@@ -9,6 +9,11 @@
     if (currentPage == null) currentPage = 1;
     if (totalPages  == null) totalPages  = 1;
     if (labelFilter == null) labelFilter = "";
+
+    AppUser me = (AppUser) session.getAttribute("user");
+    String myRole = (me != null) ? me.getRoleCode() : "";
+    boolean isAdmin = "ADMIN".equals(myRole);
+    boolean canEdit = isAdmin || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole) || "REVIEWER".equals(myRole);
 %>
 <!DOCTYPE html>
 <html>
@@ -34,7 +39,10 @@
         </select>
         <button type="submit">Loc</button>
         <a class="btn ghost" href="<%= ctx %>/sessions">Bo loc</a>
-        <a class="btn" href="<%= ctx %>/sessions/create">+ Them phien do</a>
+        
+        <% if (isAdmin) { %>
+            <a class="btn" href="<%= ctx %>/sessions/create">+ Them phien do</a>
+        <% } %>
 
         <a class="btn btn-export" href="<%= ctx %>/sessions/export?label=<%= Web.esc(labelFilter) %>">
             Xuat file
@@ -73,21 +81,27 @@
             <td><%= r.getBaseShift() %></td>
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
             <td><%= r.getDeviceCode() != null ? r.getDeviceCode() : "" %></td>
+            
             <td class="ops ops-group">
                 <button type="button" class="btn-block btn-gray"
                         onclick="window.location.href='<%= ctx %>/sessions/detail?id=<%= r.getSessionId() %>'">
                     Chi tiết
                 </button>
-                <button type="button" class="btn-block btn-blue"
-                        onclick="window.location.href='<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>'">
-                    Sửa
-                </button>
                 
-                <form method="post" action="<%= ctx %>/sessions/delete"
-                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiên đo này?');">
-                    <input type="hidden" name="id" value="<%= r.getSessionId() %>">
-                    <button type="submit" class="btn-block btn-red">Xóa</button>
-                </form>
+                <% if (canEdit) { %>
+                    <button type="button" class="btn-block btn-blue"
+                            onclick="window.location.href='<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>'">
+                        Sửa
+                    </button>
+                <% } %>
+                
+                <% if (isAdmin) { %>
+                    <form method="post" action="<%= ctx %>/sessions/delete"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiên đo này?');" style="display:inline-block;">
+                        <input type="hidden" name="id" value="<%= r.getSessionId() %>">
+                        <button type="submit" class="btn-block btn-red">Xóa</button>
+                    </form>
+                <% } %>
             </td>
         </tr>
         <% } } %>

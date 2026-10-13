@@ -12,13 +12,15 @@ import javax.servlet.http.HttpServletResponse;
 import model.AirStation;
 import util.Web;
 
-@WebServlet(urlPatterns = { "/admin/stations", 
-                            "/admin/stations/create", 
-                            "/admin/stations/edit",
-                            "/admin/stations/save",
-                            "/admin/stations/lock",
-                            "/admin/stations/detail",
-                            "/admin/stations/delete" })
+@WebServlet(urlPatterns = {
+                        "/admin/stations", 
+                        "/admin/stations/create", 
+                        "/admin/stations/edit", 
+                        "/admin/stations/save", 
+                        "/admin/stations/delete", 
+                        "/admin/stations/lock",
+                        "/admin/stations/detail"
+})
 
 public class StationServlet extends HttpServlet {
 

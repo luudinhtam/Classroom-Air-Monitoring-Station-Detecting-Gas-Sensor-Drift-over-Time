@@ -1,14 +1,18 @@
-
-
 <%@page import="util.Web"%>
 <%@page import="model.AirStation"%>
 <%@page import="java.util.List"%>
+<%@page import="model.AppUser"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
     List<AirStation> rows = (List<AirStation>) request.getAttribute("rows");
     String keyword = (String) request.getAttribute("keyword");
     String status = (String) request.getAttribute("status");
     String ctx = request.getContextPath();
+    
+    // Khởi tạo cờ kiểm tra quyền quản lý trạm (Admin, Station Manager, Operator)
+    AppUser me = (AppUser) session.getAttribute("user");
+    String myRole = (me != null) ? me.getRoleCode() : "";
+    boolean canManageStation = "ADMIN".equals(myRole) || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole);
 %>
 <!DOCTYPE html>
 <html>
@@ -34,7 +38,9 @@
                 <button type="submit">Loc</button>
                 <a class="btn ghost" href="<%= ctx %>/admin/stations">Bo loc</a>
 
-                <a class="btn" href="<%= ctx %>/admin/stations/create">Them tram</a>
+                <% if (canManageStation) { %>
+                    <a class="btn" href="<%= ctx %>/admin/stations/create">Them tram</a>
+                <% } %>
             </form>
             
             <table class="grid">
@@ -60,28 +66,32 @@
                     <td class="c"><%= a.isActive() ? "Active" : "Inactive" %></td>
                     
                     <td class="ops ops-group">
-                        <button type="button" class="btn-block btn-blue"
-                                onclick="window.location.href='<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>'">
-                            Sửa
-                        </button>
-
-                        <form method="post" action="<%= ctx %>/admin/stations/lock">
-                            <input type="hidden" name="id" value="<%= a.getStationId() %>">
-                            <button type="submit" class="btn-block <%= a.isActive() ? "btn-orange" : "btn-green" %>">
-                                <%= a.isActive() ? "Tắt" : "Mở" %>
+                        <% if (canManageStation) { %>
+                            <button type="button" class="btn-block btn-blue"
+                                    onclick="window.location.href='<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>'">
+                                Sửa
                             </button>
-                        </form>
+
+                            <form method="post" action="<%= ctx %>/admin/stations/lock">
+                                <input type="hidden" name="id" value="<%= a.getStationId() %>">
+                                <button type="submit" class="btn-block <%= a.isActive() ? "btn-orange" : "btn-green" %>">
+                                    <%= a.isActive() ? "Tắt" : "Mở" %>
+                                </button>
+                            </form>
+                        <% } %>
 
                         <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/stations/detail?id=<%= a.getStationId() %>'">
                             Chi tiết
                         </button>
 
-                        <form method="post" action="<%= ctx %>/admin/stations/delete"
-                              onsubmit="return confirm('Xóa trạm này?');">
-                            <input type="hidden" name="id" value="<%= a.getStationId() %>">
-                            <button type="submit" class="btn-block btn-red">Xóa</button>
-                        </form>
+                        <% if (canManageStation) { %>
+                            <form method="post" action="<%= ctx %>/admin/stations/delete"
+                                  onsubmit="return confirm('Xóa trạm này?');">
+                                <input type="hidden" name="id" value="<%= a.getStationId() %>">
+                                <button type="submit" class="btn-block btn-red">Xóa</button>
+                            </form>
+                        <% } %>
 
                         <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/calibrations?stationId=<%= a.getStationId() %>'">
