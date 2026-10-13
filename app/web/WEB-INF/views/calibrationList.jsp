@@ -1,3 +1,4 @@
+<%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="model.AirStation"%>
 <%@page import="dao.AirStationDAO"%>
 <%@page import="util.Web"%>
@@ -10,6 +11,7 @@
     int stationId = (int) request.getAttribute("stationId");
     int total = (int) request.getAttribute("total");
     String ctx = request.getContextPath();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     AirStationDAO stations = new AirStationDAO();
     // Chỉ tra cứu trạm nếu stationId hợp lệ — tránh NullPointerException khi vào từ dashboard không có stationId
@@ -102,7 +104,7 @@
                     <td class="c"><%= c.getCoBaseLine() %></td>
                     <td class="c"><%= c.getCo2BaseLine() %></td>
                     <td><%= Web.esc(c.getPerformedByUsername()) %></td>
-                    <td class="muted"><%= c.getCalibratedAt() != null ? c.getCalibratedAt().toString().substring(0, 10) : "–" %></td>
+                    <td class="muted"><%= c.getCalibratedAt() != null ? c.getCalibratedAt().toLocalDateTime().format(formatter) : "–" %></td>
                     <td class="muted" style="font-size: 12px;"><%= c.getNote() != null ? Web.esc(c.getNote()) : "–" %></td>
                     
                     <td class="ops ops-group">

@@ -1,3 +1,4 @@
+<%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="model.AirStation"%>
 <%@page import="dao.AirStationDAO"%>
 <%@page import="util.Web"%>
@@ -13,6 +14,8 @@
 
     AirStationDAO stations = new AirStationDAO();
     AirStation a = stations.findById(stationId);
+    
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 %>
 
 <!DOCTYPE html>
@@ -75,13 +78,13 @@
 
                     <td><%= Web.esc(ew.getName()) %></td>
 
-                    <td><%= ew.getStartAt().toString().substring(0, 10) %></td>
+                    <td><%= ew.getStartAt().format(formatter) %></td>
 
-                    <td><%= ew.getEndAt().toString().substring(0, 10) %></td>
+                    <td><%= ew.getEndAt().format(formatter) %></td>
 
                     <td><%= Web.esc(ew.getMarkedByUsername()) %></td>
 
-                    <td><%= ew.getCreatedAt().toString().substring(0, 10) %></td>
+                    <td><%= ew.getCreatedAt().format(formatter) %></td>
 
                     <td><%= Web.esc(ew.getNote()) %></td>
 

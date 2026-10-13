@@ -1,5 +1,6 @@
 
 
+<%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="util.Web"%>
 <%@page import="model.AirStation"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -8,6 +9,7 @@
     AirStation item = (AirStation) request.getAttribute("detail");
     String error = (String) request.getAttribute("error");
     String ctx = request.getContextPath();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 %>
 
 <!DOCTYPE html>
@@ -78,7 +80,7 @@
 
                 <p>
                     <strong>Created At:</strong>
-                    <%= item.getCreatedAt() %>
+                    <%= item.getCreatedAt().toLocalDateTime().format(formatter) %>
                 </p>
             </div>
 
