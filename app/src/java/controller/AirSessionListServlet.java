@@ -48,16 +48,6 @@ public class AirSessionListServlet extends HttpServlet {
     req.getRequestDispatcher("/WEB-INF/views/sessionForm.jsp").forward(req, resp);
     }
     
-    private void showDetail(HttpServletRequest req, HttpServletResponse resp, AirSession session)
-        throws ServletException, IOException {
-    req.setAttribute("detail", session);
-    req.setAttribute("device", deviceDAO.findById(session.getDeviceId()));
-    req.setAttribute("timeline", dao.findTimeline(session.getDeviceId(), 15));
-    req.setAttribute("labelHistory", labelDAO.findBySessionId(session.getSessionId()));
-    req.getRequestDispatcher("/WEB-INF/views/sessionDetail.jsp").forward(req, resp);
-    }
-    
-    
     private void showList(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         String label = Web.trimmed(req, "label");
