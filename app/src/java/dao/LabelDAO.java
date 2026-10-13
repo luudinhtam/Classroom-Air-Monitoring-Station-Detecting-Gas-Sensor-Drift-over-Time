@@ -29,7 +29,6 @@ public class LabelDAO {
             e.printStackTrace();
         }
     }
-
     public List<AirLabel> findBySessionId(int sessionId) {
         List<AirLabel> list = new ArrayList<>();
         String sql = "SELECT l.label_id, l.session_id, l.label_code, l.source, l.reason, l.labeled_by, "

@@ -20,7 +20,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Devices</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -63,18 +63,23 @@
                     <%= d.isIsActive() ? "Hoat dong" : "Tam ngung" %>
                 </span>
             </td>
-            <td class="ops">
-                <a href="<%= ctx %>/admin/devices/edit?id=<%= d.getDeviceId() %>">Sua</a>
+            <td class="ops ops-group">
+                <button type="button" class="btn-block btn-blue"
+                        onclick="window.location.href='<%= ctx %>/admin/devices/edit?id=<%= d.getDeviceId() %>'">
+                    Sửa
+                </button>
                 
                 <form method="post" action="<%= ctx %>/admin/devices/toggle">
                     <input type="hidden" name="id" value="<%= d.getDeviceId() %>">
-                    <button type="submit" class="link"><%= d.isIsActive() ? "Khoa" : "Mo khoa" %></button>
+                    <button type="submit" class="btn-block <%= d.isIsActive() ? "btn-orange" : "btn-green" %>">
+                        <%= d.isIsActive() ? "Khóa" : "Mở khóa" %>
+                    </button>
                 </form>
                 
                 <form method="post" action="<%= ctx %>/admin/devices/delete"
-                      onsubmit="return confirm('Xoa thiet bi nay?');">
+                      onsubmit="return confirm('Xóa thiết bị này?');">
                     <input type="hidden" name="id" value="<%= d.getDeviceId() %>">
-                    <button type="submit" class="link danger">Xoa</button>
+                    <button type="submit" class="btn-block btn-red">Xóa</button>
                 </form>
             </td>
         </tr>
