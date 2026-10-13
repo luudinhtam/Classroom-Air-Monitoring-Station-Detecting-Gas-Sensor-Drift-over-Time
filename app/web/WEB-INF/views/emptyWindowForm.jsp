@@ -1,3 +1,5 @@
+<%@page import="model.AirStation"%>
+<%@page import="dao.AirStationDAO"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="java.util.List"%>
 <%@page import="model.AppUser"%>
@@ -10,6 +12,8 @@
     String error = (String) request.getAttribute("error");
     Integer stationId = (Integer) request.getAttribute("stationId");
     String ctx = request.getContextPath();
+    AirStationDAO stations = new AirStationDAO();
+    AirStation a = stations.findById(stationId);
 
     boolean isNew = (item == null || item.getEmptyWindowId() == 0);
 
@@ -40,7 +44,7 @@
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
-            <h2><%= isNew ? "Them khoang phong trong" : "Sua khoang phong trong" %> cho stationId: <%= stationId %></h2>
+            <h2><%= isNew ? "Them khoang phong trong" : "Sua khoang phong trong" %> cho station: <%= a.getName() %></h2>
 
             <% if (error != null) { %>
                 <div class="error"><%= Web.esc(error) %></div>
@@ -68,29 +72,6 @@
                 <label>End at</label>
                 <input type="datetime-local" name="endAt" required value="<%= endAt %>">
                 <small style="color:#888"> Thoi gian ket thuc phai sau thoi gian bat dau.</small>
-
-                <label>Marked by</label>
-                <select name="userId" required>
-                    <option value="">
-                        -- Chọn người đánh dấu --
-                    </option>
-
-                    <%
-                        List<AppUser> emptyWindowUsers = (List<AppUser>) request.getAttribute("emptyWindowUsers");
-
-                        int markedBy = item == null ? 0 : item.getMarkedBy();
-                        if (emptyWindowUsers != null) {
-                            for (AppUser u : emptyWindowUsers) {
-                    %>
-                        <option value="<%= u.getUserId() %>"
-                                <%= u.getUserId() == markedBy ? "selected" : "" %>>
-                            <%= Web.esc(u.getUsername()) %>
-                        </option>
-                    <%
-                            }
-                        }
-                    %>
-                </select>
 
                 <label>Note</label>
                 <input type="text" name="note" value="<%= item == null ? "" : Web.esc(item.getNote()) %>">
