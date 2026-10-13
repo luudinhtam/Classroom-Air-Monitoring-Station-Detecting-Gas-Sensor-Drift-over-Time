@@ -88,6 +88,30 @@ public class AirSessionDAO {
         return null;
     }
     
+    public List<AirSession> findTimeline(int deviceId, int limit) {
+        List<AirSession> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, "
+                   + "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, "
+                   + "(SELECT TOP 1 l.label_code FROM Air_Label l WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code "
+                   + "FROM Air_Session s WHERE s.device_id = ? ORDER BY s.measured_at DESC";
+        Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
+        try {
+            cn = DBContext.getConnection();
+            ps = cn.prepareStatement(sql);
+            ps.setInt(1, limit);
+            ps.setInt(2, deviceId);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(0, map(rs)); // prepend to sort ascending by time
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(rs, ps, cn);
+        }
+        return list;
+    }
+    
     public List<model.Device> listDevices() {
     List<model.Device> list = new ArrayList<>();
     String sql = "SELECT device_id, device_code, location FROM Device";
