@@ -1,0 +1,190 @@
+/* dashboard.css - Định dạng giao diện Bảng điều khiển chuyên nghiệp */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 18px 0 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #1e293b;
+}
+.dashboard-header .sub {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+/* KHỐI 6 THẺ CHỈ SỐ CỐT LÕI (METRIC CARDS) */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.kpi-card .kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.kpi-card .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 8px 0 4px;
+    color: #0f172a;
+}
+.kpi-card .kpi-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+.kpi-card.blue .kpi-value { color: #2563eb; }
+.kpi-card.red .kpi-value { color: #dc2626; }
+.kpi-card.purple .kpi-value { color: #9333ea; }
+.kpi-card.green .kpi-value { color: #16a34a; }
+.kpi-card.amber .kpi-value { color: #d97706; }
+
+/* KHU VỰC BIỂU ĐỒ PHÂN TÁN (SCATTER PLOT) */
+.section-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.panel-note {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 10px 0 14px;
+    font-size: 12px;
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.scatter-analysis-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border-left: 4px solid #f97316;
+    border-radius: 0 4px 4px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #334155;
+}
+
+/* LƯỚI 2 CỘT CHO XU HƯỚNG & PHÂN BỔ CẢNH BÁO */
+.dual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+@media (max-width: 900px) {
+    .dual-grid { grid-template-columns: 1fr; }
+}
+
+/* BẢNG ĐỐI CHIẾU MỨC TRÔI (UCI VS TỰ THU) */
+.table-comparison {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+}
+.table-comparison th, .table-comparison td {
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+.table-comparison th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #334155;
+}
+.table-comparison tr:nth-child(even) {
+    background: #f8fafc;
+}
+.table-comparison .metric-col {
+    font-weight: 600;
+    width: 25%;
+    color: #1e293b;
+}
+.table-comparison .bench-col {
+    color: #2563eb;
+    font-weight: 500;
+}
+.table-comparison .live-col {
+    color: #d97706;
+    font-weight: 500;
+}
+
+/* BADGES VÀ TAGS */
+.badge-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-status.good { background: #dcfce7; color: #166534; }
+.badge-status.warn { background: #fef3c7; color: #92400e; }
+.badge-status.danger { background: #fee2e2; color: #991b1b; }
+
+/* CANVAS RESPONSIVE */
+.canvas-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+.canvas-wrapper canvas {
+    max-width: 100%;
+    display: block;
+}

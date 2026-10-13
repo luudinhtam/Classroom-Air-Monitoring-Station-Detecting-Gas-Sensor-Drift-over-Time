@@ -123,31 +123,31 @@
         <div class="info-panel">
             <h3>📋 Thông số kỹ thuật phiên đo</h3>
             <div class="info-row">
-                <span class="info-label">Mã phiên đo (Session ID)</span>
+                <span class="info-label">Mã phiên đo</span>
                 <span class="info-val">#<%= item.getSessionId() %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Sequence No (Board Seq)</span>
+                <span class="info-label">Sequence No</span>
                 <span class="info-val"><%= item.getDeviceSeq() %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Thời điểm đo (measured_at)</span>
+                <span class="info-label">Thời điểm đo</span>
                 <span class="info-val"><%= item.getMeasuredAt() != null ? item.getMeasuredAt() : "–" %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Thời điểm nạp (ingested_at)</span>
+                <span class="info-label">Thời điểm nạp </span>
                 <span class="info-val"><%= item.getIngestedAt() != null ? item.getIngestedAt() : "–" %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Cảm biến sấy nóng (warm)</span>
+                <span class="info-label">Cảm biến sấy nóng</span>
                 <span class="info-val"><%= item.isWarm() ? "Đã làm nóng (Yes)" : "Chưa (No)" %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Nguồn dữ liệu (is_sample)</span>
+                <span class="info-label">Nguồn dữ liệu</span>
                 <span class="info-val"><%= item.isSample() ? "Dữ liệu mẫu (Seeded UCI)" : "Thiết bị gửi trực tiếp (Live)" %></span>
             </div>
             <div class="info-row">
-                <span class="info-label">Thiết bị đo (Device)</span>
+                <span class="info-label">Thiết bị đo</span>
                 <span class="info-val"><%= device != null ? Web.esc(device.getDeviceCode()) : "ID #" + item.getDeviceId() %></span>
             </div>
             <div class="info-row">

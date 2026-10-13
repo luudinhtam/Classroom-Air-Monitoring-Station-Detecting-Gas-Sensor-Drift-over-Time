@@ -24,6 +24,8 @@ public class AuthFilter implements Filter {
         ALLOWED.put("/sessions", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/session", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/dashboard", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/alerts", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/alert", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/export", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
     }
 
