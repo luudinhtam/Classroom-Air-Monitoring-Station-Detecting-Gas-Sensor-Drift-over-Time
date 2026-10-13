@@ -23,7 +23,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Users</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -64,36 +64,32 @@
             <td><%= Web.esc(u.getFullName()) %></td>
             <td><span class="tag"><%= Web.esc(u.getRoleCode()) %></span></td>
             <td class="c"><%= u.isLocked() ? "Da khoa" : "Dang dung" %></td>
-            <td class="ops">
-                <button type="button" class="btn ghost"
+            <td class="ops ops-group">
+                <button type="button" class="btn-block btn-blue"
                         onclick="window.location.href='<%= ctx %>/admin/users/edit?id=<%= u.getUserId() %>'">
-                    Sua
+                    Sửa
                 </button>
-
+                
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/lock">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                        <button type="submit" class="btn" style="<%= u.isLocked()
-                                        ? "background-color: #dcfce7; color: #166534;"
-                                        :  "background-color: #fee2e2; color: #b91c1c;" %>">
-                            <%= u.isLocked() ? "Mo khoa" : "Khoa" %>
+                        <button type="submit" class="btn-block <%= u.isLocked() ? "btn-green" : "btn-orange" %>">
+                            <%= u.isLocked() ? "Mở khóa" : "Khóa" %>
                         </button>
                     </form>
                 <% } %>
 
                 <form method="post" action="<%= ctx %>/admin/users/reset"
-                      onsubmit="return confirm('Dat lai mat khau ve 123456?');">
+                      onsubmit="return confirm('Đặt lại mật khẩu về 123456?');">
                     <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                    <button type="submit" class="btn">Dat lai mat khau</button>
+                    <button type="submit" class="btn-block btn-gray">Đặt lại mật khẩu</button>
                 </form>
 
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/delete"
-                          onsubmit="return confirm('Xoa tai khoan nay?');">
+                          onsubmit="return confirm('Xóa tài khoản này?');">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                        
-                        <button type="submit" class="btn" style="background-color: red; color: white">Xoa</button>
-                        
+                        <button type="submit" class="btn-block btn-red">Xóa</button>
                     </form>
                 <% } %>
             </td>

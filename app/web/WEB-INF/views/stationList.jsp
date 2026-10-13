@@ -15,7 +15,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Stations</title>
-        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+        <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
     </head>
     
     <body>
@@ -59,49 +59,39 @@
                     
                     <td class="c"><%= a.isActive() ? "Active" : "Inactive" %></td>
                     
-                    <td class="ops">
-                        <button type="button" class="btn ghost"
+                    <td class="ops ops-group">
+                        <button type="button" class="btn-block btn-blue"
                                 onclick="window.location.href='<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>'">
-                            Sua
+                            Sửa
                         </button>
 
                         <form method="post" action="<%= ctx %>/admin/stations/lock">
                             <input type="hidden" name="id" value="<%= a.getStationId() %>">
-
-                            <button type="submit"
-                                    style="<%= a.isActive()
-                                        ? "background-color: #fee2e2; color: #b91c1c;"
-                                        : "background-color: #dcfce7; color: #166534;" %>">
-                                <%= a.isActive() ? "Tat" : "Mo" %>
+                            <button type="submit" class="btn-block <%= a.isActive() ? "btn-orange" : "btn-green" %>">
+                                <%= a.isActive() ? "Tắt" : "Mở" %>
                             </button>
                         </form>
 
-                        <button type="button" class="btn ghost"
+                        <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/stations/detail?id=<%= a.getStationId() %>'">
-                            Chi tiet
+                            Chi tiết
                         </button>
 
-                        <form method="post"
-                              action="<%= ctx %>/admin/stations/delete"
-                              onsubmit="return confirm('Xoa tram nay?');">
-
+                        <form method="post" action="<%= ctx %>/admin/stations/delete"
+                              onsubmit="return confirm('Xóa trạm này?');">
                             <input type="hidden" name="id" value="<%= a.getStationId() %>">
-
-                            <button type="submit" class="btn" style="background-color: red; color: white">
-                                Xoa
-                            </button>
+                            <button type="submit" class="btn-block btn-red">Xóa</button>
                         </form>
 
-                        <button type="button" class="btn"
+                        <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/calibrations?stationId=<%= a.getStationId() %>'">
-                            Hieu chuan
+                            Hiệu chuẩn
                         </button>
 
-                        <button type="button" class="btn"
+                        <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/emptyWindows?stationId=<%= a.getStationId() %>'">
-                            Khoang trong
+                            Khoảng trống
                         </button>
-
                     </td>
                 </tr>
                 <% } %>
