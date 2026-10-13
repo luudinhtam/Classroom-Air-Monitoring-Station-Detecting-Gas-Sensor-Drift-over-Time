@@ -1,2 +1,0 @@
-ALTER TABLE Air_Session
-ADD note NVARCHAR(MAX) NULL;
