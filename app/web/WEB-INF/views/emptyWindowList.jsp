@@ -51,9 +51,7 @@
                     Them khoang phong trong
                 </a>
 
-                <a class="btn ghost" href="<%= ctx %>/admin/stations" style="background-color: pink;">
-                    Click to go back
-                </a>
+                <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
             </form>
 
             <table class="grid">
@@ -87,16 +85,16 @@
 
                     <td><%= Web.esc(ew.getNote()) %></td>
 
-                    <td class="ops">
+                    <td class="ops ops-group">
 
-                        <button type="button" class="btn ghost"
+                        <button type="button" class="btn-block btn-blue"
                                 onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                            Sua
+                            Sửa
                         </button>
 
                         <form method="post"
                               action="<%= ctx %>/admin/emptyWindows/delete"
-                              onsubmit="return confirm('Xoa khoang phong trong nay?');">
+                              onsubmit="return confirm('Xóa khoảng phòng trống này?');">
 
                             <input type="hidden" name="emptyWindowId"
                                    value="<%= ew.getEmptyWindowId() %>">
@@ -104,14 +102,14 @@
                             <input type="hidden" name="stationId"
                                    value="<%= stationId %>">
 
-                            <button type="submit" class="btn danger" style="background-color: red; color: white">
-                                Xoa
+                            <button type="submit" class="btn-block btn-red">
+                                Xóa
                             </button>
                         </form>
 
-                        <button type="button" class="btn"
+                        <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                            Tinh muc nen
+                            Tính mức nền
                         </button>
 
                     </td>

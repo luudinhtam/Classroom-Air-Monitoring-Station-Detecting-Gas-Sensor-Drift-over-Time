@@ -104,23 +104,29 @@
                     <td><%= Web.esc(c.getPerformedByUsername()) %></td>
                     <td class="muted"><%= c.getCalibratedAt() != null ? c.getCalibratedAt().toString().substring(0, 10) : "–" %></td>
                     <td class="muted" style="font-size: 12px;"><%= c.getNote() != null ? Web.esc(c.getNote()) : "–" %></td>
-                    <td class="c">
-                        <div style="display: flex; gap: 4px; justify-content: center;">
-                            <button type="button" class="btn ghost" style="padding: 2px 8px; font-size: 12px;"
-                                    onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
-                                Sửa
+                    
+                    <td class="ops ops-group">
+
+                        <button type="button" class="btn-block btn-blue"
+                                onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
+                            Sửa
+                        </button>
+
+                        <form method="post"
+                              action="<%= ctx %>/admin/calibrations/delete"
+                              onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');">
+
+                            <input type="hidden" name="calibrationId"
+                                   value="<%= c.getCalibrationId() %>">
+
+                            <input type="hidden" name="stationId"
+                                   value="<%= c.getStationId() %>">
+
+                            <button type="submit" class="btn-block btn-red">
+                                Xóa
                             </button>
-                            <form method="post" action="<%= ctx %>/admin/calibrations/delete"
-                                  style="display: inline; margin: 0;"
-                                  onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');">
-                                <input type="hidden" name="calibrationId" value="<%= c.getCalibrationId() %>">
-                                <input type="hidden" name="stationId" value="<%= c.getStationId() %>">
-                                <button type="submit" class="btn"
-                                        style="background: #ef4444; color: #fff; padding: 2px 8px; font-size: 12px;">
-                                    Xóa
-                                </button>
-                            </form>
-                        </div>
+                        </form>
+
                     </td>
                 </tr>
                 <% } %>
