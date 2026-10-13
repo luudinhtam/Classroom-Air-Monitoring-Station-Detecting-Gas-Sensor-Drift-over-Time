@@ -14,6 +14,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import model.AppUser;
 import model.EmptyWindow;
 import util.Web;
@@ -118,12 +119,22 @@ public class EmptyWindowServlet extends HttpServlet {
         
         String action = action(request);
         int stationId = Web.intParam(request, "stationId", 0);
-
-        // SAVE: CREATE hoặc UPDATE
+        
         if ("/save".equals(action)) {
 
             int emptyWindowId = Web.intParam(request, "emptyWindowId", 0);
-            int userId = Web.intParam(request, "userId", 0);
+            
+            HttpSession session = request.getSession(false);
+            if (session == null) {
+                Web.flash(request,
+                        "Phien lam viec da het han. Vui long tinh lai baseline.");
+                response.sendRedirect(request.getContextPath() + "/admin/stations");
+                return;
+            }
+
+            // Kiểm tra người dùng đã đăng nhập.
+            AppUser me = (AppUser) session.getAttribute("user");
+            int userId = me.getUserId();
 
             String code = Web.trimmed(request, "code");
             String name = Web.trimmed(request, "name");

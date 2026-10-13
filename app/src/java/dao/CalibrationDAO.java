@@ -70,22 +70,35 @@ public class CalibrationDAO {
         return 0;
     }
     
-    
     public boolean insert(Calibration c) {
-        String sql = "INSERT INTO Air_Calibration(code, name, note, station_id, performed_by) VALUES (?, ?, ?, ?, ?)";
-        Connection cn = null; PreparedStatement ps = null;
+        String sql = "INSERT INTO Air_Calibration "
+                + "(code, name, note, station_id, performed_by, "
+                + "co_baseline, co2_baseline) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        Connection cn = null;
+        PreparedStatement ps = null;
+
         try {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql);
+
             ps.setString(1, c.getCode());
             ps.setString(2, c.getName());
             ps.setString(3, c.getNote());
             ps.setInt(4, c.getStationId());
             ps.setInt(5, c.getPerformedBy());
+            ps.setFloat(6, c.getCoBaseLine());
+            ps.setFloat(7, c.getCo2BaseLine());
+
             return ps.executeUpdate() > 0;
-        } catch (SQLException e) { e.printStackTrace(); }
-        finally { close(null, ps, cn); }
-        return false;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            close(null, ps, cn);
+        }
     }
     
     public boolean update(Calibration c) {
