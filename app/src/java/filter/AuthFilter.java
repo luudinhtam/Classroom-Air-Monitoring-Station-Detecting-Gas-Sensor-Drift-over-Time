@@ -7,43 +7,70 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.*;
 import model.AppUser;
 
-/**
- * One filter guards every page. The map says which roles may reach which path
- * prefix, so adding a screen means adding one line here instead of scattering
- * role checks through the servlets.
- */
 @WebFilter("/*")
 public class AuthFilter implements Filter {
 
-    private static final Map<String, Set<String>> ALLOWED = new LinkedHashMap<String, Set<String>>();
+    private static final Map<String, Set<String>> ALLOWED = new LinkedHashMap<>();
 
     static {
-        ALLOWED.put("/admin", roles("ADMIN"));
-        ALLOWED.put("/master", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
-        ALLOWED.put("/label", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER"));
+        // 1. CHỈ ADMIN: Quản lý người dùng và thiết bị
+        ALLOWED.put("/admin/users", roles("ADMIN"));
+        ALLOWED.put("/admin/devices", roles("ADMIN"));
+        
+        // 2. TRẠM, HIỆU CHUẨN, PHÒNG TRỐNG
+        ALLOWED.put("/admin/stations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/stations/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/stations/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/stations/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/stations/lock", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        
+        ALLOWED.put("/admin/calibrations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/calibrations/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/calibrations/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/calibrations/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        
+        ALLOWED.put("/admin/emptyWindows/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/emptyWindows/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/emptyWindows/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/emptyWindows/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/emptyWindows/baseline", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+
+        // 3. QUYỀN XEM TRẠM, HIỆU CHUẨN, PHÒNG TRỐNG
+        ALLOWED.put("/admin/stations/detail", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/admin/stations", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/admin/calibrations", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/admin/emptyWindows", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+
+        // 4. PHIÊN ĐO (Sử dụng đường dẫn gốc không có /admin)
+        ALLOWED.put("/alerts", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER")); 
+        ALLOWED.put("/sessions/create", roles("ADMIN"));
+        ALLOWED.put("/sessions/delete", roles("ADMIN"));
+        ALLOWED.put("/sessions/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER")); 
+        ALLOWED.put("/sessions/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER"));
+        ALLOWED.put("/sessions/detail", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/sessions/export", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/sessions", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
-        ALLOWED.put("/session", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        
+        // 5. LABEL & DASHBOARD
+        ALLOWED.put("/label/correct", roles("ADMIN", "REVIEWER")); 
         ALLOWED.put("/dashboard", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
-        ALLOWED.put("/alerts", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
-        ALLOWED.put("/alert", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
-        ALLOWED.put("/export", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
     }
 
     private static Set<String> roles(String... names) {
-        return new HashSet<String>(Arrays.asList(names));
+        return new HashSet<>(Arrays.asList(names));
     }
 
     @Override
     public void doFilter(ServletRequest rq, ServletResponse rp, FilterChain chain)
             throws IOException, ServletException {
+
         HttpServletRequest req = (HttpServletRequest) rq;
         HttpServletResponse resp = (HttpServletResponse) rp;
         String path = req.getRequestURI().substring(req.getContextPath().length());
 
-        // the device endpoint and the public files carry their own check
         if (path.startsWith("/api/") || path.startsWith("/login")
-                || path.startsWith("/css/") || path.startsWith("/js/")) {
-                chain.doFilter(rq, rp);
+            || path.startsWith("/css/") || path.startsWith("/js/")) {
+            chain.doFilter(rq, rp);
             return;
         }
 
@@ -53,16 +80,22 @@ public class AuthFilter implements Filter {
             return;
         }
 
+        boolean isAllowed = false;
+        String matchedPath = "";
+        
         for (Map.Entry<String, Set<String>> e : ALLOWED.entrySet()) {
-            if (path.startsWith(e.getKey())) {
-                if (!e.getValue().contains(me.getRoleCode())) {
-                    resp.sendError(HttpServletResponse.SC_FORBIDDEN,
-                            me.getRoleCode() + " không có quyền truy cập trang này!");
-                    return;
-                }
-                break;
+            if (path.startsWith(e.getKey()) && e.getKey().length() > matchedPath.length()) {
+                matchedPath = e.getKey();
+                isAllowed = e.getValue().contains(me.getRoleCode());
             }
         }
+
+        if (!matchedPath.isEmpty() && !isAllowed) {
+            req.setAttribute("neededPerm", matchedPath);
+            req.getRequestDispatcher("/WEB-INF/views/denied.jsp").forward(req, resp);
+            return;
+        }
+
         chain.doFilter(rq, rp);
     }
 

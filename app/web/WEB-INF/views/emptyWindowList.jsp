@@ -3,6 +3,7 @@
 <%@page import="util.Web"%>
 <%@page import="model.EmptyWindow"%>
 <%@page import="java.util.List"%>
+<%@page import="model.AppUser"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <%
@@ -13,6 +14,11 @@
 
     AirStationDAO stations = new AirStationDAO();
     AirStation a = stations.findById(stationId);
+
+    // Phân quyền hiển thị nút: Admin, Station Manager, Operator được quản lý; Reviewer/Viewer chỉ xem
+    AppUser me = (AppUser) session.getAttribute("user");
+    String myRole = (me != null) ? me.getRoleCode() : "";
+    boolean canManageEmptyWindow = "ADMIN".equals(myRole) || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole);
 %>
 
 <!DOCTYPE html>
@@ -38,8 +44,8 @@
 
                 <input type="text" name="keyword" placeholder="Ten khoang phong trong"
                        value="<%= request.getParameter("keyword") != null
-                                ? Web.esc(request.getParameter("keyword"))
-                                : "" %>">
+                                    ? Web.esc(request.getParameter("keyword"))
+                                    : "" %>">
 
                 <button type="submit">Loc</button>
 
@@ -47,9 +53,11 @@
                     Bo loc
                 </a>
 
-                <a class="btn" href="<%= ctx %>/admin/emptyWindows/create?stationId=<%= stationId %>">
-                    Them khoang phong trong
-                </a>
+                <% if (canManageEmptyWindow) { %>
+                    <a class="btn" href="<%= ctx %>/admin/emptyWindows/create?stationId=<%= stationId %>">
+                        Them khoang phong trong
+                    </a>
+                <% } %>
 
                 <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
             </form>
@@ -64,7 +72,9 @@
                     <th>Marked by</th>
                     <th>Created at</th>
                     <th>Note</th>
-                    <th>Thao tac</th>
+                    <% if (canManageEmptyWindow) { %>
+                        <th>Thao tac</th>
+                    <% } %>
                 </tr>
 
                 <% for (EmptyWindow ew : rows) { %>
@@ -85,39 +95,41 @@
 
                     <td><%= Web.esc(ew.getNote()) %></td>
 
-                    <td class="ops ops-group">
+                    <% if (canManageEmptyWindow) { %>
+                        <td class="ops ops-group">
 
-                        <button type="button" class="btn-block btn-blue"
-                                onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                            Sửa
-                        </button>
-
-                        <form method="post"
-                              action="<%= ctx %>/admin/emptyWindows/delete"
-                              onsubmit="return confirm('Xóa khoảng phòng trống này?');">
-
-                            <input type="hidden" name="emptyWindowId"
-                                   value="<%= ew.getEmptyWindowId() %>">
-
-                            <input type="hidden" name="stationId"
-                                   value="<%= stationId %>">
-
-                            <button type="submit" class="btn-block btn-red">
-                                Xóa
+                            <button type="button" class="btn-block btn-blue"
+                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
+                                Sửa
                             </button>
-                        </form>
 
-                        <button type="button" class="btn-block btn-gray"
-                                onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                            Tính mức nền
-                        </button>
+                            <form method="post"
+                                  action="<%= ctx %>/admin/emptyWindows/delete"
+                                  onsubmit="return confirm('Xóa khoảng phòng trống này?');" style="display:inline-block;">
 
-                    </td>
+                                <input type="hidden" name="emptyWindowId"
+                                       value="<%= ew.getEmptyWindowId() %>">
+
+                                <input type="hidden" name="stationId"
+                                       value="<%= stationId %>">
+
+                                <button type="submit" class="btn-block btn-red">
+                                    Xóa
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn-block btn-gray"
+                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
+                                Tính mức nền
+                            </button>
+
+                        </td>
+                    <% } %>
                 </tr>
                 <% } %>
                 <% if (rows.isEmpty()) { %>
                 <tr>
-                    <td colspan="9" class="c">
+                    <td colspan="<%= canManageEmptyWindow ? 9 : 8 %>" class="c">
                         Khong co khoang phong trong nao
                     </td>
                 </tr>

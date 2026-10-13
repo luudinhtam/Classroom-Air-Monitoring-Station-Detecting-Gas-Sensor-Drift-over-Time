@@ -3,6 +3,7 @@
 <%@page import="util.Web"%>
 <%@page import="model.Calibration"%>
 <%@page import="java.util.List"%>
+<%@page import="model.AppUser"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <%
@@ -19,6 +20,11 @@
         ? "Lịch sử hiệu chuẩn – " + Web.esc(a.getCode()) + " / " + Web.esc(a.getName())
         : "Lịch sử hiệu chuẩn – Tất cả trạm";
     String baseUrl = ctx + "/admin/calibrations" + (stationId > 0 ? "?stationId=" + stationId : "");
+
+    // Phân quyền hiển thị nút: Admin, Station Manager, Operator được quản lý; Reviewer/Viewer chỉ xem
+    AppUser me = (AppUser) session.getAttribute("user");
+    String myRole = (me != null) ? me.getRoleCode() : "";
+    boolean canManageCalibration = "ADMIN".equals(myRole) || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole);
 %>
 <!DOCTYPE html>
 <html>
@@ -39,7 +45,7 @@
             <div class="muted">Tổng số phiếu hiệu chuẩn: <b><%= total %></b></div>
         </div>
         <div class="actions" style="margin: 0;">
-            <% if (a != null) { %>
+            <% if (a != null && canManageCalibration) { %>
                 <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Thêm hiệu chuẩn</a>
             <% } %>
             <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
@@ -87,7 +93,9 @@
                     <th style="width: 140px;">Người thực hiện</th>
                     <th style="width: 130px;">Ngày hiệu chuẩn</th>
                     <th>Ghi chú</th>
-                    <th class="c" style="width: 130px;">Thao tác</th>
+                    <% if (canManageCalibration) { %>
+                        <th class="c" style="width: 130px;">Thao tác</th>
+                    <% } %>
                 </tr>
             </thead>
             <tbody>
@@ -105,29 +113,29 @@
                     <td class="muted"><%= c.getCalibratedAt() != null ? c.getCalibratedAt().toString().substring(0, 10) : "–" %></td>
                     <td class="muted" style="font-size: 12px;"><%= c.getNote() != null ? Web.esc(c.getNote()) : "–" %></td>
                     
-                    <td class="ops ops-group">
-
-                        <button type="button" class="btn-block btn-blue"
-                                onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
-                            Sửa
-                        </button>
-
-                        <form method="post"
-                              action="<%= ctx %>/admin/calibrations/delete"
-                              onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');">
-
-                            <input type="hidden" name="calibrationId"
-                                   value="<%= c.getCalibrationId() %>">
-
-                            <input type="hidden" name="stationId"
-                                   value="<%= c.getStationId() %>">
-
-                            <button type="submit" class="btn-block btn-red">
-                                Xóa
+                    <% if (canManageCalibration) { %>
+                        <td class="ops ops-group c">
+                            <button type="button" class="btn-block btn-blue"
+                                    onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
+                                Sửa
                             </button>
-                        </form>
 
-                    </td>
+                            <form method="post"
+                                  action="<%= ctx %>/admin/calibrations/delete"
+                                  onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');" style="display:inline-block;">
+
+                                <input type="hidden" name="calibrationId"
+                                       value="<%= c.getCalibrationId() %>">
+
+                                <input type="hidden" name="stationId"
+                                       value="<%= c.getStationId() %>">
+
+                                <button type="submit" class="btn-block btn-red">
+                                    Xóa
+                                </button>
+                            </form>
+                        </td>
+                    <% } %>
                 </tr>
                 <% } %>
             </tbody>
