@@ -55,7 +55,7 @@
                 <input type="number" name="maxBaselineDrift" 
                        value="<%= item == null ? "" : item.getMaxBaselineDrift() %>">
                 
-                <label>Device Key</label>
+                <label>Device Code</label>
                 <input type="text" name="deviceKey" 
                        value="<%= item == null ? "" : Web.esc(item.getDeviceKey()) %>">
                 
