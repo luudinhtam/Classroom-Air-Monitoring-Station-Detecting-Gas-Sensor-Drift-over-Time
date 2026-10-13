@@ -217,15 +217,18 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <% for (AirLabel al : labelHistory) { String r=al.getReason(); if (r
-                                                        !=null) { // Lấy đoạn của lần gán hiện tại nếu có phân cách bởi
-                                                        dấu gạch ngang if (r.contains("----------------")) {
-                                                        r=r.split("----------------")[0]; } // Bỏ phần ngày giờ dạng
-                                                        [dd/MM/yyyy HH:mm] hoặc [...] ở đầu
-                                                        r=r.replaceFirst("^\\[[^\\]]+\\]\\s*", "" ); // Chuẩn hóa xuống
-                                                        dòng và bỏ dấu gạch nối thừa ở cuối r=r.replace("\r", ""
-                                                        ).replace("\n", " " ).trim(); r=r.replaceAll("[-=]+$", ""
-                                                        ).trim(); } %>
+                                                    <% 
+                                                        for (AirLabel al : labelHistory) { 
+                                                            String r = al.getReason(); 
+                                                            if (r != null) { 
+                                                                if (r.contains("----------------")) {
+                                                                    r = r.split("----------------")[0]; 
+                                                                } 
+                                                                r = r.replaceFirst("^\\[[^\\]]+\\]\\s*", ""); 
+                                                                r = r.replace("\r", "").replace("\n", " ").trim(); 
+                                                                r = r.replaceAll("[-=]+$", "").trim(); 
+                                                            } 
+                                                    %>
                                                         <tr>
                                                             <td><span class="tag">
                                                                     <%= Web.esc(al.getLabelCode()) %>
