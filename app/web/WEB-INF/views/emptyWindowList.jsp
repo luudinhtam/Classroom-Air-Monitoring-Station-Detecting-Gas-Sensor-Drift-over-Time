@@ -75,13 +75,13 @@
 
                     <td><%= Web.esc(ew.getName()) %></td>
 
-                    <td><%= ew.getStartAt() %></td>
+                    <td><%= ew.getStartAt().toString().substring(0, 10) %></td>
 
-                    <td><%= ew.getEndAt() %></td>
+                    <td><%= ew.getEndAt().toString().substring(0, 10) %></td>
 
                     <td><%= Web.esc(ew.getMarkedByUsername()) %></td>
 
-                    <td><%= ew.getCreatedAt() %></td>
+                    <td><%= ew.getCreatedAt().toString().substring(0, 10) %></td>
 
                     <td><%= Web.esc(ew.getNote()) %></td>
 
