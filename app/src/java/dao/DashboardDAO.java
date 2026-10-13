@@ -221,18 +221,37 @@ public class DashboardDAO {
      * không tính toán biểu thức trong ORDER BY giúp tốc độ tăng gấp 50 lần.
      */
     private void loadScatterPoints(Connection cn, DashboardStats stats) {
-        String sql = "SELECT TOP 200 " +
-                     "  s.temp_c, s.gas_a_raw, s.gas_a_delta, s.humid_pct, " +
-                     "  ISNULL(l.label_code, 'BASE') AS label_code " +
-                     "FROM Air_Session s " +
-                     "OUTER APPLY ( " +
-                     "  SELECT TOP 1 l2.label_code " +
-                     "  FROM Air_Label l2 " +
-                     "  WHERE l2.session_id = s.session_id " +
-                     "  ORDER BY l2.label_id DESC " +
-                     ") l " +
-                     "WHERE s.session_id % 45 = 0 AND s.temp_c IS NOT NULL AND s.gas_a_raw IS NOT NULL " +
-                     "ORDER BY s.session_id DESC";
+        // UNION: lấy toàn bộ điểm có nhãn đặc biệt + sample ngẫu nhiên các điểm BASE
+        // Đảm bảo scatter plot luôn hiển thị đủ màu cho tất cả label
+        String sql =
+            "SELECT TOP 250 temp_c, gas_a_raw, gas_a_delta, humid_pct, label_code FROM (" +
+            // Phần 1: Tất cả phiên có nhãn đặc biệt (tối đa 150 điểm)
+            "  SELECT TOP 150 " +
+            "    s.temp_c, s.gas_a_raw, s.gas_a_delta, s.humid_pct, " +
+            "    l.label_code " +
+            "  FROM Air_Session s " +
+            "  INNER JOIN ( " +
+            "    SELECT session_id, label_code FROM (" +
+            "      SELECT session_id, label_code, ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY label_id DESC) rn" +
+            "      FROM Air_Label WHERE label_code IN ('HIGH','DRIFTED','WARMUP','TEMP_EFFECT','RAISED')" +
+            "    ) x WHERE rn = 1" +
+            "  ) l ON l.session_id = s.session_id " +
+            "  WHERE s.temp_c IS NOT NULL AND s.gas_a_raw IS NOT NULL " +
+            "  ORDER BY s.session_id DESC " +
+            "  UNION ALL " +
+            // Phần 2: Sample phiên BASE (không có nhãn đặc biệt) để trải đều nền
+            "  SELECT TOP 100 " +
+            "    s.temp_c, s.gas_a_raw, s.gas_a_delta, s.humid_pct, " +
+            "    'BASE' AS label_code " +
+            "  FROM Air_Session s " +
+            "  WHERE s.session_id % 30 = 0 " +
+            "    AND s.temp_c IS NOT NULL AND s.gas_a_raw IS NOT NULL " +
+            "    AND NOT EXISTS (" +
+            "      SELECT 1 FROM Air_Label l2 WHERE l2.session_id = s.session_id" +
+            "        AND l2.label_code IN ('HIGH','DRIFTED','WARMUP','TEMP_EFFECT','RAISED')" +
+            "    ) " +
+            "  ORDER BY s.session_id DESC " +
+            ") combined ORDER BY NEWID()";
 
         List<ScatterPoint> points = new ArrayList<>();
         try (Statement st = cn.createStatement();

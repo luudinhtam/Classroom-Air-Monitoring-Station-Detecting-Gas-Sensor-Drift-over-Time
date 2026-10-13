@@ -1,5 +1,3 @@
-
-
 <%@page import="model.AirStation"%>
 <%@page import="dao.AirStationDAO"%>
 <%@page import="util.Web"%>
@@ -12,97 +10,124 @@
     int stationId = (int) request.getAttribute("stationId");
     int total = (int) request.getAttribute("total");
     String ctx = request.getContextPath();
-    
-    AirStationDAO stations = new AirStationDAO();
-    AirStation a = stations.findById(stationId);
-%>
 
+    AirStationDAO stations = new AirStationDAO();
+    // Chỉ tra cứu trạm nếu stationId hợp lệ — tránh NullPointerException khi vào từ dashboard không có stationId
+    AirStation a = stationId > 0 ? stations.findById(stationId) : null;
+
+    String pageTitle = (a != null)
+        ? "Lịch sử hiệu chuẩn – " + Web.esc(a.getCode()) + " / " + Web.esc(a.getName())
+        : "Lịch sử hiệu chuẩn – Tất cả trạm";
+    String baseUrl = ctx + "/admin/calibrations" + (stationId > 0 ? "?stationId=" + stationId : "");
+%>
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Station Calibrations</title>
-        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
-    </head>
-    <body>
-        <jsp:include page="/WEB-INF/views/nav.jsp"/>
-        
-        <div class="wrap">
-            <h2>Lich su hieu chuan tram: <%= a.getCode() %> / <%= a.getName() %>  (<%= request.getAttribute("total") %>)</h2>
-            <form class="filter" method="get" action="<%= ctx %>/admin/calibrations?stationId=<%= stationId %>">
-                <input type="text" name="keyword" placeholder="Ten hieu chuan"
-                       value="">
-                
-                <button type="submit">Loc</button>
-                <a class="btn ghost" href="<%= ctx %>/admin/calibrations?stationId=<%= stationId %>">Bo loc</a>
+<head>
+    <meta charset="UTF-8">
+    <title><%= pageTitle %></title>
+    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+</head>
+<body>
+<jsp:include page="/WEB-INF/views/nav.jsp"/>
 
-                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">Them hieu chuan</a>
-                
-                <a class="btn ghost" href="<%= ctx %>/admin/stations" style="background-color: pink;">Click to go back</a>
-            </form>
-            
-            
-            
-            <table class="grid">
+<div class="wrap">
+
+    <!-- TIÊU ĐỀ -->
+    <div class="dashboard-header" style="margin-bottom: 12px;">
+        <div>
+            <h2><%= pageTitle %></h2>
+            <div class="muted">Tổng số phiếu hiệu chuẩn: <b><%= total %></b></div>
+        </div>
+        <div class="actions" style="margin: 0;">
+            <% if (a != null) { %>
+                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Thêm hiệu chuẩn</a>
+            <% } %>
+            <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
+        </div>
+    </div>
+
+    <!-- CẢNH BÁO KHI VÀO KHÔNG CÓ STATION -->
+    <% if (a == null) { %>
+        <div style="padding: 12px 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px;
+                    font-size: 13px; color: #92400e; margin-bottom: 14px;">
+            ⚠️ Chưa chọn trạm giám sát. Đang hiển thị <b>tất cả phiếu hiệu chuẩn</b>.
+            Để quản lý theo từng trạm, hãy vào
+            <a href="<%= ctx %>/admin/stations" style="color: #b45309; font-weight: 600;">Danh sách trạm</a>
+            và chọn trạm cụ thể.
+        </div>
+    <% } %>
+
+    <!-- BỘ LỌC -->
+    <form class="filter" method="get" action="<%= ctx %>/admin/calibrations" style="margin-bottom: 14px;">
+        <% if (stationId > 0) { %>
+            <input type="hidden" name="stationId" value="<%= stationId %>">
+        <% } %>
+        <label style="font-size: 13px; font-weight: 500; color: #475569;">Tìm kiếm:</label>
+        <input type="text" name="keyword" placeholder="Tên hoặc mã phiếu hiệu chuẩn..." value="">
+        <button type="submit" class="btn">Lọc</button>
+        <a class="btn ghost" href="<%= baseUrl %>">Đặt lại</a>
+    </form>
+
+    <!-- BẢNG DANH SÁCH -->
+    <% if (rows == null || rows.isEmpty()) { %>
+        <div style="padding: 24px; text-align: center; background: #fff; border: 1px solid #e2e8f0;
+                    border-radius: 6px; color: #64748b;">
+            Không tìm thấy phiếu hiệu chuẩn nào<%= a != null ? " cho trạm " + Web.esc(a.getName()) : "" %>.
+        </div>
+    <% } else { %>
+        <table class="grid">
+            <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>CO Baseline</th>
-                    <th>CO2 Baseline</th>
-                    <th>Performed by</th>
-                    <th>Calibrated at</th>
-                    <th>Note</th>
-                    <th>Thao tac</th>
+                    <th style="width: 60px;">#</th>
+                    <th style="width: 100px;">Mã phiếu</th>
+                    <th>Tên hiệu chuẩn</th>
+                    <% if (a == null) { %><th style="width: 80px;">Trạm #</th><% } %>
+                    <th class="c" style="width: 110px;">CO Baseline</th>
+                    <th class="c" style="width: 110px;">CO2 Baseline</th>
+                    <th style="width: 140px;">Người thực hiện</th>
+                    <th style="width: 130px;">Ngày hiệu chuẩn</th>
+                    <th>Ghi chú</th>
+                    <th class="c" style="width: 130px;">Thao tác</th>
                 </tr>
-                
+            </thead>
+            <tbody>
                 <% for (Calibration c : rows) { %>
                 <tr>
-                    <td><%= c.getCalibrationId()%></td>
-                    <td><%= Web.esc(c.getCode()) %></td>
+                    <td><b><%= c.getCalibrationId() %></b></td>
+                    <td><span class="tag"><%= Web.esc(c.getCode()) %></span></td>
                     <td><%= Web.esc(c.getName()) %></td>
-                    <td><%= c.getCoBaseLine() %></td>
-                    <td><%= c.getCo2BaseLine() %></td>
+                    <% if (a == null) { %>
+                        <td class="c"><%= c.getStationId() %></td>
+                    <% } %>
+                    <td class="c"><%= c.getCoBaseLine() %></td>
+                    <td class="c"><%= c.getCo2BaseLine() %></td>
                     <td><%= Web.esc(c.getPerformedByUsername()) %></td>
-                    <td><%= c.getCalibratedAt() %></td>
-                    <td><%= Web.esc(c.getNote()) %></td>
-                    
-                    
-                    <td class="ops">
-
-                        <button type="button" class="btn ghost"
-                                onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= stationId %>'">
-                            Sua
-                        </button>
-
-                        <form method="post"
-                              action="<%= ctx %>/admin/calibrations/delete"
-                              onsubmit="return confirm('Xoa tram nay?');">
-
-                            <input type="hidden" name="calibrationId"
-                                   value="<%= c.getCalibrationId() %>">
-
-                            <input type="hidden" name="stationId"
-                                   value="<%= stationId %>">
-
-                            <button type="submit" class="btn"
-                                    style="background-color: red; color: white;">
-                                Xoa
+                    <td class="muted"><%= c.getCalibratedAt() != null ? c.getCalibratedAt().toString().substring(0, 10) : "–" %></td>
+                    <td class="muted" style="font-size: 12px;"><%= c.getNote() != null ? Web.esc(c.getNote()) : "–" %></td>
+                    <td class="c">
+                        <div style="display: flex; gap: 4px; justify-content: center;">
+                            <button type="button" class="btn ghost" style="padding: 2px 8px; font-size: 12px;"
+                                    onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
+                                Sửa
                             </button>
-                        </form>
-
+                            <form method="post" action="<%= ctx %>/admin/calibrations/delete"
+                                  style="display: inline; margin: 0;"
+                                  onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');">
+                                <input type="hidden" name="calibrationId" value="<%= c.getCalibrationId() %>">
+                                <input type="hidden" name="stationId" value="<%= c.getStationId() %>">
+                                <button type="submit" class="btn"
+                                        style="background: #ef4444; color: #fff; padding: 2px 8px; font-size: 12px;">
+                                    Xóa
+                                </button>
+                            </form>
+                        </div>
                     </td>
-
                 </tr>
                 <% } %>
-                
-                <% if (rows.isEmpty()) { %>
-                    <tr><td colspan="9" class="c">Khong co dong nao khop bo loc</td></tr>
-                <% } %>
-            </table>
-            
-        </div>
-        
-        
-    </body>
+            </tbody>
+        </table>
+    <% } %>
+
+</div>
+</body>
 </html>

@@ -15,7 +15,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Airroom – Bảng điều khiển & Giám sát trôi cảm biến</title>
+    <title>Airroom – Bảng điều khiển</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <link rel="stylesheet" href="<%= ctx %>/css/dashboard.css">
 </head>
@@ -27,9 +27,6 @@
     <div class="dashboard-header">
         <div>
             <h2>Bảng điều khiển & Thống kê trôi cảm biến theo thời gian</h2>
-            <div class="sub">
-                Hệ thống giám sát trạm không khí lớp học &bull; Nhận diện trôi cảm biến khí gas &bull; Tách ảnh hưởng của nhiệt
-            </div>
         </div>
         <div class="actions" style="margin: 0;">
             <a href="<%= ctx %>/sessions" class="btn">Tra cứu phiên đo</a>
@@ -93,7 +90,7 @@
         <div class="kpi-card purple">
             <div class="kpi-label">Phiên trôi cảm biến</div>
             <div class="kpi-value"><%= stats.getDriftedCount() %></div>
-            <div class="kpi-desc">Tỉ lệ: <b><%= stats.getDriftedRate() %>%</b> (cần hiệu chuẩn)</div>
+            <div class="kpi-desc">Tỉ lệ: <b><%= stats.getDriftedRate() %>%</b></div>
         </div>
 
         <div class="kpi-card green">
@@ -105,7 +102,7 @@
         <div class="kpi-card amber">
             <div class="kpi-label">Cảnh báo & Tỉ lệ bác bỏ</div>
             <div class="kpi-value"><%= stats.getTotalAlerts() %></div>
-            <div class="kpi-desc">Bác bỏ: <b><%= stats.getAlertRejectionRate() %>%</b> (<%= stats.getRejectedAlerts() %> lần do nhiễu)</div>
+            <div class="kpi-desc">Bác bỏ: <b><%= stats.getAlertRejectionRate() %>%</b></div>
         </div>
 
         <div class="kpi-card">
@@ -183,7 +180,6 @@
         <div class="panel-head">
             <div>
                 <h3 class="panel-title">Biểu đồ phân tán: Tương quan giữa giá trị khí và nhiệt độ (Scatter Plot)</h3>
-                <div class="panel-note">Mục tiêu: Tách ảnh hưởng của nhiệt độ cao khỏi sự cố ô nhiễm không khí thực sự (Mục IX.2)</div>
             </div>
             <div class="chart-legend">
                 <div class="legend-item"><span class="legend-dot" style="background: #3b82f6;"></span> BASE (Bình thường)</div>
@@ -191,6 +187,7 @@
                 <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> TEMP_EFFECT (Nhiễu do nhiệt)</div>
                 <div class="legend-item"><span class="legend-dot" style="background: #a855f7;"></span> DRIFTED (Trôi cảm biến)</div>
                 <div class="legend-item"><span class="legend-dot" style="background: #64748b;"></span> WARMUP (Làm nóng)</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #06b6d4;"></span> RAISED (Tăng nhẹ)</div>
             </div>
         </div>
 
@@ -199,7 +196,7 @@
         </div>
 
         <div class="scatter-analysis-box">
-            <b>Phân tích tách ảnh hưởng nhiệt (Decoupling Rule):</b> 
+            <b>Phân tích tách ảnh hưởng nhiệt:</b> 
             Khi nhiệt độ vượt quá <b>30°C</b> và độ ẩm giảm mạnh, nồng độ khí đo được tăng đồng pha theo đường dốc phân tán (các chấm màu cam <b>TEMP_EFFECT</b>). 
             Hệ thống nhận diện hiện tượng này dựa trên đạo hàm biến thiên cùng chiều của nhiệt độ và nồng độ khí để <b>không kết luận nhầm là không khí kém</b>, tránh phát tín hiệu cảnh báo giả.
         </div>
@@ -212,7 +209,6 @@
             <div class="panel-head">
                 <div>
                     <h3 class="panel-title">Xu hướng Mức nền & Độ dịch (%) theo thời gian</h3>
-                    <div class="panel-note">Theo dõi độ trôi của cảm biến qua các đợt quan trắc</div>
                 </div>
             </div>
             <div class="chart-legend" style="margin-top: 0;">
@@ -228,9 +224,7 @@
         <div class="section-panel" style="margin-bottom: 0;">
             <div class="panel-head">
                 <div>
-                    <h3 class="panel-title">Phân bổ cảnh báo & Tỉ lệ người duyệt bác bỏ</h3>
-                    <div class="panel-note">Thống kê theo 5 luật cảnh báo của Mục IX.1</div>
-                </div>
+                    <h3 class="panel-title">Phân bổ cảnh báo & Tỉ lệ người duyệt bác bỏ</h3>                </div>
             </div>
             <div class="canvas-wrapper">
                 <canvas id="alertBarCanvas" width="510" height="230"></canvas>
@@ -304,7 +298,7 @@
                 <h3 class="panel-title">Thời gian giữ được mức nền trong dung sai kể từ mỗi lần hiệu chuẩn</h3>
                 <div class="panel-note">Theo dõi tình trạng trôi cảm biến của các trạm đo theo phiếu hiệu chuẩn gần nhất</div>
             </div>
-            <a href="<%= ctx %>/calibrations" class="btn ghost">Quản lý phiếu hiệu chuẩn</a>
+            <a href="<%= ctx %>/admin/calibrations" class="btn ghost">Quản lý phiếu hiệu chuẩn</a>
         </div>
 
         <table class="grid" style="margin-top: 8px;">
