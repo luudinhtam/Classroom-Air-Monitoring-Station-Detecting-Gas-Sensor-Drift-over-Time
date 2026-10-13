@@ -20,6 +20,7 @@ public class AirSession {
     private double baseShift; // column base_shift
     private boolean warm;     // column warm
     private String note;
+    private String deviceCode;
 
     public int getSessionId() { return sessionId; }
     public void setSessionId(int v) { this.sessionId = v; }
@@ -66,13 +67,12 @@ public class AirSession {
     public boolean isWarm() { return warm; }
     public void setWarm(boolean v) { this.warm = v; }
 
-    public String getNote() {
-        return note;
-    }
+    public String getNote() {return note;}
+    public void setNote(String note) {this.note = note;}
 
-    public void setNote(String note) {
-        this.note = note;
-    }
+    public String getDeviceCode() {return deviceCode;}
+    public void setDeviceCode(String deviceCode) {this.deviceCode = deviceCode;}
+    
     
     
 }

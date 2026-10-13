@@ -68,7 +68,7 @@
             <td><%= r.getHumidPct() %></td>
             <td><%= r.getBaseShift() %></td>
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
-            <td><%= r.getDeviceId() %></td>
+            <td><%= r.getDeviceCode()%></td>
             <td class="ops">
                 <a href="<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>">Sua</a>
                 
