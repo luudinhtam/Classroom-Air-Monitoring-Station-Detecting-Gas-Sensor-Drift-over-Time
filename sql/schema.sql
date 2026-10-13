@@ -1,3 +1,9 @@
+
+-- Xoa DATABASE neu exist
+DROP DATABASE IF EXISTS ten_database;
+
+
+
 IF DB_ID('AirRoomDB') IS NULL
     CREATE DATABASE AirRoomDB;
 GO
@@ -59,6 +65,10 @@ CREATE TABLE Air_Session (
     is_sample   BIT NOT NULL DEFAULT 0,   -- 1 for seeded rows, 0 for rows from the device
     CONSTRAINT UQ_Air_Session_seq UNIQUE (device_id, device_seq)
 );
+
+-- Add them cot note vao bang Session
+ALTER TABLE Air_Session
+ADD note NVARCHAR(MAX) DEFAULT NULL;
  
 CREATE INDEX IX_Air_Session_measured ON Air_Session(measured_at DESC);
  

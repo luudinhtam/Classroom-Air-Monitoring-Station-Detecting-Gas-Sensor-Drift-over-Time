@@ -65,26 +65,35 @@
             <td><span class="tag"><%= Web.esc(u.getRoleCode()) %></span></td>
             <td class="c"><%= u.isLocked() ? "Da khoa" : "Dang dung" %></td>
             <td class="ops">
-                <a href="<%= ctx %>/admin/users/edit?id=<%= u.getUserId() %>">Sua</a>
-                
+                <button type="button" class="btn ghost"
+                        onclick="window.location.href='<%= ctx %>/admin/users/edit?id=<%= u.getUserId() %>'">
+                    Sua
+                </button>
+
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/lock">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                        <button type="submit" class="link"><%= u.isLocked() ? "Mo khoa" : "Khoa" %></button>
+                        <button type="submit" class="btn" style="<%= u.isLocked()
+                                        ? "background-color: #dcfce7; color: #166534;"
+                                        :  "background-color: #fee2e2; color: #b91c1c;" %>">
+                            <%= u.isLocked() ? "Mo khoa" : "Khoa" %>
+                        </button>
                     </form>
                 <% } %>
-                
+
                 <form method="post" action="<%= ctx %>/admin/users/reset"
                       onsubmit="return confirm('Dat lai mat khau ve 123456?');">
                     <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                    <button type="submit" class="link">Dat lai mat khau</button>
+                    <button type="submit" class="btn">Dat lai mat khau</button>
                 </form>
-                
+
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/delete"
                           onsubmit="return confirm('Xoa tai khoan nay?');">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                        <button type="submit" class="link danger">Xoa</button>
+                        
+                        <button type="submit" class="btn" style="background-color: red; color: white">Xoa</button>
+                        
                     </form>
                 <% } %>
             </td>
