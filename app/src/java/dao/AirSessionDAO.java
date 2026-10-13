@@ -12,7 +12,7 @@ public class AirSessionDAO {
         "SELECT s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, " +
         "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, " +
         "(SELECT TOP 1 l.label_code FROM Air_Label l WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code, " +
-        "(SELECT d.device_code FROM Device d WHERE d.device_id = s.device_id) AS device_code " + 
+        "(SELECT d.device_code FROM Device d WHERE d.device_id = s.device_id) AS device_code " +
         "FROM Air_Session s ";
 
     /** READ, one page of rows with optional filters. */
@@ -179,54 +179,57 @@ public class AirSessionDAO {
 
     /** UPDATE, used by the screens that let a staff member fix a reading. */
     public boolean update(AirSession o) {
-        
-        String sqlSession = "UPDATE Air_Session SET device_id = ?, gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
-                          + "humid_pct = ?, base_shift = ?, warm = ?, note = ?, device_seq = ? WHERE session_id = ?";
-        
-        Connection cn = null; 
+        String sqlSession = "UPDATE Air_Session SET gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
+                           + "humid_pct = ?, base_shift = ?, warm = ?, note = ? WHERE session_id = ?";
+        Connection cn = null;
         PreparedStatement psSession = null;
         PreparedStatement psLabel = null;
-        
         try {
             cn = DBContext.getConnection();
-            cn.setAutoCommit(false); 
-            
+            cn.setAutoCommit(false);
             psSession = cn.prepareStatement(sqlSession);
-            psSession.setInt(1, o.getDeviceId());
-            psSession.setInt(2, o.getGasARaw());
-            psSession.setInt(3, o.getGasBRaw());
-            psSession.setInt(4, o.getGasABase());
-            psSession.setDouble(5, o.getGasADelta());
-            psSession.setDouble(6, o.getTempC());
-            psSession.setDouble(7, o.getHumidPct());
-            psSession.setDouble(8, o.getBaseShift());
-            psSession.setBoolean(9, o.isWarm());
-            psSession.setString(10, o.getNote());
-            psSession.setInt(11, o.getDeviceSeq()); 
-            psSession.setInt(12, o.getSessionId()); 
-            int updated = psSession.executeUpdate();
-            
-            // --- Cập nhật bảng Nhãn ---
-            if (o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
-                String currentLabel = "";
-                try (PreparedStatement psCheck = cn.prepareStatement("SELECT TOP 1 label_code FROM Air_Label WHERE session_id = ? ORDER BY label_id DESC")) {
+            psSession.setInt(1, o.getGasARaw());
+            psSession.setInt(2, o.getGasBRaw());
+            psSession.setInt(3, o.getGasABase());
+            psSession.setDouble(4, o.getGasADelta());
+            psSession.setDouble(5, o.getTempC());
+            psSession.setDouble(6, o.getHumidPct());
+            psSession.setDouble(7, o.getBaseShift());
+            psSession.setBoolean(8, o.isWarm());
+            psSession.setString(9, o.getNote());
+            psSession.setInt(10, o.getSessionId());
+            boolean ok = psSession.executeUpdate() > 0;
+
+            if (ok && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
+                String currentLabel = null;
+                try (PreparedStatement psCheck = cn.prepareStatement(
+                        "SELECT TOP 1 label_code FROM Air_Label WHERE session_id = ? ORDER BY label_id DESC")) {
                     psCheck.setInt(1, o.getSessionId());
-                    try (ResultSet rs = psCheck.executeQuery()) {
-                        if (rs.next()) currentLabel = rs.getString("label_code");
+                    try (ResultSet rsCheck = psCheck.executeQuery()) {
+                        if (rsCheck.next()) currentLabel = rsCheck.getString(1);
                     }
                 }
-                
-                if (!o.getLabelCode().equals(currentLabel)) {
-                    psLabel = cn.prepareStatement("INSERT INTO Air_Label(session_id, label_code, source) VALUES (?, ?, 'REVIEWER')");
+
+                if (currentLabel == null || !currentLabel.trim().equals(o.getLabelCode().trim())) {
+                    psLabel = cn.prepareStatement(
+                        "INSERT INTO Air_Label(session_id, label_code, source, reason) VALUES (?, ?, 'REVIEWER', ?)");
                     psLabel.setInt(1, o.getSessionId());
                     psLabel.setString(2, o.getLabelCode());
+                    String labelReason = o.getNote();
+                    if (labelReason != null) {
+                        if (labelReason.contains("----------------")) {
+                            labelReason = labelReason.split("----------------")[0];
+                        }
+                        labelReason = labelReason.replaceFirst("^\\[[^\\]]+\\]\\s*", "");
+                        labelReason = labelReason.replace("\r", "").replace("\n", " ").trim();
+                        labelReason = labelReason.replaceAll("[-=]+$", "").trim();
+                    }
+                    psLabel.setString(3, labelReason);
                     psLabel.executeUpdate();
                 }
             }
-            
-            cn.commit(); 
-            return updated > 0;
-            
+            cn.commit();
+            return ok;
         } catch (SQLException e) {
             try { if (cn != null) cn.rollback(); } catch (Exception ex) {}
             e.printStackTrace(); 

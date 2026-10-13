@@ -20,6 +20,8 @@ import util.Web;
                             "/sessions/edit", 
                             "/sessions/save",
                             "/sessions/delete",
+                            "/sessions/detail",
+                            "/session/detail",
                             "/sessions/export" })
 
 
@@ -93,6 +95,18 @@ public class AirSessionListServlet extends HttpServlet {
             showForm(req, resp, session);
             return;
         }
+        if("/detail".equals(action)){
+            int id = Web.intParam(req, "id", 0);
+            AirSession session = dao.findById(id);
+            if (session == null){
+                Web.flash(req, "Khong tim thay phien do #" + id);
+                resp.sendRedirect(req.getContextPath() + "/sessions");
+                return;
+            }
+            showDetail(req, resp, session);
+            return;
+        }
+
         if ("/export".equals(action)) {
             exportCsv(req, resp);
             return;

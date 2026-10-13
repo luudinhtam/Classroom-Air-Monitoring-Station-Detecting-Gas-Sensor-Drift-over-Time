@@ -72,8 +72,12 @@
             <td><%= r.getHumidPct() %></td>
             <td><%= r.getBaseShift() %></td>
             <td><span class="tag"><%= Web.esc(lbl) %></span></td>
-            <td><%= r.getDeviceCode()%></td>
+            <td><%= r.getDeviceCode() != null ? r.getDeviceCode() : "" %></td>
             <td class="ops ops-group">
+                <button type="button" class="btn-block btn-gray"
+                        onclick="window.location.href='<%= ctx %>/sessions/detail?id=<%= r.getSessionId() %>'">
+                    Chi tiết
+                </button>
                 <button type="button" class="btn-block btn-blue"
                         onclick="window.location.href='<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>'">
                     Sửa
