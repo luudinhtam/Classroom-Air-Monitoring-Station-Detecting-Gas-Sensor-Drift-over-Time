@@ -1,6 +1,7 @@
 package controller;
 
 import dao.AirStationDAO;
+import dao.DeviceDAO;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
@@ -81,6 +82,8 @@ public class StationServlet extends HttpServlet {
     private void showForm(HttpServletRequest request, HttpServletResponse response, AirStation a)
             throws ServletException, IOException {
         request.setAttribute("editStation", a);
+        DeviceDAO deviceDAO = new DeviceDAO();
+        request.setAttribute("deviceList", deviceDAO.getActiveDevices());
         request.getRequestDispatcher("/WEB-INF/views/stationForm.jsp").forward(request, response);
     }
     
