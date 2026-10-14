@@ -117,7 +117,7 @@ public class AirStation {
         return deviceCode;
     }
 
-    public void setDeviceCode(String deviceKey) {
+    public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
     }
     
