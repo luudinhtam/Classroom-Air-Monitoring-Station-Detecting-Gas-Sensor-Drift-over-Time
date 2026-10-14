@@ -221,9 +221,7 @@ public class DashboardDAO {
      * không tính toán biểu thức trong ORDER BY giúp tốc độ tăng gấp 50 lần.
      */
     private void loadScatterPoints(Connection cn, DashboardStats stats) {
-        // UNION: lấy toàn bộ điểm có nhãn đặc biệt + sample ngẫu nhiên các điểm BASE
-        // Đảm bảo scatter plot luôn hiển thị đủ màu cho tất cả label
-        String sql =
+       String sql =
             "SELECT TOP 250 temp_c, gas_a_raw, gas_a_delta, humid_pct, label_code FROM (" +
             // Phần 1: Tất cả phiên có nhãn đặc biệt (tối đa 150 điểm)
             "  SELECT TOP 150 " +
@@ -252,6 +250,7 @@ public class DashboardDAO {
             "    ) " +
             "  ORDER BY s.session_id DESC " +
             ") combined ORDER BY NEWID()";
+
 
         List<ScatterPoint> points = new ArrayList<>();
         try (Statement st = cn.createStatement();
@@ -331,11 +330,11 @@ public class DashboardDAO {
      * 6. Bảng đối chiếu mức trôi: Dữ liệu tự thu (is_sample = 0) vs Bộ dữ liệu nền (is_sample = 1)
      */
     private void loadDatasetComparison(Connection cn, DashboardStats stats) {
-        DatasetComparison sample = queryDatasetStats(cn, 1, "Bộ dữ liệu nền (UCI Benchmark)");
-        sample.setConclusion("Cảm biến trong môi trường kiểm chuẩn có độ trôi ổn định (+0.00% đến +2.1%), giữ hiệu chuẩn trung bình trên 90 ngày.");
+        DatasetComparison sample = queryDatasetStats(cn, 1, "Benchmark Dataset (UCI Benchmark)");
+        sample.setConclusion("Sensors in calibration test environment exhibit stable drift (+0.00% to +2.1%), maintaining calibration for over 90 days on average.");
         stats.setSampleStats(sample);
 
-        DatasetComparison live = queryDatasetStats(cn, 0, "Dữ liệu nhóm tự thu (Phòng học FPTU)");
+        DatasetComparison live = queryDatasetStats(cn, 0, "Field Collected Data (FPTU Classroom)");
         if (live.getRecordCount() == 0) {
             live.setRecordCount(180);
             live.setAvgGasARaw(585.4);
@@ -346,9 +345,9 @@ public class DashboardDAO {
             live.setAvgHumid(68.2);
             live.setDriftCount(6);
             live.setDriftRate(3.33);
-            live.setConclusion("Môi trường phòng học đóng mở điều hòa liên tục khiến độ trôi dao động mạnh (+8.45%), cần chu kỳ hiệu chuẩn 30-45 ngày.");
+            live.setConclusion("Classroom environment with continuous AC cycles causes pronounced baseline drift (+8.45%), requiring a 30-45 day calibration cycle.");
         } else {
-            live.setConclusion("Dữ liệu tự thu phản ánh tác động lớn của nhiệt ẩm phòng học, mức trôi trung bình cao hơn bộ dữ liệu chuẩn.");
+            live.setConclusion("Field collected data reflects significant thermo-hygrometric impacts, showing higher average drift than the benchmark dataset.");
         }
         stats.setLiveStats(live);
     }
@@ -438,7 +437,7 @@ public class DashboardDAO {
                         info.setStatus("ON_TRACK");
                     }
                 } else {
-                    info.setLastCalibratedAt("Chưa hiệu chuẩn lần nào");
+                    info.setLastCalibratedAt("Not calibrated yet");
                     info.setCoBaseline(1200.0);
                     info.setDaysInTolerance(0);
                     info.setCurrentShift(0);
@@ -468,24 +467,24 @@ public class DashboardDAO {
             if (rs.next() && rs.getInt(1) == 0) {
                 String seedSql = 
                     "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 45 session_id, 'HIGH', 'CRITICAL', N'Nồng độ khí vượt ngưỡng cảnh báo trạm (Không khí kém)', " +
+                    "SELECT TOP 45 session_id, 'HIGH', 'CRITICAL', 'Gas concentration exceeds threshold (Poor Air Quality)', " +
                     "  CASE WHEN session_id % 7 = 0 THEN 'REJECTED' WHEN session_id % 3 = 0 THEN 'OPEN' ELSE 'ACKED' END, " +
                     "  measured_at " +
                     "FROM Air_Session WHERE gas_a_raw >= 1400; " +
 
                     "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 30 session_id, 'TEMP_EFFECT', 'WARN', N'Ảnh hưởng của nhiệt: Giá trị khí tăng đồng pha nhiệt độ cao', " +
+                    "SELECT TOP 30 session_id, 'TEMP_EFFECT', 'WARN', 'Thermal effect: Gas readings rise in-phase with high temperature', " +
                     "  CASE WHEN session_id % 5 = 0 THEN 'REJECTED' ELSE 'ACKED' END, " +
                     "  measured_at " +
                     "FROM Air_Session WHERE temp_c >= 30; " +
 
                     "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 15 session_id, 'DRIFTED', 'CRITICAL', N'Cảm biến đã trôi: Mức nền dịch quá ngưỡng dung sai', " +
+                    "SELECT TOP 15 session_id, 'DRIFTED', 'CRITICAL', 'Sensor drift detected: Baseline shift exceeds tolerance', " +
                     "  'ACKED', measured_at " +
                     "FROM Air_Session WHERE base_shift >= 14; " +
 
                     "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 10 session_id, 'WARMUP', 'WARN', N'Thiết bị chưa làm nóng xong (dưới 10 phút cấp điện)', " +
+                    "SELECT TOP 10 session_id, 'WARMUP', 'WARN', 'Device warming up (< 10 minutes from power-on)', " +
                     "  CASE WHEN session_id % 4 = 0 THEN 'REJECTED' ELSE 'ACKED' END, " +
                     "  measured_at " +
                     "FROM Air_Session WHERE warm = 0;";

@@ -49,7 +49,7 @@ function initScatterPlot(canvasId, points) {
             ctx.fillStyle = '#b45309';
             ctx.font = 'italic 11px sans-serif';
             ctx.textAlign = 'right';
-            ctx.fillText('Vùng nhiệt độ cao (>30°C): Nguy cơ nhiễu nhiệt (TEMP_EFFECT)', w - padR - 8, padT + 16);
+            ctx.fillText('High Temp Zone (>30°C): Risk of Thermal Interference (TEMP_EFFECT)', w - padR - 8, padT + 16);
         }
 
         // Lưới ngang & Ticks trục Y (Nồng độ khí)
@@ -102,13 +102,13 @@ function initScatterPlot(canvasId, points) {
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Nhiệt độ môi trường (°C)', padL + plotW / 2, h - 8);
+        ctx.fillText('Ambient Temperature (°C)', padL + plotW / 2, h - 8);
 
         ctx.save();
         ctx.translate(14, padT + plotH / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
-        ctx.fillText('Giá trị khí Gas A Raw (ppm/đơn vị)', 0, 0);
+        ctx.fillText('Gas A Raw Value (ppm / raw units)', 0, 0);
         ctx.restore();
 
         // Vẽ các điểm Scatter
@@ -140,9 +140,9 @@ function initScatterPlot(canvasId, points) {
             var hx = mapX(hPt.tempC);
             var hy = mapY(hPt.gasARaw);
 
-            var text1 = 'Nhãn: ' + hPt.labelCode;
-            var text2 = 'Nhiệt độ: ' + hPt.tempC + '°C | Khí: ' + hPt.gasARaw;
-            var text3 = 'Độ ẩm: ' + hPt.humidPct + '% | Delta: ' + hPt.gasADelta;
+            var text1 = 'Label: ' + hPt.labelCode;
+            var text2 = 'Temp: ' + hPt.tempC + '°C | Gas: ' + hPt.gasARaw;
+            var text3 = 'Humidity: ' + hPt.humidPct + '% | Delta: ' + hPt.gasADelta;
 
             var tipW = 190, tipH = 58;
             var tipX = Math.min(w - tipW - 10, Math.max(padL + 10, hx + 10));

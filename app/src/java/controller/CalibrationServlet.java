@@ -46,7 +46,7 @@ public class CalibrationServlet extends HttpServlet {
 
             // Kiểm tra calibrationId và stationId
             if (calibrationId <= 0 || stationId <= 0) {
-                Web.flash(request, "Thong tin hieu chuan khong hop le");
+                Web.flash(request, "Invalid calibration information");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
@@ -55,14 +55,14 @@ public class CalibrationServlet extends HttpServlet {
 
             // Không tìm thấy calibration
             if (c == null) {
-                Web.flash(request, "Khong tim thay hieu chuan");
+                Web.flash(request, "Calibration record not found");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
 
             // Calibration không thuộc station hiện tại
             if (c.getStationId() != stationId) {
-                Web.flash(request, "Hieu chuan khong thuoc tram nay");
+                Web.flash(request, "Calibration record does not belong to this station");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
@@ -131,11 +131,11 @@ public class CalibrationServlet extends HttpServlet {
             c.setNote(Web.trimmed(request, "note"));
 
             if (calibrationId == 0) {
-                if (calibrations.insert(c)) Web.flash(request, "Da them hieu chuan " + c.getName());
-                else Web.flash(request, "Loi khi them, khong biet");
+                if (calibrations.insert(c)) Web.flash(request, "Added calibration " + c.getName());
+                else Web.flash(request, "Failed to add calibration");
             } else {
-                if (calibrations.update(c)) Web.flash(request, "Da luu thay doi");
-                else Web.flash(request, "Loi khi luu");
+                if (calibrations.update(c)) Web.flash(request, "Calibration changes saved successfully");
+                else Web.flash(request, "Failed to save calibration changes");
             }
         }
         
@@ -144,13 +144,13 @@ public class CalibrationServlet extends HttpServlet {
 
             if (calibrationId > 0 && stationId > 0) {
                 if (calibrations.delete(calibrationId, stationId)) {
-                    Web.flash(request, "Da xoa hieu chuan");
+                    Web.flash(request, "Calibration record deleted successfully");
                 } else {
-                    Web.flash(request, "Khong tim thay hieu chuan cua station nay");
+                    Web.flash(request, "Calibration record not found for this station");
                 }
             }
             else {
-                Web.flash(request, "Thong tin xoa khong hop le");
+                Web.flash(request, "Invalid deletion request");
             }
         }
         

@@ -39,7 +39,7 @@ public class UserServlet extends HttpServlet {
         if ("/edit".equals(action)) {
             AppUser u = users.findById(Web.intParam(req, "id", 0));
             if (u == null) {
-                Web.flash(req, "Khong tim thay nguoi dung");
+                Web.flash(req, "User not found");
                 resp.sendRedirect(req.getContextPath() + "/admin/users");
                 return;
             }
@@ -98,11 +98,11 @@ public class UserServlet extends HttpServlet {
 
             if (id == 0) {
                 u.setPassHash(PasswordUtil.hash(DEFAULT_PASSWORD));
-                if (users.insert(u)) Web.flash(req, "Da them nguoi dung " + u.getUsername());
-                else Web.flash(req, "Loi khi them, co the ten dang nhap da ton tai");
+                if (users.insert(u)) Web.flash(req, "Added user " + u.getUsername());
+                else Web.flash(req, "Failed to add user, username might already exist");
             } else {
-                if (users.update(u)) Web.flash(req, "Da luu thay doi");
-                else Web.flash(req, "Loi khi luu");
+                if (users.update(u)) Web.flash(req, "User changes saved successfully");
+                else Web.flash(req, "Failed to save user changes");
             }
         }
         else if ("/lock".equals(action)) {
@@ -110,21 +110,21 @@ public class UserServlet extends HttpServlet {
             AppUser u = users.findById(id);
             if (u != null) {
                 users.lock(id, !u.isLocked());
-                Web.flash(req, "Da " + (u.isLocked() ? "mo khoa " : "khoa ") + u.getUsername());
+                Web.flash(req, "Successfully " + (u.isLocked() ? "unlocked " : "locked ") + u.getUsername());
             }
         }
         else if ("/reset".equals(action)) {
             int id = Web.intParam(req, "id", 0);
             if (users.resetPassword(id, PasswordUtil.hash(DEFAULT_PASSWORD))) {
-                Web.flash(req, "Da dat lai mat khau thanh cong");
+                Web.flash(req, "Password reset successfully");
             }
         }
         else if ("/delete".equals(action)) {
             int id = Web.intParam(req, "id", 0);
             if (users.delete(id)) {
-                Web.flash(req, "Da xoa nguoi dung");
+                Web.flash(req, "User deleted successfully");
             } else {
-                Web.flash(req, "Loi khi xoa nguoi dung");
+                Web.flash(req, "Failed to delete user");
             }
         }
         resp.sendRedirect(req.getContextPath() + "/admin/users");

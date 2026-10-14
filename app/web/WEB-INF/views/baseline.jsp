@@ -24,16 +24,16 @@
 %>
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tính mức nền - Air Station</title>
+    <title>Baseline Calculation - Air Station</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
 </head>
 <body style="padding: 40px 100px;">
 
-    <h1>Tính mức nền cảm biến</h1>
+    <h1>Sensor Baseline Calculation</h1>
 
     <% if (errorMessage != null) { %>
         <p role="alert"><%= errorMessage %></p>
@@ -44,40 +44,40 @@
             
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
 
-            <!-- Thông tin khoảng phòng trống: bên trái -->
+            <!-- Empty window info: left -->
             <div>
                 <h2 style="margin-top: 0; margin-bottom: 20px;">
-                    Thông tin khoảng phòng trống
+                    Empty Window Information
                 </h2>
 
                 <table border="1" cellpadding="8" cellspacing="0">
                     <tr>
-                        <th>Mã khoảng</th>
+                        <th>Window Code</th>
                         <td><%= ew.getCode() %></td>
                     </tr>
                     <tr>
-                        <th>Tên khoảng</th>
+                        <th>Window Name</th>
                         <td><%= ew.getName() %></td>
                     </tr>
                     <tr>
-                        <th>Bắt đầu</th>
+                        <th>Start At</th>
                         <td><%= ew.getStartAt().format(formatter) %></td>
                     </tr>
                     <tr>
-                        <th>Kết thúc</th>
+                        <th>End At</th>
                         <td><%= ew.getEndAt().format(formatter) %></td>
                     </tr>
                     <tr>
-                        <th>Số mẫu</th>
+                        <th>Sample Count</th>
                         <td><%= sampleCount %></td>
                     </tr>
                 </table>
             </div>
 
-            <!-- Danh sách mẫu đo: bên phải -->
+            <!-- Samples list: right -->
             <div>
                 <h2 style="margin-top: 0; margin-bottom: 20px;">
-                    Danh sách mẫu đo
+                    Measurement Samples
                 </h2>
 
                 <div style="max-height: 380px; width: 650px; overflow-y: auto; border: 1px solid #ccc;">
@@ -86,10 +86,10 @@
 
                         <thead>
                             <tr style="position: sticky; top: 0; background: #f2f2f2; z-index: 2; border: 1px solid #000;">
-                                <th >STT</th>
-                                <th >Thời gian đo</th>
-                                <th >CO</th>
-                                <th >CO₂</th>
+                                <th>#</th>
+                                <th>Measured At</th>
+                                <th>CO</th>
+                                <th>CO₂</th>
                             </tr>
                         </thead>
 
@@ -123,13 +123,13 @@
         </div>
 
             
-        <h2 style="text-align: center; margin-top: 60px">Kết quả baseline dự kiến</h2>
+        <h2 style="text-align: center; margin-top: 60px">Estimated Baseline Result</h2>
 
         <table style="width: 50%; margin: 0 auto" border="1" cellpadding="8" cellspacing="0">
             <thead>
                 <tr>
-                    <th>Thông số</th>
-                    <th>Giá trị trung bình</th>
+                    <th>Metric</th>
+                    <th>Average Value</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,39 +145,37 @@
         </table>
 
         <p>
-            <strong>Lưu ý:</strong>
-            Đây là dữ liệu cảm biến giả lập phục vụ kiểm thử,
-            chưa phải dữ liệu đo từ thiết bị thật.
+            <strong>Note:</strong>
+            This is simulated sensor data for testing, not real measurements from a physical device.
         </p>
 
-        <h2>Xác nhận</h2>
+        <h2>Confirmation</h2>
 
         <p>
-            Chỉ xác nhận nếu bạn đồng ý lưu hai giá trị baseline phía trên
-            thành một bản ghi Calibration mới.
+            Confirm only if you agree to save these two baseline values as a new Calibration record.
         </p>
 
         <form method="post" action="<%= ctx %>/admin/emptyWindows/baseline">
 
             <button class="btn" type="submit">
-                Xác nhận lưu mức nền mới
+                Confirm & Save New Baseline
             </button>
 
             <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
-                Quay lại
+                Back
             </a>
         </form>
 
     <% } else { %>
 
-        <p>Không có kết quả baseline để hiển thị.</p>
+        <p>No baseline results to display.</p>
 
         <% if (stationId != null) { %>
             <a href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
-                Quay lại danh sách khoảng phòng trống
+                Back to Empty Windows List
             </a>
         <% } else { %>
-            <a href="<%= ctx %>/admin/stations">Quay lại danh sách trạm</a>
+            <a href="<%= ctx %>/admin/stations">Back to Stations List</a>
         <% } %>
 
     <% } %>

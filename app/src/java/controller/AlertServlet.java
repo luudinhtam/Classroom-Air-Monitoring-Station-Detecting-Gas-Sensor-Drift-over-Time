@@ -79,7 +79,7 @@ public class AlertServlet extends HttpServlet {
 
         // Kiểm tra quyền: VIEWER chỉ có quyền xem
         if ("VIEWER".equals(me.getRoleCode())) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý cảnh báo.");
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to handle alerts.");
             return;
         }
 
@@ -93,25 +93,25 @@ public class AlertServlet extends HttpServlet {
             try {
                 int alertId = Integer.parseInt(idStr);
                 String newStatus = "ACKED";
-                String actionText = "xác nhận";
+                String actionText = "acknowledged";
 
                 if ("reject".equalsIgnoreCase(action)) {
                     newStatus = "REJECTED";
-                    actionText = "bác bỏ";
+                    actionText = "rejected";
                     if (note == null || note.isEmpty()) {
-                        note = "Bác bỏ cảnh báo (Báo động giả / Nhiễu)";
+                        note = "Rejected alert (False alarm / Noise)";
                     }
                 } else {
                     if (note == null || note.isEmpty()) {
-                        note = "Đã xác nhận sự cố";
+                        note = "Incident confirmed";
                     }
                 }
 
                 boolean ok = alertDAO.updateStatus(alertId, newStatus, me.getUserId(), note);
                 if (ok) {
-                    req.getSession().setAttribute("flash", "Đã " + actionText + " cảnh báo #" + alertId + " thành công.");
+                    req.getSession().setAttribute("flash", "Alert #" + alertId + " " + actionText + " successfully.");
                 } else {
-                    req.getSession().setAttribute("flashError", "Không thể cập nhật cảnh báo #" + alertId + ".");
+                    req.getSession().setAttribute("flashError", "Could not update alert #" + alertId + ".");
                 }
             } catch (NumberFormatException ignored) {}
         }

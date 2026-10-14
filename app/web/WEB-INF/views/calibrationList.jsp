@@ -19,8 +19,8 @@
     AirStation a = stationId > 0 ? stations.findById(stationId) : null;
 
     String pageTitle = (a != null)
-        ? "Lịch sử hiệu chuẩn – " + Web.esc(a.getCode()) + " / " + Web.esc(a.getName())
-        : "Lịch sử hiệu chuẩn – Tất cả trạm";
+        ? "Calibration History – " + Web.esc(a.getCode()) + " / " + Web.esc(a.getName())
+        : "Calibration History – All Stations";
     String baseUrl = ctx + "/admin/calibrations" + (stationId > 0 ? "?stationId=" + stationId : "");
 
     // Phân quyền hiển thị nút: Admin, Station Manager, Operator được quản lý; Reviewer/Viewer chỉ xem
@@ -44,13 +44,13 @@
     <div class="dashboard-header" style="margin-bottom: 12px;">
         <div>
             <h2><%= pageTitle %></h2>
-            <div class="muted">Tổng số phiếu hiệu chuẩn: <b><%= total %></b></div>
+            <div class="muted">Total Calibration Records: <b><%= total %></b></div>
         </div>
         <div class="actions" style="margin: 0;">
             <% if (a != null && canManageCalibration) { %>
-                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Thêm hiệu chuẩn</a>
+                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Add Calibration</a>
             <% } %>
-            <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
+            <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
         </div>
     </div>
 
@@ -58,10 +58,10 @@
     <% if (a == null) { %>
         <div style="padding: 12px 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px;
                     font-size: 13px; color: #92400e; margin-bottom: 14px;">
-            ⚠️ Chưa chọn trạm giám sát. Đang hiển thị <b>tất cả phiếu hiệu chuẩn</b>.
-            Để quản lý theo từng trạm, hãy vào
-            <a href="<%= ctx %>/admin/stations" style="color: #b45309; font-weight: 600;">Danh sách trạm</a>
-            và chọn trạm cụ thể.
+            ⚠️ No monitoring station selected. Displaying <b>all calibration records</b>.
+            To manage by specific station, go to
+            <a href="<%= ctx %>/admin/stations" style="color: #b45309; font-weight: 600;">Stations List</a>
+            and choose a station.
         </div>
     <% } %>
 
@@ -70,33 +70,33 @@
         <% if (stationId > 0) { %>
             <input type="hidden" name="stationId" value="<%= stationId %>">
         <% } %>
-        <label style="font-size: 13px; font-weight: 500; color: #475569;">Tìm kiếm:</label>
-        <input type="text" name="keyword" placeholder="Tên hoặc mã phiếu hiệu chuẩn..." value="">
-        <button type="submit" class="btn">Lọc</button>
-        <a class="btn ghost" href="<%= baseUrl %>">Đặt lại</a>
+        <label style="font-size: 13px; font-weight: 500; color: #475569;">Search:</label>
+        <input type="text" name="keyword" placeholder="Name or calibration code..." value="">
+        <button type="submit" class="btn">Filter</button>
+        <a class="btn ghost" href="<%= baseUrl %>">Reset</a>
     </form>
 
     <!-- BẢNG DANH SÁCH -->
     <% if (rows == null || rows.isEmpty()) { %>
         <div style="padding: 24px; text-align: center; background: #fff; border: 1px solid #e2e8f0;
                     border-radius: 6px; color: #64748b;">
-            Không tìm thấy phiếu hiệu chuẩn nào<%= a != null ? " cho trạm " + Web.esc(a.getName()) : "" %>.
+            No calibration records found<%= a != null ? " for station " + Web.esc(a.getName()) : "" %>.
         </div>
     <% } else { %>
         <table class="grid">
             <thead>
                 <tr>
                     <th style="width: 60px;">#</th>
-                    <th style="width: 100px;">Mã phiếu</th>
-                    <th>Tên hiệu chuẩn</th>
-                    <% if (a == null) { %><th style="width: 80px;">Trạm #</th><% } %>
+                    <th style="width: 100px;">Code</th>
+                    <th>Name</th>
+                    <% if (a == null) { %><th style="width: 80px;">Station #</th><% } %>
                     <th class="c" style="width: 110px;">CO Baseline</th>
                     <th class="c" style="width: 110px;">CO2 Baseline</th>
-                    <th style="width: 140px;">Người thực hiện</th>
-                    <th style="width: 130px;">Ngày hiệu chuẩn</th>
-                    <th>Ghi chú</th>
+                    <th style="width: 140px;">Performed By</th>
+                    <th style="width: 130px;">Calibrated At</th>
+                    <th>Note</th>
                     <% if (canManageCalibration) { %>
-                        <th class="c" style="width: 130px;">Thao tác</th>
+                        <th class="c" style="width: 130px;">Actions</th>
                     <% } %>
                 </tr>
             </thead>
@@ -119,12 +119,12 @@
                         <td class="ops ops-group c">
                             <button type="button" class="btn-block btn-blue"
                                     onclick="window.location.href='<%= ctx %>/admin/calibrations/edit?id=<%= c.getCalibrationId() %>&stationId=<%= c.getStationId() %>'">
-                                Sửa
+                                Edit
                             </button>
 
                             <form method="post"
                                   action="<%= ctx %>/admin/calibrations/delete"
-                                  onsubmit="return confirm('Xóa phiếu hiệu chuẩn này?');" style="display:inline-block;">
+                                  onsubmit="return confirm('Delete this calibration record?');" style="display:inline-block;">
 
                                 <input type="hidden" name="calibrationId"
                                        value="<%= c.getCalibrationId() %>">
@@ -133,7 +133,7 @@
                                        value="<%= c.getStationId() %>">
 
                                 <button type="submit" class="btn-block btn-red">
-                                    Xóa
+                                    Delete
                                 </button>
                             </form>
                         </td>

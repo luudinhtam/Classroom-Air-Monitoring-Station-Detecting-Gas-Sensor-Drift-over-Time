@@ -26,14 +26,14 @@ public class LabelCorrectServlet extends HttpServlet {
         String reason = req.getParameter("reason");
 
         if (reason == null || reason.trim().length() < 5) {
-            req.getSession().setAttribute("flash", "Phai ghi ly do sua nhan");
+            req.getSession().setAttribute("flash", "A reason is required to correct the label (at least 5 characters)");
             resp.sendRedirect(req.getContextPath() + "/session/detail?id=" + sessionId);
             return;
         }
 
         labels.insert(sessionId, newLabel, "REVIEWER", reason.trim(),
                 Integer.valueOf(me.getUserId()));
-        req.getSession().setAttribute("flash", "Da sua nhan thanh " + newLabel);
+        req.getSession().setAttribute("flash", "Label updated to " + newLabel);
         resp.sendRedirect(req.getContextPath() + "/session/detail?id=" + sessionId);
     }
 }

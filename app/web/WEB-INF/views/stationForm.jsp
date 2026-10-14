@@ -14,13 +14,13 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title><%= isNew ? "Them tram" : "Sua tram" %></title>
+        <title><%= isNew ? "Add Station" : "Edit Station" %></title>
         <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     </head>
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
-            <h2><%= isNew ? "Them tram" : "Sua tram" %></h2>
+            <h2><%= isNew ? "Add Station" : "Edit Station" %></h2>
             
             <% if (error != null) { %><div class="error"><%= Web.esc(error) %></div><% } %>
             
@@ -32,7 +32,7 @@
                         <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
                         value="<%= item == null ? "" : Web.esc(item.getCode()) %>">
                     <% if (!isNew) { %>
-                    <small style="color:#888">Code tram khong the thay doi sau khi tao.</small>
+                    <small style="color:#888">Station code cannot be changed once created.</small>
                     <% } %>
 
                 <label>Name</label>
@@ -64,8 +64,8 @@
                        value="<%= item == null ? "" : Web.esc(item.getNote()) %>">
 
                 <div class="actions">
-                    <button type="submit" class="primary">Luu thong tin</button>
-                    <a href="<%= ctx %>/admin/stations" class="btn ghost">Huy bo</a>
+                    <button type="submit" class="primary">Save</button>
+                    <a href="<%= ctx %>/admin/stations" class="btn ghost">Cancel</a>
                 </div>
             </form>
         </div>

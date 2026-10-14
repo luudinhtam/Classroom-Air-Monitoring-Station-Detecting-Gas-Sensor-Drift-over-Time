@@ -61,7 +61,7 @@ public class BaseLineServlet extends HttpServlet {
 
         if (startAt == null || endAt == null
                 || !endAt.isAfter(startAt)) {
-            Web.flash(request, "Khoang thoi gian khong hop le");
+            Web.flash(request, "Invalid time range");
             response.sendRedirect(request.getContextPath()
                     + "/admin/emptyWindows?stationId=" + stationId);
             return;
@@ -72,7 +72,7 @@ public class BaseLineServlet extends HttpServlet {
                 generateMockSamples(startAt, endAt);
 
         if (samples.isEmpty()) {
-            Web.flash(request, "Khong co du lieu de tinh muc nen");
+            Web.flash(request, "No data found to calculate baseline");
             response.sendRedirect(request.getContextPath()
                     + "/admin/emptyWindows?stationId=" + stationId);
             return;
@@ -116,7 +116,7 @@ public class BaseLineServlet extends HttpServlet {
 
         if (session == null) {
             Web.flash(request,
-                    "Phien lam viec da het han. Vui long tinh lai baseline.");
+                    "Session expired. Please recalculate baseline.");
             response.sendRedirect(
                     request.getContextPath() + "/admin/stations");
             return;
@@ -135,7 +135,7 @@ public class BaseLineServlet extends HttpServlet {
 
         if (!(value instanceof BaselinePreview)) {
             Web.flash(request,
-                    "Khong tim thay ket qua xem truoc. Vui long tinh lai baseline.");
+                    "Preview results not found. Please recalculate baseline.");
             response.sendRedirect(
                     request.getContextPath() + "/admin/stations");
             return;
@@ -154,9 +154,9 @@ public class BaseLineServlet extends HttpServlet {
                 "Baseline - " + preview.getEmptyWindow().getName());
 
         calibration.setNote(
-                "Tao tu khoang phong trong "
+                "Created from empty window "
                 + preview.getEmptyWindow().getName()
-                + " (du lieu cam bien gia lap)");
+                + " (simulated sensor data)");
 
         calibration.setStationId(preview.getStationId());
         calibration.setPerformedBy(me.getUserId());
@@ -167,14 +167,14 @@ public class BaseLineServlet extends HttpServlet {
 
         if (!inserted) {
             showPreview(request, response, preview,
-                    "Khong the luu Calibration. Vui long thu lai.");
+                    "Unable to save calibration. Please try again.");
             return;
         }
 
         // Chỉ xóa kết quả xem trước sau khi lưu thành công.
         session.removeAttribute(PREVIEW_KEY);
 
-        Web.flash(request, "Da luu muc nen moi thanh cong");
+        Web.flash(request, "New baseline saved successfully");
 
         response.sendRedirect(request.getContextPath()
                 + "/admin/calibrations?stationId="

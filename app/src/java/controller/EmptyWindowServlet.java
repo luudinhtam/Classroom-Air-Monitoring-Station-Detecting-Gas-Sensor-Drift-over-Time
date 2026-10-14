@@ -51,7 +51,7 @@ public class EmptyWindowServlet extends HttpServlet {
 
             if (emptyWindowId <= 0 || stationId <= 0) {
                 Web.flash(request,
-                        "Thong tin khoang phong trong khong hop le");
+                        "Invalid empty window information");
                 response.sendRedirect(
                         request.getContextPath() + "/admin/stations");
                 return;
@@ -61,7 +61,7 @@ public class EmptyWindowServlet extends HttpServlet {
 
             if (ew == null) {
                 Web.flash(request,
-                        "Khong tim thay khoang phong trong");
+                        "Empty window not found");
                 response.sendRedirect(
                         request.getContextPath()
                         + "/admin/emptyWindows?stationId=" + stationId);
@@ -71,7 +71,7 @@ public class EmptyWindowServlet extends HttpServlet {
             // Kiểm tra EmptyWindow có thuộc station này không
             if (ew.getStationId() != stationId) {
                 Web.flash(request,
-                        "Khoang phong trong khong thuoc tram nay");
+                        "Empty window does not belong to this station");
                 response.sendRedirect(
                         request.getContextPath()
                         + "/admin/emptyWindows?stationId=" + stationId);
@@ -127,7 +127,7 @@ public class EmptyWindowServlet extends HttpServlet {
             HttpSession session = request.getSession(false);
             if (session == null) {
                 Web.flash(request,
-                        "Phien lam viec da het han. Vui long tinh lai baseline.");
+                        "Session expired. Please recalculate baseline.");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
@@ -148,7 +148,7 @@ public class EmptyWindowServlet extends HttpServlet {
                     || startText.isEmpty() || endText.isEmpty()) {
 
                 Web.flash(request,
-                        "Vui long nhap day du thong tin khoang phong trong");
+                        "Please enter all required empty window details");
 
                 response.sendRedirect(
                         request.getContextPath()
@@ -162,7 +162,7 @@ public class EmptyWindowServlet extends HttpServlet {
 
                 // Thời gian kết thúc phải sau thời gian bắt đầu
                 if (!endAt.isAfter(startAt)) {
-                    Web.flash(request, "Thoi gian ket thuc phai sau thoi gian bat dau");
+                    Web.flash(request, "End time must be after start time");
                     response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?stationId=" + stationId);
                     return;
                 }
@@ -181,9 +181,9 @@ public class EmptyWindowServlet extends HttpServlet {
                 // INSERT
                 if (emptyWindowId == 0) {
                     if (emptyWindows.insert(ew)) {
-                        Web.flash(request, "Da them khoang phong trong " + ew.getName());
+                        Web.flash(request, "Added empty window " + ew.getName());
                     } else {
-                        Web.flash(request, "Loi khi them khoang phong trong");
+                        Web.flash(request, "Failed to add empty window");
                     }
 
                 } else {
@@ -191,16 +191,16 @@ public class EmptyWindowServlet extends HttpServlet {
                     EmptyWindow existing = emptyWindows.findById(emptyWindowId);
 
                     if (existing == null || existing.getStationId() != stationId) {
-                        Web.flash(request, "Khong tim thay khoang phong trong cua tram nay");
+                        Web.flash(request, "Empty window not found for this station");
                     } else if (emptyWindows.update(ew)) {
-                        Web.flash(request, "Da luu thay doi");
+                        Web.flash(request, "Empty window changes saved successfully");
                     } else {
-                        Web.flash(request, "Loi khi luu khoang phong trong");
+                        Web.flash(request, "Failed to save empty window changes");
                     }
                 }
 
             } catch (DateTimeParseException e) { 
-                Web.flash(request, "Dinh dang thoi gian khong hop le");
+                Web.flash(request, "Invalid date/time format");
             }
             
         } 
@@ -210,13 +210,13 @@ public class EmptyWindowServlet extends HttpServlet {
 
             if (emptyWindowId > 0 && stationId > 0) {
                 if (emptyWindows.delete(emptyWindowId, stationId)) {
-                    Web.flash(request, "Da xoa khoang phong trong");
+                    Web.flash(request, "Empty window deleted successfully");
                 } else {
                     Web.flash(request,
-                            "Khong tim thay khoang phong trong cua tram nay");
+                            "Empty window not found for this station");
                 }
             } else {
-                Web.flash(request, "Thong tin xoa khong hop le");
+                Web.flash(request, "Invalid deletion request");
             }
         }
         

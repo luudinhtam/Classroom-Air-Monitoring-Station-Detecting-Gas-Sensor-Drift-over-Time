@@ -25,11 +25,11 @@
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
 <div class="wrap">
-    <h2>Danh sach phien do (<%= request.getAttribute("total") %>)</h2>
+    <h2>Measurement Sessions (<%= request.getAttribute("total") %>)</h2>
 
     <form class="filter" method="get" action="<%= ctx %>/sessions">
         <select name="label">
-            <option value="">-- Tat ca nhan --</option>
+            <option value="">-- All Labels --</option>
             <option value="BASE"        <%= "BASE".equals(labelFilter)        ? "selected" : "" %>>BASE</option>
             <option value="RAISED"      <%= "RAISED".equals(labelFilter)      ? "selected" : "" %>>RAISED</option>
             <option value="HIGH"        <%= "HIGH".equals(labelFilter)        ? "selected" : "" %>>HIGH</option>
@@ -37,22 +37,22 @@
             <option value="TEMP_EFFECT" <%= "TEMP_EFFECT".equals(labelFilter) ? "selected" : "" %>>TEMP_EFFECT</option>
             <option value="WARMUP"      <%= "WARMUP".equals(labelFilter)      ? "selected" : "" %>>WARMUP</option>
         </select>
-        <button type="submit">Loc</button>
-        <a class="btn ghost" href="<%= ctx %>/sessions">Bo loc</a>
+        <button type="submit">Filter</button>
+        <a class="btn ghost" href="<%= ctx %>/sessions">Reset</a>
         
         <% if (isAdmin) { %>
-            <a class="btn" href="<%= ctx %>/sessions/create">+ Them phien do</a>
+            <a class="btn" href="<%= ctx %>/sessions/create">+ Add Session</a>
         <% } %>
 
         <a class="btn btn-export" href="<%= ctx %>/sessions/export?label=<%= Web.esc(labelFilter) %>">
-            Xuat file
+            Export CSV
         </a>
     </form>
 
     <table class="grid">
         <tr>
             <th>#</th>
-            <th>Thoi gian do</th>
+            <th>Measured At</th>
             <th>Gas A (raw)</th>
             <th>Gas B (raw)</th>
             <th>Gas A (base)</th>
@@ -60,9 +60,9 @@
             <th>Temp (°C)</th>
             <th>Humid (%)</th>
             <th>Base Shift</th>
-            <th>Nhan</th>
-            <th>Ma thiet bi</th>
-            <th>Thao tac</th>
+            <th>Label</th>
+            <th>Device Code</th>
+            <th>Actions</th>
         </tr>
         <% if (rows != null) {
             for (AirSession r : rows) {
@@ -85,35 +85,35 @@
             <td class="ops ops-group">
                 <button type="button" class="btn-block btn-gray"
                         onclick="window.location.href='<%= ctx %>/sessions/detail?id=<%= r.getSessionId() %>'">
-                    Chi tiết
+                    Details
                 </button>
                 
                 <% if (canEdit) { %>
                     <button type="button" class="btn-block btn-blue"
                             onclick="window.location.href='<%= ctx %>/sessions/edit?id=<%= r.getSessionId() %>'">
-                        Sửa
+                        Edit
                     </button>
                 <% } %>
                 
                 <% if (isAdmin) { %>
                     <form method="post" action="<%= ctx %>/sessions/delete"
-                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiên đo này?');" style="display:inline-block;">
+                          onsubmit="return confirm('Are you sure you want to delete this session?');" style="display:inline-block;">
                         <input type="hidden" name="id" value="<%= r.getSessionId() %>">
-                        <button type="submit" class="btn-block btn-red">Xóa</button>
+                        <button type="submit" class="btn-block btn-red">Delete</button>
                     </form>
                 <% } %>
             </td>
         </tr>
         <% } } %>
         <% if (rows == null || rows.isEmpty()) { %>
-        <tr><td colspan="12" class="c">Khong co phien nao khop bo loc</td></tr>
+        <tr><td colspan="12" class="c">No sessions match the filter</td></tr>
         <% } %>
     </table>
 
     <div class="pager">
         <% if (currentPage > 1) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">&laquo; Đầu</a>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage - 1 %>">&lsaquo; Trước</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">&laquo; First</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage - 1 %>">&lsaquo; Prev</a>
         <% } %>
 
         <%
@@ -150,14 +150,14 @@
         <% } %>
 
         <% if (currentPage < totalPages) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Sau &rsaquo;</a>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Cuối &raquo;</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Next &rsaquo;</a>
+            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Last &raquo;</a>
         <% } %>
 
         <form method="get" action="<%= ctx %>/sessions" style="display: inline-block; margin-left: 15px;">
             <input type="hidden" name="label" value="<%= Web.esc(labelFilter) %>">
-            <input type="number" name="page" min="1" max="<%= totalPages %>" placeholder="Trang..." required style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;">
-            <button type="submit" style="padding: 4px 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; background: #eee; color: black;">Đi</button>
+            <input type="number" name="page" min="1" max="<%= totalPages %>" placeholder="Page..." required style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;">
+            <button type="submit" style="padding: 4px 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; background: #eee; color: black;">Go</button>
         </form>
     </div>
 </div>

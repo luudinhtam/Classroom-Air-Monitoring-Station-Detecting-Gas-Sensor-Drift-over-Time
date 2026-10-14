@@ -20,6 +20,7 @@
     AppUser me = (AppUser) session.getAttribute("user");
     String myRole = (me != null) ? me.getRoleCode() : "";
     boolean canManageEmptyWindow = "ADMIN".equals(myRole) || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 %>
 
 <!DOCTYPE html>
@@ -34,7 +35,7 @@
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
             <h2>
-                Khoang phong trong tram:
+                Empty Windows for Station:
                 <%= a.getCode() %> / <%= a.getName() %>
                 (<%= total %>)
             </h2>
@@ -43,24 +44,24 @@
                 
                 <input type="hidden" name="stationId" value="<%= stationId %>">
 
-                <input type="text" name="keyword" placeholder="Ten khoang phong trong"
+                <input type="text" name="keyword" placeholder="Empty window name..."
                        value="<%= request.getParameter("keyword") != null
-                                    ? Web.esc(request.getParameter("keyword"))
-                                    : "" %>">
+                                     ? Web.esc(request.getParameter("keyword"))
+                                     : "" %>">
 
-                <button type="submit">Loc</button>
+                <button type="submit">Filter</button>
 
                 <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
-                    Bo loc
+                    Reset
                 </a>
 
                 <% if (canManageEmptyWindow) { %>
                     <a class="btn" href="<%= ctx %>/admin/emptyWindows/create?stationId=<%= stationId %>">
-                        Them khoang phong trong
+                        + Add Empty Window
                     </a>
                 <% } %>
 
-                <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Danh sách trạm</a>
+                <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
             </form>
 
             <table class="grid">
@@ -74,7 +75,7 @@
                     <th>Created at</th>
                     <th>Note</th>
                     <% if (canManageEmptyWindow) { %>
-                        <th>Thao tac</th>
+                        <th>Actions</th>
                     <% } %>
                 </tr>
 
@@ -101,12 +102,12 @@
 
                             <button type="button" class="btn-block btn-blue"
                                     onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                                Sửa
+                                Edit
                             </button>
 
                             <form method="post"
                                   action="<%= ctx %>/admin/emptyWindows/delete"
-                                  onsubmit="return confirm('Xóa khoảng phòng trống này?');" style="display:inline-block;">
+                                  onsubmit="return confirm('Delete this empty window?');" style="display:inline-block;">
 
                                 <input type="hidden" name="emptyWindowId"
                                        value="<%= ew.getEmptyWindowId() %>">
@@ -115,13 +116,13 @@
                                        value="<%= stationId %>">
 
                                 <button type="submit" class="btn-block btn-red">
-                                    Xóa
+                                    Delete
                                 </button>
                             </form>
 
                             <button type="button" class="btn-block btn-gray"
                                     onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
-                                Tính mức nền
+                                Calculate Baseline
                             </button>
 
                         </td>
@@ -131,7 +132,7 @@
                 <% if (rows.isEmpty()) { %>
                 <tr>
                     <td colspan="<%= canManageEmptyWindow ? 9 : 8 %>" class="c">
-                        Khong co khoang phong trong nao
+                        No empty windows found
                     </td>
                 </tr>
                 <% } %>

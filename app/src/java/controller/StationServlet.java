@@ -39,7 +39,7 @@ public class StationServlet extends HttpServlet {
         if ("/edit".equals(action)) {
             AirStation a = stations.findById(Web.intParam(request, "id", 0));
             if (a == null) {
-                Web.flash(request, "Khong tim thay tram");
+                Web.flash(request, "Station not found");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
@@ -50,7 +50,7 @@ public class StationServlet extends HttpServlet {
         if ("/detail".equals(action)) { 
             AirStation a = stations.findById(Web.intParam(request, "id", 0));
             if (a == null) {
-                Web.flash(request, "Khong tim thay tram");
+                Web.flash(request, "Station not found");
                 response.sendRedirect(request.getContextPath() + "/admin/stations");
                 return;
             }
@@ -110,11 +110,11 @@ public class StationServlet extends HttpServlet {
             a.setNote(Web.trimmed(request, "note"));
 
             if (id == 0) {
-                if (stations.insert(a)) Web.flash(request, "Da them tram " + a.getName());
-                else Web.flash(request, "Loi khi them, co the ma tram da ton tai");
+                if (stations.insert(a)) Web.flash(request, "Added station " + a.getName());
+                else Web.flash(request, "Failed to add station, station code might already exist");
             } else {
-                if (stations.update(a)) Web.flash(request, "Da luu thay doi");
-                else Web.flash(request, "Loi khi luu");
+                if (stations.update(a)) Web.flash(request, "Station changes saved successfully");
+                else Web.flash(request, "Failed to save station changes");
             }
         }
         
@@ -123,16 +123,16 @@ public class StationServlet extends HttpServlet {
             AirStation a = stations.findById(id);
             if (a != null) {
                 stations.lock(id, !a.isActive());
-                Web.flash(request, "Da " + (a.isActive() ? "tat tram " : "kich hoat tram ") + a.getName());
+                Web.flash(request, "Successfully " + (a.isActive() ? "deactivated " : "activated ") + a.getName());
             }
         }
         
         else if ("/delete".equals(action)) {
             int id = Web.intParam(request, "id", 0);
             if (stations.delete(id)) {
-                Web.flash(request, "Da xoa tram");
+                Web.flash(request, "Station deleted successfully");
             } else {
-                Web.flash(request, "Loi khi xoa tram");
+                Web.flash(request, "Failed to delete station");
             }
         }
         

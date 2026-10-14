@@ -18,14 +18,14 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title><%= isNew ? "Them hieu chuan" : "Sua hieu chuan" %></title>
+        <title><%= isNew ? "Add Calibration" : "Edit Calibration" %></title>
         <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     </head>
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         
         <div class="wrap">
-            <h2><%= isNew ? "Them hieu chuan" : "Sua hieu chuan" %> cho stationId: <%= stationId %></h2>
+            <h2><%= isNew ? "Add Calibration" : "Edit Calibration" %> for Station ID: <%= stationId %></h2>
             
             <% if (error != null) { %><div class="error"><%= Web.esc(error) %></div><% } %>
             
@@ -37,7 +37,7 @@
                         <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
                         value="<%= item == null ? "" : Web.esc(item.getCode()) %>">
                     <% if (!isNew) { %>
-                    <small style="color:#888">Code hieu chuan khong the thay doi sau khi tao.</small>
+                    <small style="color:#888">Calibration code cannot be changed once created.</small>
                     <% } %>
 
                 <label>Name</label>
@@ -55,7 +55,7 @@
                 
                 <label>Performed by</label>
                 <select name="userId" required>
-                    <option value="">-- Chọn người thực hiện --</option>
+                    <option value="">-- Select Performer --</option>
                     <%
                         List<AppUser> calibrationUsers = (List<AppUser>) request.getAttribute("calibrationUsers");
 
@@ -75,8 +75,8 @@
                        value="<%= item == null ? "" : Web.esc(item.getNote()) %>">
 
                 <div class="actions">
-                    <button type="submit" class="primary">Luu thong tin</button>
-                    <a href="<%= ctx %>/admin/calibrations?stationId=<%= stationId %>" class="btn ghost">Huy bo</a>
+                    <button type="submit" class="primary">Save</button>
+                    <a href="<%= ctx %>/admin/calibrations?stationId=<%= stationId %>" class="btn ghost">Cancel</a>
                 </div>
             </form>
         </div>

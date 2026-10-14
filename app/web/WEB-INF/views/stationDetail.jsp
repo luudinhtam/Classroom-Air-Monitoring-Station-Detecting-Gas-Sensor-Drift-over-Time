@@ -16,14 +16,17 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Air Station Detail</title>
+        <title>Air Station Details</title>
+        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     </head>
     <body>
-        <h1>Air Station Detail</h1>
+        <jsp:include page="/WEB-INF/views/nav.jsp"/>
+        <div class="wrap">
+            <h2>Air Station Details</h2>
 
-        <% if (item == null) { %>
+            <% if (item == null) { %>
 
-            <p>Air station not found.</p>
+                <p>Air station not found.</p>
 
         <% } else { %>
 
@@ -86,10 +89,11 @@
 
         <% } %>
 
-        <p>
-            <a href="${pageContext.request.contextPath}/admin/stations">
-                Back to Stations
+        <p style="margin-top: 20px;">
+            <a class="btn ghost" href="${pageContext.request.contextPath}/admin/stations">
+                &larr; Back to Stations
             </a>
         </p>
+        </div>
     </body>
 </html>

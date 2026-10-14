@@ -23,7 +23,7 @@
 <div class="menu">
     <a href="<%= ctx %>/dashboard">Dashboard</a>
     <a href="<%= ctx %>/sessions">Sessions</a>
-    <a href="<%= ctx %>/alerts">Alert</a>
+    <a href="<%= ctx %>/alerts">Alerts</a>
     
     <!-- Mọi vai trò đều có quyền Xem (R) Trạm nên không ẩn menu này -->
     <a href="<%= ctx %>/admin/stations">Stations</a>

@@ -28,30 +28,30 @@
             <h2>Stations (<%= request.getAttribute("total") %>)</h2>
             
             <form class="filter" method="get" action="<%= ctx %>/admin/stations">
-                <input type="text" name="keyword" placeholder="Ten tram"
+                <input type="text" name="keyword" placeholder="Station name..."
                        value="<%= Web.esc(keyword) %>">
                 <select name="status">
-                    <option value="">-- Moi trang thai --</option>
+                    <option value="">-- All Statuses --</option>
                     <option value="ACTIVE" <%= "ACTIVE".equals(status) ? "selected" : "" %>>Active</option>
                     <option value="INACTIVE" <%= "INACTIVE".equals(status) ? "selected" : "" %>>Inactive</option>
                 </select>
-                <button type="submit">Loc</button>
-                <a class="btn ghost" href="<%= ctx %>/admin/stations">Bo loc</a>
+                <button type="submit">Filter</button>
+                <a class="btn ghost" href="<%= ctx %>/admin/stations">Reset</a>
 
                 <% if (canManageStation) { %>
-                    <a class="btn" href="<%= ctx %>/admin/stations/create">Them tram</a>
+                    <a class="btn" href="<%= ctx %>/admin/stations/create">+ Add Station</a>
                 <% } %>
             </form>
             
             <table class="grid">
                 <tr>
                     <th>#</th>
-                    <th>Ma tram</th>
-                    <th>Ten tram</th>
-                    <th>Dia chi</th>
-                    <th>Ghi chu</th>
-                    <th class="c">Trang thai</th>
-                    <th>Thao tac</th>
+                    <th>Station Code</th>
+                    <th>Station Name</th>
+                    <th>Location</th>
+                    <th>Note</th>
+                    <th class="c">Status</th>
+                    <th>Actions</th>
                 </tr>
                 
                 <% for (AirStation a : rows) { %>
@@ -69,45 +69,45 @@
                         <% if (canManageStation) { %>
                             <button type="button" class="btn-block btn-blue"
                                     onclick="window.location.href='<%= ctx %>/admin/stations/edit?id=<%= a.getStationId() %>'">
-                                Sửa
+                                Edit
                             </button>
 
                             <form method="post" action="<%= ctx %>/admin/stations/lock">
                                 <input type="hidden" name="id" value="<%= a.getStationId() %>">
                                 <button type="submit" class="btn-block <%= a.isActive() ? "btn-orange" : "btn-green" %>">
-                                    <%= a.isActive() ? "Tắt" : "Mở" %>
+                                    <%= a.isActive() ? "Deactivate" : "Activate" %>
                                 </button>
                             </form>
                         <% } %>
 
                         <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/stations/detail?id=<%= a.getStationId() %>'">
-                            Chi tiết
+                            Details
                         </button>
 
                         <% if (canManageStation) { %>
                             <form method="post" action="<%= ctx %>/admin/stations/delete"
-                                  onsubmit="return confirm('Xóa trạm này?');">
+                                  onsubmit="return confirm('Delete this station?');">
                                 <input type="hidden" name="id" value="<%= a.getStationId() %>">
-                                <button type="submit" class="btn-block btn-red">Xóa</button>
+                                <button type="submit" class="btn-block btn-red">Delete</button>
                             </form>
                         <% } %>
 
                         <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/calibrations?stationId=<%= a.getStationId() %>'">
-                            Hiệu chuẩn
+                            Calibrations
                         </button>
 
                         <button type="button" class="btn-block btn-gray"
                                 onclick="window.location.href='<%= ctx %>/admin/emptyWindows?stationId=<%= a.getStationId() %>'">
-                            Khoảng trống
+                            Empty Windows
                         </button>
                     </td>
                 </tr>
                 <% } %>
                 
                 <% if (rows.isEmpty()) { %>
-                    <tr><td colspan="7" class="c">Khong co dong nao khop bo loc</td></tr>
+                    <tr><td colspan="7" class="c">No stations match the filter</td></tr>
                 <% } %>
             </table>
             

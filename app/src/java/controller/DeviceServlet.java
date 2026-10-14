@@ -35,7 +35,7 @@ public class DeviceServlet extends HttpServlet {
         if ("/edit".equals(action)) {
             Device d = devices.findById(Web.intParam(req, "id", 0));
             if (d == null) {
-                Web.flash(req, "Khong tim thay thiet bi");
+                Web.flash(req, "Device not found");
                 resp.sendRedirect(req.getContextPath() + "/admin/devices");
                 return;
             }
@@ -89,11 +89,11 @@ public class DeviceServlet extends HttpServlet {
             d.setIsActive("1".equals(req.getParameter("isActive")) || "true".equals(req.getParameter("isActive")));
 
             if (id == 0) {
-                if (devices.insert(d)) Web.flash(req, "Da them thiet bi " + d.getDeviceCode());
-                else Web.flash(req, "Loi khi them, co the ma thiet bi da ton tai");
+                if (devices.insert(d)) Web.flash(req, "Added device " + d.getDeviceCode());
+                else Web.flash(req, "Failed to add device, device code might already exist");
             } else {
-                if (devices.update(d)) Web.flash(req, "Da luu thay doi thiet bi");
-                else Web.flash(req, "Loi khi luu thiet bi");
+                if (devices.update(d)) Web.flash(req, "Device changes saved successfully");
+                else Web.flash(req, "Failed to save device changes");
             }
         }
         else if ("/toggle".equals(action)) {
@@ -101,15 +101,15 @@ public class DeviceServlet extends HttpServlet {
             Device d = devices.findById(id);
             if (d != null) {
                 devices.setActive(id, !d.isIsActive());
-                Web.flash(req, "Da " + (d.isIsActive() ? "vo hieu hoa " : "kich hoat ") + d.getDeviceCode());
+                Web.flash(req, "Successfully " + (d.isIsActive() ? "deactivated " : "activated ") + d.getDeviceCode());
             }
         }
         else if ("/delete".equals(action)) {
             int id = Web.intParam(req, "id", 0);
             if (devices.delete(id)) {
-                Web.flash(req, "Da xoa thiet bi");
+                Web.flash(req, "Device deleted successfully");
             } else {
-                Web.flash(req, "Loi khi xoa thiet bi (co the do dang co du lieu phien do lien quan)");
+                Web.flash(req, "Failed to delete device (it may have associated session records)");
             }
         }
         resp.sendRedirect(req.getContextPath() + "/admin/devices");

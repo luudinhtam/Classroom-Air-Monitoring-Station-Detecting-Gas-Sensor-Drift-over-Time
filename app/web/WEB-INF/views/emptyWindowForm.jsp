@@ -37,14 +37,14 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title><%= isNew ? "Them khoang phong trong" : "Sua khoang phong trong" %></title>
+        <title><%= isNew ? "Add Empty Window" : "Edit Empty Window" %></title>
         <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     </head>
 
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
-            <h2><%= isNew ? "Them khoang phong trong" : "Sua khoang phong trong" %> cho station: <%= a.getName() %></h2>
+            <h2><%= isNew ? "Add Empty Window" : "Edit Empty Window" %> for Station: <%= a.getName() %></h2>
 
             <% if (error != null) { %>
                 <div class="error"><%= Web.esc(error) %></div>
@@ -60,7 +60,7 @@
                        <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
                        value="<%= item == null ? "" : Web.esc(item.getCode()) %>">
                 <% if (!isNew) { %>
-                    <small style="color:#888">Code khoang phong trong khong the thay doi sau khi tao.</small>
+                    <small style="color:#888">Empty window code cannot be changed once created.</small>
                 <% } %>
 
                 <label>Name</label>
@@ -71,18 +71,18 @@
 
                 <label>End at</label>
                 <input type="datetime-local" name="endAt" required value="<%= endAt %>">
-                <small style="color:#888"> Thoi gian ket thuc phai sau thoi gian bat dau.</small>
+                <small style="color:#888">End time must be after start time.</small>
 
                 <label>Note</label>
                 <input type="text" name="note" value="<%= item == null ? "" : Web.esc(item.getNote()) %>">
 
                 <div class="actions">
                     <button type="submit" class="primary">
-                        Luu thong tin
+                        Save
                     </button>
 
                     <a href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>" class="btn ghost">
-                        Huy bo
+                        Cancel
                     </a>
                 </div>
             </form>

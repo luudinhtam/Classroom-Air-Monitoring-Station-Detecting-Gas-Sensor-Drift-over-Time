@@ -21,7 +21,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title><%= isNew ? "Thêm phiên đo mới" : "Cập nhật phiên đo #" + item.getSessionId() %></title>
+    <title><%= isNew ? "New Measurement Session" : "Update Session #" + item.getSessionId() %></title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <script>
     var originalLabel = "<%= (item != null && item.getLabelCode() != null) ? item.getLabelCode().trim() : "" %>";
@@ -59,7 +59,7 @@
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
 
 <div class="wrap">
-    <h2><%= isNew ? "Thêm phiên đo mới" : "Cập nhật phiên đo #" + item.getSessionId() %></h2>
+    <h2><%= isNew ? "New Measurement Session" : "Update Session #" + item.getSessionId() %></h2>
 
     <% if (error != null) { %>
         <div class="error" style="color: #d9534f; margin-bottom: 15px; font-weight: bold;"><%= Web.esc(error) %></div>
@@ -72,10 +72,10 @@
                 <input type="hidden" name="sessionId" value="<%= isNew ? 0 : item.getSessionId() %>">
 
                 <% if (!isNew) { %>
-                    <label>Ma phien do</label>
+                    <label>Session ID</label>
                     <input type="text" value="<%= item.getSessionId() %>" readonly style="background: #f0f0f0; color: #555; border: 1px solid #ccc; cursor: not-allowed; padding: 8px; border-radius: 4px;">
                     
-                    <label>Thoi gian do</label>
+                    <label>Measured At</label>
                     <input type="text" value="<%= item.getMeasuredAt() %>" readonly style="background: #f0f0f0; color: #555; border: 1px solid #ccc; cursor: not-allowed; padding: 8px; border-radius: 4px;">
                 <% } %>
 
@@ -94,7 +94,7 @@
                 <label>Humid (%)</label>
                 <input type="text" name="humidPct" required value="<%= item == null ? "" : item.getHumidPct() %>" <%= isReviewerOnly ? "readonly style='background: #f0f0f0; cursor: not-allowed;'" : "" %>>
 
-                <label>Nhan <%= !canEditLabel && !isNew ? "(Chỉ Admin mới được đổi nhãn)" : "" %></label>
+                <label>Label <%= !canEditLabel && !isNew ? "(Only Admin can change label)" : "" %></label>
                 <select name="labelCode" id="labelCodeSelect" required onchange="handleLabelChange()" <%= (!canEditLabel && !isNew) ? "disabled style='background: #f0f0f0; cursor: not-allowed;'" : "" %>>
                     <% 
                         String[] labels = {"BASE", "RAISED", "HIGH", "DRIFTED", "TEMP_EFFECT", "WARMUP"};
@@ -108,9 +108,9 @@
                     <input type="hidden" name="labelCode" value="<%= currentLabel %>">
                 <% } %>
                 
-                <label>Mã thiết bị</label>
+                <label>Device Code</label>
                 <select name="deviceId" required <%= isReviewerOnly ? "disabled style='background: #f0f0f0; cursor: not-allowed;'" : "" %>>
-                    <option value="">-- Chọn thiết bị đo --</option>
+                    <option value="">-- Select Measurement Device --</option>
                     <% 
                         List<model.Device> devices = (List<model.Device>) request.getAttribute("devices");
                         int currentDeviceId = (item != null) ? item.getDeviceId() : 0;
@@ -131,17 +131,17 @@
                 <% } %>
 
                 <div id="reasonContainer" style="display: none;">
-                    <label style="margin-top: 15px; color: #d9534f; font-weight: bold;">Lý do chỉnh sửa / thay đổi nhãn (* Bắt buộc)</label>
+                    <label style="margin-top: 15px; color: #d9534f; font-weight: bold;">Reason for edit / label change (* Required)</label>
                     <textarea name="editReason" id="editReasonField" rows="3" 
-                              placeholder="Vui lòng giải thích rõ lý do (tối thiểu 5 ký tự)..." 
+                              placeholder="Please provide a clear reason (at least 5 characters)..." 
                               minlength="5"
                               style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; color: #333; font-family: inherit;"
                     ><%= request.getParameter("editReason") != null ? Web.esc(request.getParameter("editReason")) : "" %></textarea>
                 </div>
 
                 <div class="actions" style="margin-top: 20px;">
-                    <button type="submit" class="primary">Lưu thông tin</button>
-                    <a href="<%= ctx %>/sessions" class="btn ghost">Hủy bỏ</a>
+                    <button type="submit" class="primary">Save</button>
+                    <a href="<%= ctx %>/sessions" class="btn ghost">Cancel</a>
                 </div>
             </form>
         </div>
@@ -149,14 +149,14 @@
         <% if (!isNew) { %>
         <div style="flex: 1; min-width: 300px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             <h3 style="margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 16px;">
-                📜 Lịch sử thay đổi nhãn
+                📜 Label Change History
             </h3>
             
             <div style="color: #555; font-size: 14px; line-height: 1.6; max-height: 500px; overflow-y: auto; margin-top: 10px;">
                 <% if (item.getNote() != null && !item.getNote().trim().isEmpty()) { %>
                     <div style="white-space: pre-wrap;"><%= Web.esc(item.getNote()) %></div>
                 <% } else { %>
-                    <em style="color: #999;">Chưa có lịch sử thay đổi nhãn nào cho phiên đo này.</em>
+                    <em style="color: #999;">No label change history for this session.</em>
                 <% } %>
             </div>
         </div>

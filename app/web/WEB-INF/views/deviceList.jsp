@@ -25,31 +25,31 @@
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
 <div class="wrap">
-    <h2>Thiet bi (<%= request.getAttribute("total") %>)</h2>
+    <h2>Devices (<%= request.getAttribute("total") %>)</h2>
 
     <form class="filter" method="get" action="<%= ctx %>/admin/devices">
-        <input type="text" name="keyword" placeholder="Ma thiet bi, vi tri"
+        <input type="text" name="keyword" placeholder="Device code, location..."
                value="<%= Web.esc(keyword) %>">
         <select name="activeState">
-            <option value="">-- Moi trang thai --</option>
-            <option value="ACTIVE" <%= "ACTIVE".equals(activeState) ? "selected" : "" %>>Hoat dong</option>
-            <option value="INACTIVE" <%= "INACTIVE".equals(activeState) ? "selected" : "" %>>Tam ngung</option>
+            <option value="">-- All Statuses --</option>
+            <option value="ACTIVE" <%= "ACTIVE".equals(activeState) ? "selected" : "" %>>Active</option>
+            <option value="INACTIVE" <%= "INACTIVE".equals(activeState) ? "selected" : "" %>>Inactive</option>
         </select>
-        <button type="submit">Loc</button>
-        <a class="btn ghost" href="<%= ctx %>/admin/devices">Bo loc</a>
+        <button type="submit">Filter</button>
+        <a class="btn ghost" href="<%= ctx %>/admin/devices">Reset</a>
         
-        <a class="btn" href="<%= ctx %>/admin/devices/create">Them thiet bi</a>
+        <a class="btn" href="<%= ctx %>/admin/devices/create">+ Add Device</a>
     </form>
 
     <table class="grid">
         <tr>
             <th>ID</th>
-            <th>Ma thiet bi</th>
+            <th>Device Code</th>
             <th>API Key</th>
-            <th>Vi tri</th>
-            <th>Lan cuoi hoat dong</th>
-            <th class="c">Trang thai</th>
-            <th>Thao tac</th>
+            <th>Location</th>
+            <th>Last Seen</th>
+            <th class="c">Status</th>
+            <th>Actions</th>
         </tr>
         <% for (Device d : rows) { %>
         <tr class="<%= !d.isIsActive() ? "locked" : "" %>">
@@ -57,35 +57,35 @@
             <td><strong><%= Web.esc(d.getDeviceCode()) %></strong></td>
             <td><code><%= Web.esc(d.getApiKey()) %></code></td>
             <td><%= Web.esc(d.getLocation() != null ? d.getLocation() : "-") %></td>
-            <td><%= d.getLastSeen() != null ? d.getLastSeen().toString() : "Chua tung" %></td>
+            <td><%= d.getLastSeen() != null ? d.getLastSeen().toString() : "Never" %></td>
             <td class="c">
                 <span class="tag <%= d.isIsActive() ? "" : "danger" %>">
-                    <%= d.isIsActive() ? "Hoat dong" : "Tam ngung" %>
+                    <%= d.isIsActive() ? "Active" : "Inactive" %>
                 </span>
             </td>
             <td class="ops ops-group">
                 <button type="button" class="btn-block btn-blue"
                         onclick="window.location.href='<%= ctx %>/admin/devices/edit?id=<%= d.getDeviceId() %>'">
-                    Sửa
+                    Edit
                 </button>
                 
                 <form method="post" action="<%= ctx %>/admin/devices/toggle">
                     <input type="hidden" name="id" value="<%= d.getDeviceId() %>">
                     <button type="submit" class="btn-block <%= d.isIsActive() ? "btn-orange" : "btn-green" %>">
-                        <%= d.isIsActive() ? "Khóa" : "Mở khóa" %>
+                        <%= d.isIsActive() ? "Lock" : "Unlock" %>
                     </button>
                 </form>
                 
                 <form method="post" action="<%= ctx %>/admin/devices/delete"
-                      onsubmit="return confirm('Xóa thiết bị này?');">
+                      onsubmit="return confirm('Delete this device?');">
                     <input type="hidden" name="id" value="<%= d.getDeviceId() %>">
-                    <button type="submit" class="btn-block btn-red">Xóa</button>
+                    <button type="submit" class="btn-block btn-red">Delete</button>
                 </form>
             </td>
         </tr>
         <% } %>
         <% if (rows == null || rows.isEmpty()) { %>
-        <tr><td colspan="7" class="c">Khong co thiet bi nao khop bo loc</td></tr>
+        <tr><td colspan="7" class="c">No devices match the filter</td></tr>
         <% } %>
     </table>
 

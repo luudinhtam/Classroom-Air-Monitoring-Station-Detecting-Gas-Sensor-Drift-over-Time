@@ -175,7 +175,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
                 
                 int result = dao.insert(session);
                 if (result == -1) {
-                    req.setAttribute("error", "Lỗi: Không thể thêm mới phiên đo do xung đột dữ liệu.");
+                    req.setAttribute("error", "Error: Failed to create new session due to data conflict.");
                     showForm(req, resp, null);
                     return;
                 }
@@ -191,7 +191,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 
                     // 1. CHỐT CHẶN BẮT BUỘC >= 5 KÝ TỰ
                     if (editReason == null || editReason.length() < 5) {
-                        req.setAttribute("error", "Bắt buộc phải nhập lý do (ít nhất 5 ký tự) khi thay đổi nhãn phân loại!");
+                        req.setAttribute("error", "A reason (at least 5 characters) is required when changing the classification label!");
                         showForm(req, resp, oldSession);
                         return;
                     }
@@ -200,7 +200,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
                     String oldNote = (oldSession != null && oldSession.getNote() != null) ? oldSession.getNote() : "";
                     String timeNow = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
 
-                    String newHistoryLine = String.format("[%s] Đổi từ '%s' sang '%s'.\nLý do: %s\n--------------------------------\n", 
+                    String newHistoryLine = String.format("[%s] Changed from '%s' to '%s'.\nReason: %s\n--------------------------------\n", 
                                                            timeNow, oldLabel, labelCode, editReason);
 
                     // Gắn lịch sử mới (cộng dồn lịch sử cũ) vào đối tượng đang chuẩn bị update
@@ -227,7 +227,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
         }
     } catch (Exception e) {
         e.printStackTrace();
-        req.setAttribute("error", "Lỗi xử lý hệ thống: " + e.getMessage());
+        req.setAttribute("error", "System error: " + e.getMessage());
         resp.sendRedirect(req.getContextPath() + "/sessions");
         return;
     }
@@ -254,7 +254,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
         java.io.PrintWriter out = new java.io.PrintWriter(new java.io.OutputStreamWriter(resp.getOutputStream(), "UTF-8"));
         
         // 1. In dòng Tiêu đề (Header) của file CSV
-        out.println("ID,Thoi gian do,Gas A (raw),Gas B (raw),Gas A (base),Delta,Temp (C),Humid (%),Base Shift,Nhan,Ma thiet bi");
+        out.println("ID,Measured At,Gas A (Raw),Gas B (Raw),Gas A (Base),Delta,Temp (C),Humid (%),Base Shift,Label,Device Code");
         
         // 2. Duyệt danh sách và in từng dòng dữ liệu
         for (AirSession r : list) {

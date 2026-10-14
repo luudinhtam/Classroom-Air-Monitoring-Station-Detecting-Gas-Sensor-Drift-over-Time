@@ -28,13 +28,13 @@
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
 <div class="wrap">
-    <h2>Nguoi dung (<%= request.getAttribute("total") %>)</h2>
+    <h2>Users (<%= request.getAttribute("total") %>)</h2>
 
     <form class="filter" method="get" action="<%= ctx %>/admin/users">
-        <input type="text" name="keyword" placeholder="Ten dang nhap, ho ten"
+        <input type="text" name="keyword" placeholder="Username, full name..."
                value="<%= Web.esc(keyword) %>">
         <select name="roleId">
-            <option value="">-- Moi vai tro --</option>
+            <option value="">-- All Roles --</option>
             <% for (AppRole r : roles) { %>
             <option value="<%= r.getRoleId() %>"
                 <%= (roleId != null && roleId.intValue() == r.getRoleId()) ? "selected" : "" %>>
@@ -42,20 +42,20 @@
             <% } %>
         </select>
         <select name="lockState">
-            <option value="">-- Moi trang thai --</option>
-            <option value="ACTIVE" <%= "ACTIVE".equals(lockState) ? "selected" : "" %>>Dang dung</option>
-            <option value="LOCKED" <%= "LOCKED".equals(lockState) ? "selected" : "" %>>Da khoa</option>
+            <option value="">-- All Statuses --</option>
+            <option value="ACTIVE" <%= "ACTIVE".equals(lockState) ? "selected" : "" %>>Active</option>
+            <option value="LOCKED" <%= "LOCKED".equals(lockState) ? "selected" : "" %>>Locked</option>
         </select>
-        <button type="submit">Loc</button>
-        <a class="btn ghost" href="<%= ctx %>/admin/users">Bo loc</a>
+        <button type="submit">Filter</button>
+        <a class="btn ghost" href="<%= ctx %>/admin/users">Reset</a>
         
-        <a class="btn" href="<%= ctx %>/admin/users/create">Them nguoi dung</a>
+        <a class="btn" href="<%= ctx %>/admin/users/create">+ Add User</a>
     </form>
 
     <table class="grid">
         <tr>
-            <th>ID</th><th>Ten dang nhap</th><th>Ho ten</th>
-            <th>Vai tro</th><th class="c">Trang thai</th><th>Thao tac</th>
+            <th>ID</th><th>Username</th><th>Full Name</th>
+            <th>Role</th><th class="c">Status</th><th>Actions</th>
         </tr>
         <% for (AppUser u : rows) { %>
         <tr class="<%= u.isLocked() ? "locked" : "" %>">
@@ -63,40 +63,40 @@
             <td><%= Web.esc(u.getUsername()) %></td>
             <td><%= Web.esc(u.getFullName()) %></td>
             <td><span class="tag"><%= Web.esc(u.getRoleCode()) %></span></td>
-            <td class="c"><%= u.isLocked() ? "Da khoa" : "Dang dung" %></td>
+            <td class="c"><%= u.isLocked() ? "Locked" : "Active" %></td>
             <td class="ops ops-group">
                 <button type="button" class="btn-block btn-blue"
                         onclick="window.location.href='<%= ctx %>/admin/users/edit?id=<%= u.getUserId() %>'">
-                    Sửa
+                    Edit
                 </button>
                 
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/lock">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
                         <button type="submit" class="btn-block <%= u.isLocked() ? "btn-green" : "btn-orange" %>">
-                            <%= u.isLocked() ? "Mở khóa" : "Khóa" %>
+                            <%= u.isLocked() ? "Unlock" : "Lock" %>
                         </button>
                     </form>
                 <% } %>
 
                 <form method="post" action="<%= ctx %>/admin/users/reset"
-                      onsubmit="return confirm('Đặt lại mật khẩu về 123456?');">
+                      onsubmit="return confirm('Reset password to 123456?');">
                     <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                    <button type="submit" class="btn-block btn-gray">Đặt lại mật khẩu</button>
+                    <button type="submit" class="btn-block btn-gray">Reset Password</button>
                 </form>
 
                 <% if (me.getUserId() != u.getUserId()) { %>
                     <form method="post" action="<%= ctx %>/admin/users/delete"
-                          onsubmit="return confirm('Xóa tài khoản này?');">
+                          onsubmit="return confirm('Delete this account?');">
                         <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                        <button type="submit" class="btn-block btn-red">Xóa</button>
+                        <button type="submit" class="btn-block btn-red">Delete</button>
                     </form>
                 <% } %>
             </td>
         </tr>
         <% } %>
         <% if (rows.isEmpty()) { %>
-        <tr><td colspan="6" class="c">Khong co dong nao khop bo loc</td></tr>
+        <tr><td colspan="6" class="c">No users match the filter</td></tr>
         <% } %>
     </table>
 

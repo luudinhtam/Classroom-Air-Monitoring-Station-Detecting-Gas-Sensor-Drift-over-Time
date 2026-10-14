@@ -32,7 +32,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Chi tiết phiên đo #<%= item.getSessionId() %> - Air Monitoring</title>
+    <title>Session Details #<%= item.getSessionId() %> - Air Monitoring</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <link rel="stylesheet" href="<%= ctx %>/css/sessionDetail.css">
 </head>
@@ -43,55 +43,55 @@
     <div class="wrap">
         <div class="detail-header">
             <div>
-                <h2>Phiên đo #<%= item.getSessionId() %></h2>
+                <h2>Session #<%= item.getSessionId() %></h2>
                 <div class="muted">
-                    Thời điểm đo: <b><%= item.getMeasuredAt() != null ? item.getMeasuredAt() : "–" %></b>
-                    &bull; Thiết bị: <b><%= device != null ? Web.esc(device.getDeviceCode()) + " (" + Web.esc(device.getLocation()) + ")" : "Device #" + item.getDeviceId() %></b>
+                    Measured At: <b><%= item.getMeasuredAt() != null ? item.getMeasuredAt() : "–" %></b>
+                    &bull; Device: <b><%= device != null ? Web.esc(device.getDeviceCode()) + " (" + Web.esc(device.getLocation()) + ")" : "Device #" + item.getDeviceId() %></b>
                 </div>
             </div>
             <div class="actions" style="margin: 0;">
                 <% if (canEditSession) { %>
-                    <a href="<%= ctx %>/sessions/edit?id=<%= item.getSessionId() %>" class="btn">Chỉnh sửa / Đổi nhãn</a>
+                    <a href="<%= ctx %>/sessions/edit?id=<%= item.getSessionId() %>" class="btn">Edit / Change Label</a>
                 <% } %>
-                <a href="<%= ctx %>/sessions" class="btn ghost">&larr; Danh sách phiên</a>
+                <a href="<%= ctx %>/sessions" class="btn ghost">&larr; Sessions List</a>
             </div>
         </div>
 
         <div class="metric-cards">
             <div class="m-card">
-                <div class="label">Cảm biến Gas A (Raw)</div>
+                <div class="label">Gas A Sensor (Raw)</div>
                 <div class="val" style="color: #2b5cb8;">
                     <%= item.getGasARaw() %>
                 </div>
-                <div class="sub">Mức nền Base: <b><%= item.getGasABase() %></b> (Delta: <%= item.getGasADelta() >= 0 ? "+" : "" %><%= item.getGasADelta() %>)</div>
+                <div class="sub">Baseline: <b><%= item.getGasABase() %></b> (Delta: <%= item.getGasADelta() >= 0 ? "+" : "" %><%= item.getGasADelta() %>)</div>
             </div>
 
             <div class="m-card">
-                <div class="label">Độ lệch Base Shift (%)</div>
+                <div class="label">Base Shift Drift (%)</div>
                 <div class="val" style="color: <%= driftColor %>;">
                     <%= item.getBaseShift() >= 0 ? "+" : "" %><%= String.format("%.2f", item.getBaseShift()) %>%
                 </div>
                 <div class="sub">
                     <% if (Math.abs(item.getBaseShift()) > 20.0) { %>
-                        <span style="color: #d9534f; font-weight: bold;">⚠ Cảnh báo lệch cảm biến cao</span>
+                        <span style="color: #d9534f; font-weight: bold;">⚠ High Sensor Drift Alert</span>
                     <% } else if (Math.abs(item.getBaseShift()) > 10.0) { %>
-                        <span style="color: #f0ad4e; font-weight: bold;">Cần theo dõi độ trôi</span>
+                        <span style="color: #f0ad4e; font-weight: bold;">Monitor Drift Trend</span>
                     <% } else { %>
-                        <span style="color: #3c763d;">Trong ngưỡng an toàn</span>
+                        <span style="color: #3c763d;">Within Safe Tolerance</span>
                     <% } %>
                 </div>
             </div>
 
             <div class="m-card">
-                <div class="label">Nhiệt độ & Độ ẩm</div>
+                <div class="label">Temperature & Humidity</div>
                 <div class="val">
                     <%= item.getTempC() %>°C
                 </div>
-                <div class="sub">Độ ẩm không khí: <b><%= item.getHumidPct() %>%</b></div>
+                <div class="sub">Relative Humidity: <b><%= item.getHumidPct() %>%</b></div>
             </div>
 
             <div class="m-card">
-                <div class="label">Nhãn phân loại hiện tại</div>
+                <div class="label">Current Classification Label</div>
                 <div class="val" style="font-size: 20px;">
                     <span class="tag" style="background: <%= "DRIFTED".equals(lbl) ? "#fbeaea" : ("HIGH".equals(lbl) ? "#fff1e0" : "#eef3fb") %>; font-size: 16px; padding: 4px 10px; border-radius: 4px;">
                         <%= Web.esc(lbl) %>
@@ -103,34 +103,34 @@
 
         <div class="chart-box">
             <div class="chart-header">
-                <h3 style="margin: 0; font-size: 16px;">📈 Biểu đồ trực quan hóa độ lệch cảm biến theo thời gian (Gas Drift Trend)</h3>
+                <h3 style="margin: 0; font-size: 16px;">📈 Sensor Drift Trend Over Time (Gas Drift Trend)</h3>
                 <div class="chart-legend">
                     <div class="legend-item">
                         <span class="legend-dot" style="background: #2b5cb8;"></span>
-                        <span>Tín hiệu Gas A Raw</span>
+                        <span>Gas A Raw Signal</span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-dot" style="background: #e07a5f;"></span>
-                        <span>Mức nền Gas Base</span>
+                        <span>Gas Baseline</span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-dot" style="background: #d9534f; border-radius: 50%;"></span>
-                        <span>Điểm phiên đo này (#<%= item.getSessionId() %>)</span>
+                        <span>Current Session (#<%= item.getSessionId() %>)</span>
                     </div>
                 </div>
             </div>
 
             <canvas id="driftCanvas" width="1080" height="320" style="width: 100%; height: auto; display: block;"></canvas>
             <div class="hint" style="margin-top: 8px; text-align: right;">
-                * Biểu đồ hiển thị chuỗi <%= timeline != null ? timeline.size() : 0 %> phiên đo gần nhất của thiết bị để phát hiện xu hướng trôi cảm biến (Sensor Drift).
+                * Displays the latest <%= timeline != null ? timeline.size() : 0 %> sessions of this device to track sensor drift trends.
             </div>
         </div>
 
         <div class="info-grid">
             <div class="info-panel">
-                <h3>📋 Thông số kỹ thuật phiên đo</h3>
+                <h3>📋 Technical Specifications</h3>
                 <div class="info-row">
-                    <span class="info-label">Mã phiên đo</span>
+                    <span class="info-label">Session ID</span>
                     <span class="info-val">#<%= item.getSessionId() %></span>
                 </div>
                 <div class="info-row">
@@ -138,42 +138,42 @@
                     <span class="info-val"><%= item.getDeviceSeq() %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Thời điểm đo</span>
+                    <span class="info-label">Measured At</span>
                     <span class="info-val"><%= item.getMeasuredAt() != null ? item.getMeasuredAt() : "–" %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Thời điểm nạp</span>
+                    <span class="info-label">Ingested At</span>
                     <span class="info-val"><%= item.getIngestedAt() != null ? item.getIngestedAt() : "–" %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Cảm biến sấy nóng</span>
-                    <span class="info-val"><%= item.isWarm() ? "Đã làm nóng (Yes)" : "Chưa (No)" %></span>
+                    <span class="info-label">Preheated / Warm</span>
+                    <span class="info-val"><%= item.isWarm() ? "Warmed Up (Yes)" : "Warming Up (No)" %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Nguồn dữ liệu</span>
-                    <span class="info-val"><%= item.isSample() ? "Dữ liệu mẫu (Seeded UCI)" : "Thiết bị gửi trực tiếp (Live)" %></span>
+                    <span class="info-label">Data Source</span>
+                    <span class="info-val"><%= item.isSample() ? "Seeded UCI Dataset" : "Live Device Telemetry" %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Thiết bị đo</span>
+                    <span class="info-label">Measurement Device</span>
                     <span class="info-val"><%= device != null ? Web.esc(device.getDeviceCode()) : "ID #" + item.getDeviceId() %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Vị trí trạm / phòng</span>
-                    <span class="info-val"><%= device != null && device.getLocation() != null ? Web.esc(device.getLocation()) : "Chưa xác định" %></span>
+                    <span class="info-label">Station / Location</span>
+                    <span class="info-val"><%= device != null && device.getLocation() != null ? Web.esc(device.getLocation()) : "Unspecified" %></span>
                 </div>
             </div>
 
             <div class="info-panel">
-                <h3>📜 Lịch sử gán & sửa nhãn (Audit Trail)</h3>
+                <h3>📜 Label Audit Trail</h3>
                 <% if (labelHistory != null && !labelHistory.isEmpty()) { %>
                     <table class="grid" style="font-size: 13px;">
                         <thead>
                             <tr>
-                                <th>Nhãn</th>
-                                <th>Nguồn</th>
-                                <th>Lý do</th>
-                                <th>Người thực hiện</th>
-                                <th>Thời gian</th>
+                                <th>Label</th>
+                                <th>Source</th>
+                                <th>Reason</th>
+                                <th>Performed By</th>
+                                <th>Timestamp</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -193,18 +193,18 @@
                                     <td><span class="tag"><%= Web.esc(al.getLabelCode()) %></span></td>
                                     <td><code><%= Web.esc(al.getSource()) %></code></td>
                                     <td><%= (r != null && !r.isEmpty()) ? Web.esc(r) : "–" %></td>
-                                    <td><%= al.getUsername() != null ? Web.esc(al.getUsername()) : "Hệ thống" %></td>
+                                    <td><%= al.getUsername() != null ? Web.esc(al.getUsername()) : "System" %></td>
                                     <td class="muted"><%= al.getLabeledAt() != null ? al.getLabeledAt() : "–" %></td>
                                 </tr>
                             <% } %>
                         </tbody>
                     </table>
                 <% } else { %>
-                    <p class="muted">Chưa có bản ghi nhãn nào trong bảng Air_Label cho phiên đo này.</p>
+                    <p class="muted">No label records found for this session.</p>
                 <% } %>
 
                 <% if (item.getNote() != null && !item.getNote().trim().isEmpty()) { %>
-                    <h4 style="margin: 14px 0 6px; font-size: 13px; color: #555;">Ghi chú lịch sử phiên:</h4>
+                    <h4 style="margin: 14px 0 6px; font-size: 13px; color: #555;">Session Notes History:</h4>
                     <div style="background: #fcfcfc; border: 1px solid #e5e5e5; border-radius: 4px; padding: 10px; font-size: 12px; white-space: pre-wrap; max-height: 160px; overflow-y: auto;">
                         <%= Web.esc(item.getNote()) %>
                     </div>
@@ -240,7 +240,7 @@
 %>
                 {
                     id: <%= item.getSessionId() %>,
-                    time: "Hiện tại",
+                    time: "Current",
                     gasRaw: <%= item.getGasARaw() %>,
                     gasBase: <%= item.getGasABase() %>,
                     shift: <%= item.getBaseShift() %>,
@@ -388,7 +388,7 @@
                     ctx.fillStyle = '#d9534f';
                     ctx.font = 'bold 12px Segoe UI, Arial';
                     ctx.textBaseline = 'bottom';
-                    ctx.fillText(pt.gasRaw + ' (Đang xem)', nx, ny - 10);
+                    ctx.fillText(pt.gasRaw + ' (Current)', nx, ny - 10);
                     ctx.textBaseline = 'top';
                 } else {
                     ctx.fillStyle = '#2b5cb8';

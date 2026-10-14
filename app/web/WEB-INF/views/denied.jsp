@@ -4,23 +4,22 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Khong du quyen</title>
+    <title>Access Denied</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/app.css">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
 <div class="wrap">
-    <h2>Khong du quyen</h2>
+    <h2>Access Denied</h2>
     <p>
-        Vai tro cua ban khong co quyen
+        Your role does not have permission
         <b><%= Web.esc((String) request.getAttribute("neededPerm")) %></b>
-        nen khong mo duoc trang nay.
+        to access this page.
     </p>
     <p>
-        Viec chan nay do bo loc phia may chu thuc hien, khong phai do an nut tren giao dien,
-        nen dan thang duong dan vao trinh duyet cung se bi tu choi y het.
+        This restriction is enforced by the server-side filter and cannot be bypassed.
     </p>
-    <p><a class="btn" href="<%= request.getContextPath() %>/dashboard">Ve trang chinh</a></p>
+    <p><a class="btn" href="<%= request.getContextPath() %>/dashboard">Back to Dashboard</a></p>
 </div>
 </body>
 </html>
