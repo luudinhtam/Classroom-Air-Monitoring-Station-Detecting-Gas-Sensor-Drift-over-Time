@@ -65,7 +65,7 @@
 
                 <p>
                     <strong>Device Code:</strong>
-                    <%= Web.esc(item.getDeviceKey()) %>
+                    <%= Web.esc(item.getDeviceCode()) %>
                 </p>
 
                 <p>

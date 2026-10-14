@@ -15,7 +15,7 @@ public class AirStationDAO {
     private static final String SELECT_BASE =
         "SELECT a.station_id, a.code, a.name, a.location, " +
         "a.co_warning_threshold, a.co2_warning_threshold, " +
-        "a.max_baseline_drift, a.device_key, a.note, " +
+        "a.max_baseline_drift, a.device_code, a.note, " +
         "a.is_active, a.created_at " +
         "FROM Air_Station a ";
     
@@ -79,7 +79,7 @@ public class AirStationDAO {
     }
     
     public boolean insert(AirStation a) {
-        String sql = "INSERT INTO Air_Station(code, name, location, note) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Air_Station(code, name, location, device_code, note) VALUES (?, ?, ?, ?, ?)";
         Connection cn = null; PreparedStatement ps = null;
         try {
             cn = DBContext.getConnection();
@@ -87,7 +87,8 @@ public class AirStationDAO {
             ps.setString(1, a.getCode());
             ps.setString(2, a.getName());
             ps.setString(3, a.getLocation());
-            ps.setString(4, a.getNote());
+            ps.setString(4, a.getDeviceCode());
+            ps.setString(5, a.getNote());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         finally { close(null, ps, cn); }
@@ -102,7 +103,7 @@ public class AirStationDAO {
                 + "co_warning_threshold = ?, "
                 + "co2_warning_threshold = ?, "
                 + "max_baseline_drift = ?, "
-                + "device_key = ?, "
+                + "device_code = ?, "
                 + "note = ? "
                 + "WHERE station_id = ?";
 
@@ -118,7 +119,7 @@ public class AirStationDAO {
             ps.setFloat(3, a.getCoWarningThreshold());
             ps.setFloat(4, a.getCo2WarningThreshold());
             ps.setFloat(5, a.getMaxBaselineDrift());
-            ps.setString(6, a.getDeviceKey());
+            ps.setString(6, a.getDeviceCode());
             ps.setString(7, a.getNote());
             ps.setInt(8, a.getStationId());
 
@@ -175,7 +176,7 @@ public class AirStationDAO {
                 rs.getFloat("co_warning_threshold"),
                 rs.getFloat("co2_warning_threshold"),
                 rs.getFloat("max_baseline_drift"),
-                rs.getString("device_key"),
+                rs.getString("device_code"),
                 rs.getString("note"),
                 rs.getBoolean("is_active"),
                 rs.getTimestamp("created_at")
