@@ -1,5 +1,7 @@
 
 
+<%@page import="java.util.List"%>
+<%@page import="model.Device"%>
 <%@page import="util.Web"%>
 <%@page import="model.AirStation"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -55,9 +57,32 @@
                 <input type="number" name="maxBaselineDrift" 
                        value="<%= item == null ? "" : item.getMaxBaselineDrift() %>">
                 
-                <label>Device Code</label>
-                <input type="text" name="deviceKey" 
-                       value="<%= item == null ? "" : Web.esc(item.getDeviceKey()) %>">
+                <label for="deviceCode">Device Code</label>
+                <select name="deviceCode" id="deviceCode" required>
+                    <option value="">-- Select Device --</option>
+
+                    <%
+                        List<Device> deviceList = (List<Device>) request.getAttribute("deviceList");
+
+                        String selectedDeviceCode = item == null
+                                ? ""
+                                : item.getDeviceCode();
+
+                        if (deviceList != null) {
+                            for (Device device : deviceList) {
+                                String deviceCode = device.getDeviceCode();
+                    %>
+                        <option value="<%= Web.esc(deviceCode) %>"
+                            <%= deviceCode.equals(selectedDeviceCode)
+                                    ? "selected"
+                                    : "" %>>
+                            <%= Web.esc(deviceCode) %>
+                        </option>
+                    <%
+                            }
+                        }
+                    %>
+                </select>
                 
                 <label>Note</label>
                 <input type="text" name="note"

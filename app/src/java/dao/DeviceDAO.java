@@ -66,6 +66,39 @@ public class DeviceDAO {
         finally { close(rs, ps, cn); }
         return null;
     }
+    
+    public List<Device> getActiveDevices() {
+        List<Device> list = new ArrayList<>();
+
+        String sql = "SELECT device_id, device_code, api_key, "
+                   + "location, last_seen, is_active "
+                   + "FROM Device "
+                   + "WHERE is_active = 1 "
+                   + "ORDER BY device_code";
+
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Device device = new Device();
+
+                device.setDeviceId(rs.getInt("device_id"));
+                device.setDeviceCode(rs.getString("device_code"));
+                device.setApiKey(rs.getString("api_key"));
+                device.setLocation(rs.getString("location"));
+                device.setLastSeen(rs.getTimestamp("last_seen"));
+                device.setIsActive(rs.getBoolean("is_active"));
+
+                list.add(device);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 
     public List<Device> search(String keyword, String activeState, int offset, int limit) {
         List<Device> out = new ArrayList<>();
