@@ -1,4 +1,3 @@
-
 package controller;
 
 import dao.CalibrationDAO;
@@ -15,31 +14,29 @@ import model.AppUser;
 import model.Calibration;
 import util.Web;
 
-
-@WebServlet(name = "CalibrationServlet", 
-        urlPatterns = {"/admin/calibrations", 
-                       "/admin/calibrations/create", 
-                       "/admin/calibrations/edit",
-                       "/admin/calibrations/save",
-                       "/admin/calibrations/delete" })
+@WebServlet(name = "CalibrationServlet",
+        urlPatterns = {"/admin/calibrations",
+            "/admin/calibrations/edit",
+            "/admin/calibrations/save",
+            "/admin/calibrations/delete"})
 
 public class CalibrationServlet extends HttpServlet {
 
     private final CalibrationDAO calibrations = new CalibrationDAO();
     private final UserDAO users = new UserDAO();
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         int stationId = Web.intParam(request, "stationId", 0);
-        
+
         String action = action(request);
-        if ("/create".equals(action)) { 
+        if ("/create".equals(action)) {
             showForm(request, response, null, stationId);
-            return; 
+            return;
         }
-        
+
         if ("/edit".equals(action)) {
 
             int calibrationId = Web.intParam(request, "id", 0);
@@ -70,75 +67,70 @@ public class CalibrationServlet extends HttpServlet {
             showForm(request, response, c, stationId);
             return;
         }
-        
-        
+
         showList(request, response);
-        
+
     }
-    
+
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         int stationId = Web.intParam(request, "stationId", 0);
-        
+
         List<Calibration> rows = calibrations.search(stationId);
         int total = calibrations.count(stationId);
-        
+
         request.setAttribute("rows", rows);
         request.setAttribute("total", Integer.valueOf(total));
         request.setAttribute("stationId", stationId);
 
         request.getRequestDispatcher("/WEB-INF/views/calibrationList.jsp").forward(request, response);
     }
-    
+
     private void showForm(HttpServletRequest request, HttpServletResponse response, Calibration c, int stationId)
             throws ServletException, IOException {
         request.setAttribute("editCalibration", c);
         request.setAttribute("stationId", stationId);
-        
+
         List<AppUser> calibrationUsers = users.findCalibrationUser();
         request.setAttribute("calibrationUsers", calibrationUsers);
-        
+
         request.getRequestDispatcher("/WEB-INF/views/calibrationForm.jsp").forward(request, response);
     }
 
-    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         String action = action(request);
         int stationId = Web.intParam(request, "stationId", 0);
-        
+
         if ("/save".equals(action)) {
-            
+
             int calibrationId = Web.intParam(request, "calibrationId", 0);
             int userId = Web.intParam(request, "userId", 0);
-            
+
             Calibration c = new Calibration();
-            
+
             c.setCalibrationId(calibrationId);
             c.setStationId(stationId);
-            
+
             c.setCode(Web.trimmed(request, "code"));
             c.setName(Web.trimmed(request, "name"));
             c.setCoBaseLine(Web.intParam(request, "coBaseline", 0));
             c.setCo2BaseLine(Web.intParam(request, "co2Baseline", 0));
-            
+
             // Phan tham chieu den AppUser
             c.setPerformedBy(userId);
-            
             c.setNote(Web.trimmed(request, "note"));
 
-            if (calibrationId == 0) {
-                if (calibrations.insert(c)) Web.flash(request, "Added calibration " + c.getName());
-                else Web.flash(request, "Failed to add calibration");
+            if (calibrations.update(c)) {
+                Web.flash(request, "Calibration changes saved successfully");
             } else {
-                if (calibrations.update(c)) Web.flash(request, "Calibration changes saved successfully");
-                else Web.flash(request, "Failed to save calibration changes");
+                Web.flash(request, "Failed to save calibration changes");
             }
         }
-        
+
         if ("/delete".equals(action)) {
             int calibrationId = Web.intParam(request, "calibrationId", 0);
 
@@ -148,16 +140,15 @@ public class CalibrationServlet extends HttpServlet {
                 } else {
                     Web.flash(request, "Calibration record not found for this station");
                 }
-            }
-            else {
+            } else {
                 Web.flash(request, "Invalid deletion request");
             }
         }
-        
+
         response.sendRedirect(request.getContextPath() + "/admin/calibrations?stationId=" + stationId);
-        
+
     }
-    
+
     private String action(HttpServletRequest req) {
         String path = req.getRequestURI().substring(req.getContextPath().length());
         return path.substring("/admin/calibrations".length());

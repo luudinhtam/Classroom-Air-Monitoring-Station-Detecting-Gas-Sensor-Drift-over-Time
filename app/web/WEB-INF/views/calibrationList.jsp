@@ -47,9 +47,6 @@
             <div class="muted">Total Calibration Records: <b><%= total %></b></div>
         </div>
         <div class="actions" style="margin: 0;">
-            <% if (a != null && canManageCalibration) { %>
-                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Add Calibration</a>
-            <% } %>
             <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
         </div>
     </div>
