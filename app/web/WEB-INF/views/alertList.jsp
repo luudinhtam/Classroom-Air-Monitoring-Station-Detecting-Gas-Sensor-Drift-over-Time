@@ -48,7 +48,7 @@
             Open (OPEN) <span class="tab-badge" style="background: #fef3c7; color: #92400e;"><%= openCount %></span>
         </a>
         <a href="<%= ctx %>/alerts?status=ACKED" class="tab-btn <%= "ACKED".equals(currentStatus) ? "active" : "" %>">
-            Acknowledged (ACKED) <span class="tab-badge" style="background: #dcfce7; color: #166534;"><%= ackedCount %></span>
+            Approved (APR) <span class="tab-badge" style="background: #dcfce7; color: #166534;"><%= ackedCount %></span>
         </a>
         <a href="<%= ctx %>/alerts?status=REJECTED" class="tab-btn <%= "REJECTED".equals(currentStatus) ? "active" : "" %>">
             Rejected (REJECTED) <span class="tab-badge" style="background: #fee2e2; color: #991b1b;"><%= rejectedCount %></span>
@@ -85,7 +85,7 @@
     <!-- BẢNG DANH SÁCH CẢNH BÁO -->
     <% if (alerts == null || alerts.isEmpty()) { %>
         <div style="padding: 24px; text-align: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; color: #64748b;">
-            No alerts match the current filter.
+            No alerts match the current filter
         </div>
     <% } else { %>
         <table class="grid">
@@ -93,7 +93,7 @@
                 <tr>
                     <th style="width: 60px;">ID</th>
                     <th style="width: 90px;">Session</th>
-                    <th style="width: 140px;">Rule</th>
+                    <th style="width: 140px;">Label</th>
                     <th class="c" style="width: 90px;">Severity</th>
                     <th>Message</th>
                     <th class="c" style="width: 110px;">Status</th>
@@ -108,9 +108,7 @@
                         <td><b>#<%= a.getAlertId() %></b></td>
                         <td>
                             <% if (a.getSessionId() != null && a.getSessionId() > 0) { %>
-                                <a href="<%= ctx %>/sessions/detail?id=<%= a.getSessionId() %>" style="color: #2563eb; font-weight: 600;">
-                                    Session #<%= a.getSessionId() %>
-                                </a>
+                               Session #<%= a.getSessionId() %>
                             <% } else { %>
                                 <span class="muted">–</span>
                             <% } %>
@@ -132,7 +130,7 @@
                             <% if ("OPEN".equals(a.getStatus())) { %>
                                 <span class="badge-status warn">Open</span>
                             <% } else if ("ACKED".equals(a.getStatus())) { %>
-                                <span class="badge-status good">Acknowledged</span>
+                                <span class="badge-status good">APR</span>
                             <% } else { %>
                                 <span class="badge-status danger">Rejected</span>
                             <% } %>
