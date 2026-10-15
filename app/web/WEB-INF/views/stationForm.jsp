@@ -56,8 +56,8 @@
                        value="<%= item == null ? "" : item.getMaxBaselineDrift() %>">
                 
                 <label>Device Code</label>
-                <input type="text" name="deviceKey" 
-                       value="<%= item == null ? "" : Web.esc(item.getDeviceKey()) %>">
+                <input type="text" name="deviceCode" 
+                       value="<%= item == null ? "" : Web.esc(item.getDeviceCode()) %>">
                 
                 <label>Note</label>
                 <input type="text" name="note"

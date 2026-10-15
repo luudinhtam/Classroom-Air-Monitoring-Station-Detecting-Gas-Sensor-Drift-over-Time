@@ -14,7 +14,7 @@ public class AirStation {
     
     private float maxBaselineDrift;
     
-    private String deviceKey;
+    private String deviceCode;
     
     private String note;
     private boolean active;
@@ -23,7 +23,7 @@ public class AirStation {
     public AirStation() {
     }
 
-    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold, float co2WarningThreshold, float maxBaselineDrift, String deviceKey, String note, boolean active, Timestamp createdAt) {
+    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold, float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active, Timestamp createdAt) {
         this.stationId = stationId;
         this.code = code;
         this.name = name;
@@ -31,7 +31,7 @@ public class AirStation {
         this.coWarningThreshold = coWarningThreshold;
         this.co2WarningThreshold = co2WarningThreshold;
         this.maxBaselineDrift = maxBaselineDrift;
-        this.deviceKey = deviceKey;
+        this.deviceCode = deviceCode;
         this.note = note;
         this.active = active;
         this.createdAt = createdAt;
@@ -113,12 +113,12 @@ public class AirStation {
         this.maxBaselineDrift = maxBaselineDrift;
     }
 
-    public String getDeviceKey() {
-        return deviceKey;
+    public String getDeviceCode() {
+        return deviceCode;
     }
 
-    public void setDeviceKey(String deviceKey) {
-        this.deviceKey = deviceKey;
+    public void setDeviceCode(String deviceCode) {
+        this.deviceCode = deviceCode;
     }
     
     

@@ -106,7 +106,7 @@ public class StationServlet extends HttpServlet {
             a.setCoWarningThreshold(Web.intParam(request, "coThreshold", 0));
             a.setCo2WarningThreshold(Web.intParam(request, "co2Threshold", 0));
             a.setMaxBaselineDrift(Web.intParam(request, "maxBaselineDrift", 0));
-            a.setDeviceKey(Web.trimmed(request, "deviceKey"));
+            a.setDeviceCode(Web.trimmed(request, "deviceCode"));
             a.setNote(Web.trimmed(request, "note"));
 
             if (id == 0) {
