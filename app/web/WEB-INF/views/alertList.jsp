@@ -24,6 +24,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alert Management</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <link rel="stylesheet" href="<%= ctx %>/css/alertList.css">
@@ -88,6 +89,7 @@
             No alerts match the current filter
         </div>
     <% } else { %>
+        <div class="table-responsive">
         <table class="grid">
             <thead>
                 <tr>
@@ -130,7 +132,7 @@
                             <% if ("OPEN".equals(a.getStatus())) { %>
                                 <span class="badge-status warn">Open</span>
                             <% } else if ("ACKED".equals(a.getStatus())) { %>
-                                <span class="badge-status good">APR</span>
+                                <span class="badge-status good">Approved</span>
                             <% } else { %>
                                 <span class="badge-status danger">Rejected</span>
                             <% } %>
@@ -170,6 +172,7 @@
                 <% } %>
             </tbody>
         </table>
+        </div>
 
         <!-- PHÂN TRANG -->
         <div class="pager">

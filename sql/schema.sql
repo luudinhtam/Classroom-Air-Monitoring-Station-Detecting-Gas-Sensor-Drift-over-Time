@@ -1,4 +1,5 @@
 
+
 -- Xoa DATABASE neu exist
 DROP DATABASE IF EXISTS ten_database;
 
@@ -110,7 +111,7 @@ CREATE TABLE Air_Station (
     max_baseline_drift      DECIMAL(10,2) NOT NULL DEFAULT 0,
 
     -- QUAN TRONG: device_key phai la UNIQUE, de phuc vu testing thi hien tai chua sua. Se sua trong tuong lai.
-    device_key              NVARCHAR(128) NOT NULL DEFAULT N'123456',
+    device_code              NVARCHAR(128) null, 
 
     note                    NVARCHAR(400) NULL,
     is_active               BIT NOT NULL DEFAULT 1,

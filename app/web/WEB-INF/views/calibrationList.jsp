@@ -32,6 +32,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= pageTitle %></title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
 </head>
@@ -80,6 +81,7 @@
             No calibration records found<%= a != null ? " for station " + Web.esc(a.getName()) : "" %>.
         </div>
     <% } else { %>
+        <div class="table-responsive">
         <table class="grid">
             <thead>
                 <tr>
@@ -139,6 +141,7 @@
                 <% } %>
             </tbody>
         </table>
+        </div>
     <% } %>
 
 </div>

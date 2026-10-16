@@ -18,6 +18,7 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Stations</title>
         <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
     </head>
@@ -43,6 +44,7 @@
                 <% } %>
             </form>
             
+            <div class="table-responsive">
             <table class="grid">
                 <tr>
                     <th>#</th>
@@ -110,6 +112,7 @@
                     <tr><td colspan="7" class="c">No stations match the filter</td></tr>
                 <% } %>
             </table>
+            </div>
             
         </div>
     </body>
