@@ -5,7 +5,7 @@ body { margin: 0; font-family: Segoe UI, Arial, sans-serif; font-size: 14px;
        color: #222; background: #f5f6f8; }
 
 .topbar { display: flex; justify-content: space-between; align-items: center;
-          padding: 8px 24px; background: #2b3a55; color: #fff; min-height: 52px; }
+          padding: 8px 24px; background: #2b3a55; color: #fff; min-height: 52px; position: relative;}
 
 .brand { flex: 1 1 0; min-width: 0; display: flex; align-items: center; font-size: 17px; font-weight: 600; color: #fff; }
 .brand .sem { font-size: 12px; font-weight: 400; background: #4a5b7a;
@@ -278,6 +278,33 @@ canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
 
 /* --- Media Query: Tablet & Mobile (<= 920px) --- */
 @media (max-width: 920px) {
+    .topbar .menu, .menu {
+        display: none !important;
+    }
+    
+    .topbar .menu.open, .menu.open {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        width: 100%;
+        
+        /* Ghi đè màu nền trong suốt cũ bằng màu nền tối của topbar */
+        background: #2b3a55 !important;
+        background-color: #2b3a55 !important;
+        
+        padding: 12px 16px !important;
+        margin: 0 !important;
+        border-radius: 0 0 8px 8px;
+        gap: 6px;
+        z-index: 9999;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+    
     .topbar {
         flex-wrap: wrap;
         padding: 10px 14px;
@@ -297,16 +324,18 @@ canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
 
     .menu {
         display: none;
+        position: absolute;  /* Định vị tuyệt đối để không chen ngang các phần tử khác */
+        top: 100%;           /* Xuất hiện ngay bên dưới topbar */
+        left: 0;
+        right: 0;
         width: 100%;
-        flex: 1 1 100%;
-        order: 3;
-        flex-direction: column;
-        align-items: stretch;
-        background: #324360;
-        padding: 8px 10px;
-        margin-top: 10px;
-        border-radius: 12px;
-        gap: 4px;
+        background: #2b3a55; /* Trùng màu nền topbar */
+        padding: 12px 16px;
+        margin: 0;
+        border-radius: 0 0 8px 8px;
+        gap: 6px;
+        z-index: 999;        /* Đảm bảo luôn nằm trên các thành phần khác */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     }
     .menu.open {
         display: flex;
@@ -314,8 +343,9 @@ canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
     }
     .menu a {
         display: block;
-        padding: 9px 16px;
-        border-radius: 9999px;
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: 6px;
         font-size: 14px;
         text-align: left;
     }
