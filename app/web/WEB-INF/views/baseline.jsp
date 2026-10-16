@@ -31,7 +31,7 @@
     <title>Baseline Calculation - Air Station</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
 </head>
-<body style="padding: 40px 100px;">
+<body style="padding: 30px min(5vw, 60px); max-width: 1200px; margin: 0 auto;">
 
     <h1>Sensor Baseline Calculation</h1>
 
@@ -80,7 +80,7 @@
                     Measurement Samples
                 </h2>
 
-                <div style="max-height: 380px; width: 650px; overflow-y: auto; border: 1px solid #ccc;">
+                <div style="max-height: 380px; width: 100%; max-width: 650px; overflow: auto; border: 1px solid #ccc;">
                     <table border="1" cellpadding="8" cellspacing="0"
                            style="width: 100%; border-collapse: separate; border-spacing: 0;">
 
@@ -125,7 +125,8 @@
             
         <h2 style="text-align: center; margin-top: 60px">Estimated Baseline Result</h2>
 
-        <table style="width: 50%; margin: 0 auto" border="1" cellpadding="8" cellspacing="0">
+        <div class="table-responsive">
+        <table style="width: 100%; max-width: 500px; margin: 0 auto" border="1" cellpadding="8" cellspacing="0">
             <thead>
                 <tr>
                     <th>Metric</th>
@@ -143,6 +144,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
 
         <p>
             <strong>Note:</strong>

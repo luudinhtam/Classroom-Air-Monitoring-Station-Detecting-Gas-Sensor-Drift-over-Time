@@ -32,6 +32,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Session Details #<%= item.getSessionId() %> - Air Monitoring</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <link rel="stylesheet" href="<%= ctx %>/css/sessionDetail.css">
@@ -120,7 +121,9 @@
                 </div>
             </div>
 
-            <canvas id="driftCanvas" width="1080" height="320" style="width: 100%; height: auto; display: block;"></canvas>
+            <div class="canvas-wrapper">
+                <canvas id="driftCanvas" width="1080" height="320" style="width: 100%; height: auto; display: block;"></canvas>
+            </div>
             <div class="hint" style="margin-top: 8px; text-align: right;">
                 * Displays the latest <%= timeline != null ? timeline.size() : 0 %> sessions of this device to track sensor drift trends.
             </div>
