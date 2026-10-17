@@ -17,6 +17,9 @@ import service.AirRuleEngine;
  * The body is flat JSON, parsed by hand so the project needs no extra library:
  * {"device":"Air-01","seq":12,"measured_at":1750000000,"gas_a_raw":0,"gas_b_raw":0}
  */
+
+
+
 @WebServlet("/api/ingest")
 public class IngestServlet extends HttpServlet {
 
@@ -34,6 +37,7 @@ public class IngestServlet extends HttpServlet {
         String key = req.getHeader("X-API-Key");
         String code = str(body, "device");
 
+        // Kiem tra thiet bi hop le
         Integer deviceId = devices.findIdByCodeAndKey(code, key);
         if (deviceId == null) {
             devices.logRejected(body, code, "unknown device or wrong key");
@@ -41,7 +45,8 @@ public class IngestServlet extends HttpServlet {
             resp.getWriter().write("{\"ok\":false,\"error\":\"auth\"}");
             return;
         }
-
+        
+        // Neu thiet bi hop le, tien hanh giai goi tin va luu vao 1 object Session
         try {
             AirSession o = new AirSession();
             o.setDeviceId(deviceId.intValue());
@@ -55,19 +60,25 @@ public class IngestServlet extends HttpServlet {
             o.setHumidPct(num(body, "humid_pct"));
             o.setBaseShift(num(body, "base_shift"));
             o.setWarm("1".equals(str(body, "warm")));
-
+            
+            // Luu vao table Session
             int id = dao.insert(o);
             if (id == -1) { // same sequence number arrived twice
                 resp.getWriter().write("{\"ok\":true,\"duplicate\":true}");
                 return;
             }
             o.setSessionId(id);
-
+            
+            // Gan nhan cho Session, luu vao table Label
             String label = engine.classify(o);
             labels.insert(id, label, "RULE", null, null);
+            
+            // Cap nhat gia tri Last Seen cho object Device
             devices.touch(deviceId.intValue());
-
+            
+            // Khai bao tinh trang/muc do nghiem trong cua object Label
             String sev = engine.severityOf(label);
+            // Kiem tra tinh trang/muc do nghiem cua object Label
             if (!"INFO".equals(sev)) {
                 alerts.insert(id, label, sev, engine.messageOf(label));
             }
@@ -103,15 +114,42 @@ public class IngestServlet extends HttpServlet {
     }
 
     /** Reads a numeric field out of flat JSON. */
+    
+/** Reads a numeric field out of flat JSON. */
     private double num(String json, String field) {
         String needle = "\"" + field + "\"";
         int i = json.indexOf(needle);
-        if (i < 0) throw new IllegalArgumentException("missing field " + field);
+
+        if (i < 0) {
+            throw new IllegalArgumentException("missing field " + field);
+        }
+
         int c = json.indexOf(':', i + needle.length());
-        int e = c + 1;
-        while (e < json.length() && "-+.0123456789eE".indexOf(json.charAt(e)) >= 0) e++;
+
+        if (c < 0) {
+            throw new IllegalArgumentException("invalid field " + field);
+        }
+
         int s = c + 1;
-        while (s < e && json.charAt(s) == ' ') s++;
+
+        // Skip whitespace before the number
+        while (s < json.length() && Character.isWhitespace(json.charAt(s))) {
+            s++;
+        }
+
+        int e = s;
+
+        // Read the number
+        while (e < json.length()
+                && "-+.0123456789eE".indexOf(json.charAt(e)) >= 0) {
+            e++;
+        }
+
+        if (s == e) {
+            throw new IllegalArgumentException("empty String: " + field);
+        }
+
         return Double.parseDouble(json.substring(s, e));
     }
+
 }
