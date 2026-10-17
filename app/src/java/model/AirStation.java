@@ -2,20 +2,20 @@ package model;
 
 import java.sql.Timestamp;
 
-
 public class AirStation {
     private int stationId;
     private String code;
     private String name;
     private String location;
-    
+
     private float coWarningThreshold;
     private float co2WarningThreshold;
-    
+
     private float maxBaselineDrift;
-    
+
     private String deviceCode;
-    
+    private String deviceCode;
+
     private String note;
     private boolean active;
     private Timestamp createdAt;
@@ -24,6 +24,10 @@ public class AirStation {
     }
 
     public AirStation(int stationId, String code, String name, String location, float coWarningThreshold, float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active, Timestamp createdAt) {
+
+    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
+            float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
+            Timestamp createdAt) {
         this.stationId = stationId;
         this.code = code;
         this.name = name;
@@ -48,6 +52,7 @@ public class AirStation {
     public String getCode() {
         return code;
     }
+
     public void setCode(String code) {
         this.code = code;
     }
@@ -55,6 +60,7 @@ public class AirStation {
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -62,6 +68,7 @@ public class AirStation {
     public String getNote() {
         return note;
     }
+
     public void setNote(String note) {
         this.note = note;
     }
@@ -77,6 +84,7 @@ public class AirStation {
     public Timestamp getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
@@ -115,12 +123,16 @@ public class AirStation {
 
     public String getDeviceCode() {
         return deviceCode;
+
+    public String getDeviceCode() {
+        return deviceCode;
     }
 
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
+
+    public void setDeviceCode(String deviceCode) {
+        this.deviceCode = deviceCode;
     }
-    
-    
-    
+
 }

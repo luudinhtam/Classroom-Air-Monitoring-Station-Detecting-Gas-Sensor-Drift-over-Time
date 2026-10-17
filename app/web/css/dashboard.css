@@ -183,8 +183,55 @@
 .canvas-wrapper {
     width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .canvas-wrapper canvas {
     max-width: 100%;
+    height: auto;
     display: block;
+}
+
+/* RESPONSIVE CHO DASHBOARD */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .dashboard-header .actions {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .dashboard-header .actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    .table-comparison {
+        min-width: 540px;
+    }
+}
+
+@media (max-width: 480px) {
+    .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        gap: 10px;
+    }
+    .kpi-card {
+        padding: 12px;
+    }
+    .kpi-card .kpi-value {
+        font-size: 20px;
+        margin: 6px 0 2px;
+    }
+    .kpi-card .kpi-label {
+        font-size: 11px;
+    }
+    .kpi-card .kpi-desc {
+        font-size: 11px;
+    }
+    .section-panel {
+        padding: 14px 12px;
+    }
 }

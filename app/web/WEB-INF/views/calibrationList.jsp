@@ -32,6 +32,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= pageTitle %></title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
 </head>
@@ -47,9 +48,6 @@
             <div class="muted">Total Calibration Records: <b><%= total %></b></div>
         </div>
         <div class="actions" style="margin: 0;">
-            <% if (a != null && canManageCalibration) { %>
-                <a class="btn" href="<%= ctx %>/admin/calibrations/create?stationId=<%= stationId %>">+ Add Calibration</a>
-            <% } %>
             <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
         </div>
     </div>
@@ -83,6 +81,7 @@
             No calibration records found<%= a != null ? " for station " + Web.esc(a.getName()) : "" %>.
         </div>
     <% } else { %>
+        <div class="table-responsive">
         <table class="grid">
             <thead>
                 <tr>
@@ -142,6 +141,7 @@
                 <% } %>
             </tbody>
         </table>
+        </div>
     <% } %>
 
 </div>

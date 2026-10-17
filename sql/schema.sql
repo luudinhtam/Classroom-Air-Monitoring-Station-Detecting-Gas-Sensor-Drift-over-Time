@@ -1,4 +1,5 @@
 
+
 -- Xoa DATABASE neu exist
 DROP DATABASE IF EXISTS ten_database;
 
@@ -116,6 +117,8 @@ CREATE TABLE Air_Station (
     created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
 
+DROP TABLE Air_Station;
+
  
 CREATE TABLE Air_Calibration (
     calibration_id      INT IDENTITY(1,1) PRIMARY KEY,
@@ -141,6 +144,8 @@ ALTER TABLE Air_Calibration
 ADD CONSTRAINT FK_Air_Calibration_User
         FOREIGN KEY (performed_by)
         REFERENCES AppUser(user_id);
+
+DROP TABLE Air_Calibration;
 
  
 CREATE TABLE Air_EmptyWindow (
@@ -175,6 +180,7 @@ ADD CONSTRAINT FK_Air_EmptyWindow_User
         FOREIGN KEY (marked_by)
         REFERENCES AppUser(user_id);
 
+DROP TABLE Air_EmptyWindow;
  
 -- ===== 7. Du lieu khoi tao =====
 INSERT INTO AppRole(role_code, role_name) VALUES

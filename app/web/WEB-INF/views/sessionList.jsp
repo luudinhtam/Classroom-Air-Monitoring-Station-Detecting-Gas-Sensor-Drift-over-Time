@@ -19,6 +19,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airroom – Sessions</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
@@ -49,6 +50,7 @@
         </a>
     </form>
 
+    <div class="table-responsive">
     <table class="grid">
         <tr>
             <th>#</th>
@@ -109,6 +111,7 @@
         <tr><td colspan="12" class="c">No sessions match the filter</td></tr>
         <% } %>
     </table>
+    </div>
 
     <div class="pager">
         <% if (currentPage > 1) { %>

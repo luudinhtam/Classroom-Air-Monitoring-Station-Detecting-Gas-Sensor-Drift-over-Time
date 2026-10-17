@@ -10,6 +10,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= isNew ? "Add Device" : "Edit Device" %></title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
 </head>
@@ -28,10 +29,9 @@
                 <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
                 value="<%= item == null ? "" : Web.esc(item.getDeviceCode()) %>">
             <% if (!isNew) { %>
-            <small style="color:#888">Device code cannot be changed once created.</small>
             <% } %>
 
-        <label>API Key (Header X-API-Key sent by device)</label>
+        <label>API Key</label>
         <input type="text" name="apiKey" required maxlength="64"
                value="<%= item == null ? "" : Web.esc(item.getApiKey()) %>">
 

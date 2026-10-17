@@ -15,6 +15,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airroom – Dashboard</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     <link rel="stylesheet" href="<%= ctx %>/css/dashboard.css">
@@ -242,6 +243,7 @@
             </div>
         </div>
 
+        <div class="table-responsive">
         <table class="table-comparison">
             <thead>
                 <tr>
@@ -290,6 +292,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- MỤC 5: BẢNG THEO DÕI THỜI GIAN GIỮ DUNG SAI HIỆU CHUẨN CỦA CÁC TRẠM -->
@@ -301,6 +304,7 @@
             </div>
         </div>
 
+        <div class="table-responsive">
         <table class="grid" style="margin-top: 8px;">
             <thead>
                 <tr>
@@ -345,6 +349,7 @@
                 <% } %>
             </tbody>
         </table>
+        </div>
     </div>
 
 </div>
