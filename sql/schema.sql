@@ -1,4 +1,5 @@
 
+
 -- Xoa DATABASE neu exist
 DROP DATABASE IF EXISTS ten_database;
 

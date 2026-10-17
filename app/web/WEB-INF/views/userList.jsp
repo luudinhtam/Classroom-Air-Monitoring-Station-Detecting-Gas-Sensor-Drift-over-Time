@@ -22,6 +22,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Users</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
@@ -52,6 +53,7 @@
         <a class="btn" href="<%= ctx %>/admin/users/create">+ Add User</a>
     </form>
 
+    <div class="table-responsive">
     <table class="grid">
         <tr>
             <th>ID</th><th>Username</th><th>Full Name</th>
@@ -99,6 +101,7 @@
         <tr><td colspan="6" class="c">No users match the filter</td></tr>
         <% } %>
     </table>
+    </div>
 
     <div class="pager">
         <% for (int p = 1; p <= totalPages; p++) { %>

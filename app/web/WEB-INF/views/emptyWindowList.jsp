@@ -27,6 +27,7 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Station Empty Windows</title>
         <link rel="stylesheet" href="<%= ctx %>/css/app.css">
     </head>
@@ -64,6 +65,7 @@
                 <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
             </form>
 
+            <div class="table-responsive">
             <table class="grid">
                 <tr>
                     <th>#</th>
@@ -138,6 +140,7 @@
                 <% } %>
 
             </table>
+            </div>
 
         </div>
 
