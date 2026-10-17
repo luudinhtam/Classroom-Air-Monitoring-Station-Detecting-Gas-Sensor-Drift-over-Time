@@ -103,7 +103,7 @@ public class AirSessionDAO {
             ps.setInt(2, deviceId);
             rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(0, map(rs)); // prepend to sort ascending by time
+                list.add(0, map(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -115,7 +115,7 @@ public class AirSessionDAO {
     
     public List<model.Device> listDevices() {
     List<model.Device> list = new ArrayList<>();
-    String sql = "SELECT device_id, device_code, location FROM Device";
+    String sql = "SELECT device_id, device_code, location FROM Device WHERE is_active = 1 ORDER BY device_code";
     try (java.sql.Connection cn = util.DBContext.getConnection();
          java.sql.PreparedStatement ps = cn.prepareStatement(sql);
          java.sql.ResultSet rs = ps.executeQuery()) {
@@ -130,14 +130,30 @@ public class AirSessionDAO {
         e.printStackTrace();
     }
     return list;
-      }
+}
     
     
 
     /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
     /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
+    /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
     public int insert(AirSession o) {
-        // Đã bổ sung is_sample và note vào lệnh INSERT để đồng bộ với DB
+        // Kiểm tra nếu deviceId chưa có nhưng có deviceCode thì tự tra cứu device_id từ bảng Device
+        if (o.getDeviceId() <= 0 && o.getDeviceCode() != null && !o.getDeviceCode().isEmpty()) {
+            String sqlFindDev = "SELECT device_id FROM Device WHERE device_code = ? AND is_active = 1";
+            try (Connection cn = util.DBContext.getConnection();
+                 PreparedStatement psDev = cn.prepareStatement(sqlFindDev)) {
+                psDev.setString(1, o.getDeviceCode());
+                try (ResultSet rsDev = psDev.executeQuery()) {
+                    if (rsDev.next()) {
+                        o.setDeviceId(rsDev.getInt("device_id"));
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         String sqlSession = "INSERT INTO Air_Session(device_id, device_seq, measured_at, is_sample, gas_a_raw, gas_b_raw, gas_a_base, "
                    + "gas_a_delta, temp_c, humid_pct, base_shift, warm, note) "
                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -177,7 +193,7 @@ public class AirSessionDAO {
             rs.close();
             ps.close();
 
-            // 2. Insert nhãn
+            // 2. Insert nhãn mặc định ban đầu nếu có
             if (newSessionId > 0 && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
                 ps = cn.prepareStatement(sqlLabel);
                 ps.setInt(1, newSessionId);
@@ -194,7 +210,6 @@ public class AirSessionDAO {
             System.out.println("====== LỖI KHI THÊM MỚI PHIÊN ĐO ======");
             e.printStackTrace();
         } finally {
-            // Đóng tài nguyên
             try { if (rs != null) rs.close(); } catch (Exception ignored) {}
             try { if (ps != null) ps.close(); } catch (Exception ignored) {}
             try { if (cn != null) cn.close(); } catch (Exception ignored) {}
@@ -204,7 +219,7 @@ public class AirSessionDAO {
 
     /** UPDATE, used by the screens that let a staff member fix a reading. */
     public boolean update(AirSession o) {
-        String sqlSession = "UPDATE Air_Session SET gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
+        String sqlSession = "UPDATE Air_Session SET device_id = ?, gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
                            + "humid_pct = ?, base_shift = ?, warm = ?, note = ? WHERE session_id = ?";
         Connection cn = null;
         PreparedStatement psSession = null;
@@ -212,17 +227,20 @@ public class AirSessionDAO {
         try {
             cn = DBContext.getConnection();
             cn.setAutoCommit(false);
+            
             psSession = cn.prepareStatement(sqlSession);
-            psSession.setInt(1, o.getGasARaw());
-            psSession.setInt(2, o.getGasBRaw());
-            psSession.setInt(3, o.getGasABase());
-            psSession.setDouble(4, o.getGasADelta());
-            psSession.setDouble(5, o.getTempC());
-            psSession.setDouble(6, o.getHumidPct());
-            psSession.setDouble(7, o.getBaseShift());
-            psSession.setBoolean(8, o.isWarm());
-            psSession.setString(9, o.getNote());
-            psSession.setInt(10, o.getSessionId());
+            psSession.setInt(1, o.getDeviceId());
+            psSession.setInt(2, o.getGasARaw());
+            psSession.setInt(3, o.getGasBRaw());
+            psSession.setInt(4, o.getGasABase());
+            psSession.setDouble(5, o.getGasADelta());
+            psSession.setDouble(6, o.getTempC());
+            psSession.setDouble(7, o.getHumidPct());
+            psSession.setDouble(8, o.getBaseShift());
+            psSession.setBoolean(9, o.isWarm());
+            psSession.setString(10, o.getNote());
+            psSession.setInt(11, o.getSessionId());
+            
             boolean ok = psSession.executeUpdate() > 0;
 
             if (ok && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
@@ -257,6 +275,7 @@ public class AirSessionDAO {
             return ok;
         } catch (SQLException e) {
             try { if (cn != null) cn.rollback(); } catch (Exception ex) {}
+            System.out.println("====== LỖI KHI UPDATE PHIÊN ĐO ======");
             e.printStackTrace(); 
             return false;
         } finally {
