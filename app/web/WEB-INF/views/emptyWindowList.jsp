@@ -12,6 +12,8 @@
     int stationId = (int) request.getAttribute("stationId");
     int total = (int) request.getAttribute("total");
     String ctx = request.getContextPath();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
 
     AirStationDAO stations = new AirStationDAO();
     AirStation a = stations.findById(stationId);
