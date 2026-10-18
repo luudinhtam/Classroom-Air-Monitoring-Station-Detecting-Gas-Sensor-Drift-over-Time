@@ -38,37 +38,12 @@
     </div>
 
     <div class="topbar-right">
-          <a href="https://www.tinkercad.com/things/4THaogXGuYY/edit?returnTo=%2Fdashboard&export=drive&sharecode=aflFzA5etyZjCrmYvCcFj38-V-5jQ3_pAHfEKWGcoOU" target="_blank" rel="noopener noreferrer" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #ffffff;
-            color: #059669;
-            font-weight: 600;
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1.5px solid #059669;
-            text-decoration: none;
-            transition: all 0.2s;
-        " title="View 3D Model">
+        <a href="https://www.tinkercad.com/things/4THaogXGuYY/edit?returnTo=%2Fdashboard&export=drive&sharecode=aflFzA5etyZjCrmYvCcFj38-V-5jQ3_pAHfEKWGcoOU" target="_blank" rel="noopener noreferrer" class="nav-btn-3d" title="View 3D Model">
             📦 3D Model
         </a>
-        
-         <a href="<%= ctx %>/map" class="nav-map-btn" style="
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #ffffff;
-        color: #2563eb;
-        font-weight: 600;
-        padding: 5px 14px;
-        border-radius: 20px;
-        border: 1.5px solid #2563eb;
-        text-decoration: none;
-        transition: all 0.2s;
-    ">
-        🗺️ Map
-    </a>
+        <a href="<%= ctx %>/map" class="nav-map-btn" title="View Map">
+            🗺️ Map
+        </a>
         <div class="who">
             <%= Web.esc(me.getFullName()) %>
             <span class="tag" style="color: black"><%= Web.esc(myRole) %></span>

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.AirSession, model.Device, model.AirLabel, model.AppUser, util.Web" %>
 <%
     AirSession item = (AirSession) request.getAttribute("detail");
@@ -34,8 +34,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Session Details #<%= item.getSessionId() %> - Air Monitoring</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
-    <link rel="stylesheet" href="<%= ctx %>/css/sessionDetail.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/sessionDetail.css">
 </head>
 
 <body>

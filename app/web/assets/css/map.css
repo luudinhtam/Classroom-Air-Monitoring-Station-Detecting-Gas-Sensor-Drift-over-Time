@@ -1,0 +1,46 @@
+/* map.css - Styles for Air Quality Interactive Map */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+#map-container {
+    position: relative;
+    width: 100vw;
+    height: calc(100vh - 60px);
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Widget biểu đồ nổi góc trái */
+.chart-widget {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 380px;
+}
+
+/* Widget thẻ thông tin trạm nổi góc phải */
+.station-card {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: #ffffff;
+    border-top: 5px solid #10b981;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 280px;
+}

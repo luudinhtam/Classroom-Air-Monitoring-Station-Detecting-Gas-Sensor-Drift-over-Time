@@ -25,7 +25,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Air Quality Map</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     <link rel="shortcut icon" href="<%= ctx %>/favicon.ico" type="image/x-icon">
     
     <!-- 1. Thư viện Leaflet CSS & JS -->
@@ -35,39 +35,7 @@
     <!-- 2. Thư viện Chart.js vẽ biểu đồ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #map-container { position: relative; width: 100vw; height: calc(100vh - 60px); }
-        #map { width: 100%; height: 100%; }
-
-        /* Widget biểu đồ nổi góc trái giống PurpleAir */
-        .chart-widget {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(4px);
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            width: 380px;
-        }
-
-        /* Widget thẻ thông tin trạm nổi góc phải */
-        .station-card {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: #ffffff;
-            border-top: 5px solid <%= statusColor %>;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            width: 280px;
-        }
-    </style>
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/map.css">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>

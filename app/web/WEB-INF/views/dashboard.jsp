@@ -20,34 +20,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Dashboard</title>
-        <link rel="stylesheet" href="<%= ctx%>/css/app.css">
-        <link rel="stylesheet" href="<%= ctx%>/css/dashboard.css">
-        <style>
-            /* Hiệu ứng radar tỏa sáng nhấp nháy */
-            @keyframes livePulse {
-                0% {
-                    transform: scale(0.95);
-                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-                }
-                70% {
-                    transform: scale(1.1);
-                    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
-                }
-                100% {
-                    transform: scale(0.95);
-                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-                }
-            }
-
-            .live-pulse-dot {
-                width: 10px;
-                height: 10px;
-                background-color: #10b981;
-                border-radius: 50%;
-                display: inline-block;
-                animation: livePulse 1.8s infinite ease-in-out;
-            }
-        </style>
+        <link rel="stylesheet" href="<%= ctx%>/assets/css/app.css">
+        <link rel="stylesheet" href="<%= ctx%>/assets/css/dashboard.css">
     </head>
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -673,8 +647,8 @@
 
         </div>
 
-        <script src="<%= ctx%>/js/app.js"></script>
-        <script src="<%= ctx%>/js/dashboardCharts.js"></script>
+        <script src="<%= ctx%>/assets/js/app.js"></script>
+        <script src="<%= ctx%>/assets/js/dashboardCharts.js"></script>
         <script>
             // 1. DỮ LIỆU ĐIỂM SCATTER PLOT
             var scatterPoints = [
@@ -789,3 +763,4 @@
         </script>
     </body>
 </html>
+
