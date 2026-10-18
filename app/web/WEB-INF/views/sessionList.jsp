@@ -20,7 +20,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Airroom – Sessions</title>
+    <title>Sessions</title>
     <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
 </head>
 <body>
@@ -55,9 +55,9 @@
         <tr>
             <th>#</th>
             <th>Measured At</th>
-            <th>Gas A (raw)</th>
-            <th>Gas B (raw)</th>
-            <th>Gas A (base)</th>
+            <th>Air Quality</th>
+            <th>CO</th>
+            <th>Air Quality (base)</th>
             <th>Delta</th>
             <th>Temp (°C)</th>
             <th>Humid (%)</th>

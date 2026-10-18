@@ -3,6 +3,7 @@ package model;
 import java.sql.Timestamp;
 
 public class AirStation {
+
     private int stationId;
     private String code;
     private String name;
@@ -14,7 +15,6 @@ public class AirStation {
     private float maxBaselineDrift;
 
     private String deviceCode;
-    private String deviceCode;
 
     private String note;
     private boolean active;
@@ -23,7 +23,6 @@ public class AirStation {
     public AirStation() {
     }
 
-    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold, float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active, Timestamp createdAt) {
 
     public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
             float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
@@ -123,16 +122,10 @@ public class AirStation {
 
     public String getDeviceCode() {
         return deviceCode;
-
-    public String getDeviceCode() {
-        return deviceCode;
     }
-
-    public void setDeviceCode(String deviceCode) {
-        this.deviceCode = deviceCode;
+    
 
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
     }
-
 }
