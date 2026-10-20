@@ -61,6 +61,10 @@ public class IngestServlet extends HttpServlet {
             o.setBaseShift(num(body, "base_shift"));
             o.setWarm("1".equals(str(body, "warm")));
             
+            // CAUTION: Hien tai dang test data nen data hien tai la sample
+            o.setSample(true);
+            // CAUTION:
+            
             // Luu vao table Session
             int id = dao.insert(o);
             if (id == -1) { // same sequence number arrived twice
