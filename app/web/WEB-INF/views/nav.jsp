@@ -23,9 +23,6 @@
         <a href="<%= ctx %>/sessions">Sessions</a>
         <a href="<%= ctx %>/alerts">Alerts</a>
         
-        
-        
-        
         <!-- Mọi vai trò đều có quyền Xem (R) Trạm nên không ẩn menu này -->
         <a href="<%= ctx %>/admin/stations">Stations</a>
         
@@ -87,3 +84,6 @@
     document.getElementsByTagName('head')[0].appendChild(link);
 })();
 </script>
+
+<!-- Nhúng AI Chatbot Widget (hiển thị trên tất cả các trang) -->
+<jsp:include page="/WEB-INF/views/chatbot.jsp"/>

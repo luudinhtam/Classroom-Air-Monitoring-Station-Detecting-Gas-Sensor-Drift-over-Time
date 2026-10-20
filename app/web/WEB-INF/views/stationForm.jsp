@@ -1,5 +1,3 @@
-﻿
-
 <%@page import="java.util.List"%>
 <%@page import="model.Device"%>
 <%@page import="util.Web"%>
@@ -46,6 +44,20 @@
                 <input type="text" name="location" required
                        value="<%= item == null ? "" : Web.esc(item.getLocation()) %>">
 
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label>Latitude (Vĩ độ)</label>
+                        <input type="number" step="any" name="latitude" 
+                               value="<%= (item == null || item.getLatitude() == null) ? 10.841129 : item.getLatitude() %>">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Longitude (Kinh độ)</label>
+                        <input type="number" step="any" name="longitude" 
+                               value="<%= (item == null || item.getLongitude() == null) ? 106.809883 : item.getLongitude() %>">
+                    </div>
+                </div>
+                <small style="color: #64748b; margin-top: -6px; margin-bottom: 12px; display: block;">Mặc định là khuôn viên ĐH FPT TP.HCM. Bạn cũng có thể kéo thả trực tiếp trên trang <b>Bản đồ (Map)</b>.</small>
+
                 <label>CO Warning Threshold</label>
                 <input type="number" name="coThreshold" 
                        value="<%= item == null ? "" : item.getCoWarningThreshold() %>">
@@ -54,9 +66,10 @@
                 <input type="number" name="co2Threshold" 
                        value="<%= item == null ? "" : item.getCo2WarningThreshold() %>">
                 
-                <label>Max Baseline Drift</label>
+                <label>Max Baseline Drift (%)</label>
                 <input type="number" name="maxBaselineDrift" 
-                       value="<%= item == null ? "" : item.getMaxBaselineDrift() %>">
+                       value="<%= isNew ? 15 : item.getMaxBaselineDrift() %>">
+                <small style="color: #64748b; display: block; margin-top: 4px;">Mặc định 15% (dung sai trôi mức nền chuẩn kỹ thuật của đề tài, có thể tùy chỉnh).</small>
                 
                 <label for="deviceCode">Device Code</label>
                 <select name="deviceCode" id="deviceCode" required>
@@ -73,10 +86,8 @@
                             for (Device device : deviceList) {
                                 String deviceCode = device.getDeviceCode();
                     %>
-                        <option value="<%= Web.esc(deviceCode) %>"
-                            <%= deviceCode.equals(selectedDeviceCode)
-                                    ? "selected"
-                                    : "" %>>
+                        <option value="<%= Web.esc(deviceCode) %>" 
+                            <%= deviceCode.equals(selectedDeviceCode) ? "selected" : "" %>>
                             <%= Web.esc(deviceCode) %>
                         </option>
                     <%
@@ -97,4 +108,3 @@
         </div>
     </body>
 </html>
-

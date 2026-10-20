@@ -406,7 +406,66 @@
                 </div>
             </div>
 
-            <!-- MỤC 2 ĐỀ TÀI: DANH SÁCH CẢNH BÁO CHƯA XỬ LÝ (OPEN ALERTS) -->
+           
+            <!-- MỤC 2: BIỂU ĐỒ PHÂN TÁN (SCATTER PLOT) TƯƠNG QUAN KHÍ VÀ NHIỆT ĐỘ -->
+            <div class="section-panel">
+                <div class="panel-head">
+                    <div>
+                        <h3 class="panel-title">Scatter Plot: Gas Concentration vs Temperature Correlation</h3>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background: #3b82f6;"></span> BASE (Normal)</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #ef4444;"></span> HIGH (Poor Air Quality)</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> TEMP_EFFECT (Thermal Interference)</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #a855f7;"></span> DRIFTED (Sensor Drift)</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #64748b;"></span> WARMUP (Warming Up)</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #06b6d4;"></span> RAISED (Elevated Gas)</div>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="scatterCanvas" width="1080" height="340"></canvas>
+                </div>
+
+                <div class="scatter-analysis-box">
+                    <b>Thermal Effect Decoupling Analysis:</b> 
+                    When temperature exceeds <b>30°C</b> and humidity drops sharply, measured gas levels rise in-phase along the scatter slope (orange dots <b>TEMP_EFFECT</b>). 
+                    The system detects this co-variance between temperature and gas readings to <b>avoid falsely diagnosing poor air quality</b>, effectively preventing false alarm triggers.
+                </div>
+            </div>
+
+            <!-- MỤC 2: XU HƯỚNG MỨC NỀN & PHÂN BỔ CẢNH BÁO (2 CỘT) -->
+            <div class="dual-grid">
+                <!-- Biểu đồ đường Xu hướng mức nền & độ dịch -->
+                <div class="section-panel" style="margin-bottom: 0;">
+                    <div class="panel-head">
+                        <div>
+                            <h3 class="panel-title">Baseline & Shift (%) Trend Over Time</h3>
+                        </div>
+                    </div>
+                    <div class="chart-legend" style="margin-top: 0;">
+                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;background:#2563eb;margin-right:4px;"></span> Baseline (left axis)</div>
+                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;border-top:2px dashed #dc2626;margin-right:4px;"></span> Base Shift % (right axis)</div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="trendCanvas" width="510" height="230"></canvas>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ phân bổ loại cảnh báo và người duyệt bác bỏ -->
+                <div class="section-panel" style="margin-bottom: 0;">
+                    <div class="panel-head">
+                        <div>
+                            <h3 class="panel-title">Alert Distribution & Rejection Breakdown</h3>
+                        </div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="alertBarCanvas" width="510" height="230"></canvas>
+                    </div>
+                </div>
+            </div>
+
+             <!-- MỤC 3 ĐỀ TÀI: DANH SÁCH CẢNH BÁO CHƯA XỬ LÝ (OPEN ALERTS) -->
             <div class="section-panel" style="margin-bottom: 24px; border-left: 4px solid #f59e0b;">
                 <div class="panel-head">
                     <div>
@@ -469,64 +528,7 @@
                 <% }%>
             </div>
 
-            <!-- MỤC 2: BIỂU ĐỒ PHÂN TÁN (SCATTER PLOT) TƯƠNG QUAN KHÍ VÀ NHIỆT ĐỘ -->
-            <div class="section-panel">
-                <div class="panel-head">
-                    <div>
-                        <h3 class="panel-title">Scatter Plot: Gas Concentration vs Temperature Correlation</h3>
-                    </div>
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background: #3b82f6;"></span> BASE (Normal)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #ef4444;"></span> HIGH (Poor Air Quality)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> TEMP_EFFECT (Thermal Interference)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #a855f7;"></span> DRIFTED (Sensor Drift)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #64748b;"></span> WARMUP (Warming Up)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #06b6d4;"></span> RAISED (Elevated Gas)</div>
-                    </div>
-                </div>
-
-                <div class="canvas-wrapper">
-                    <canvas id="scatterCanvas" width="1080" height="340"></canvas>
-                </div>
-
-                <div class="scatter-analysis-box">
-                    <b>Thermal Effect Decoupling Analysis:</b> 
-                    When temperature exceeds <b>30°C</b> and humidity drops sharply, measured gas levels rise in-phase along the scatter slope (orange dots <b>TEMP_EFFECT</b>). 
-                    The system detects this co-variance between temperature and gas readings to <b>avoid falsely diagnosing poor air quality</b>, effectively preventing false alarm triggers.
-                </div>
-            </div>
-
-            <!-- MỤC 3: XU HƯỚNG MỨC NỀN & PHÂN BỔ CẢNH BÁO (2 CỘT) -->
-            <div class="dual-grid">
-                <!-- Biểu đồ đường Xu hướng mức nền & độ dịch -->
-                <div class="section-panel" style="margin-bottom: 0;">
-                    <div class="panel-head">
-                        <div>
-                            <h3 class="panel-title">Baseline & Shift (%) Trend Over Time</h3>
-                        </div>
-                    </div>
-                    <div class="chart-legend" style="margin-top: 0;">
-                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;background:#2563eb;margin-right:4px;"></span> Baseline (left axis)</div>
-                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;border-top:2px dashed #dc2626;margin-right:4px;"></span> Base Shift % (right axis)</div>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="trendCanvas" width="510" height="230"></canvas>
-                    </div>
-                </div>
-
-                <!-- Biểu đồ phân bổ loại cảnh báo và người duyệt bác bỏ -->
-                <div class="section-panel" style="margin-bottom: 0;">
-                    <div class="panel-head">
-                        <div>
-                            <h3 class="panel-title">Alert Distribution & Rejection Breakdown</h3>
-                        </div>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="alertBarCanvas" width="510" height="230"></canvas>
-                    </div>
-                </div>
-            </div>
-
+            
             <!-- MỤC 4: BẢNG ĐỐI CHIẾU MỨC TRÔI (UCI BENCHMARK VS DỮ LIỆU TỰ THU) -->
             <div class="section-panel" style="margin-top: 24px;">
                 <div class="panel-head">
@@ -690,10 +692,10 @@
 
                 var labels = ['Poor Air', 'Temp Effect', 'Drifted', 'Warmup', 'Rejected'];
                 var values = [
-            <%= stats.getAlertsByType().getOrDefault("HIGH", 45)%>,
-            <%= stats.getAlertsByType().getOrDefault("TEMP_EFFECT", 30)%>,
-            <%= stats.getAlertsByType().getOrDefault("DRIFTED", 15)%>,
-            <%= stats.getAlertsByType().getOrDefault("WARMUP", 10)%>,
+            <%= stats.getAlertsByType().getOrDefault("HIGH", 0)%>,
+            <%= stats.getAlertsByType().getOrDefault("TEMP_EFFECT", 0)%>,
+            <%= stats.getAlertsByType().getOrDefault("DRIFTED", 0)%>,
+            <%= stats.getAlertsByType().getOrDefault("WARMUP", 0)%>,
             <%= stats.getRejectedAlerts()%>
                 ];
                 var colors = ['#ef4444', '#f97316', '#a855f7', '#64748b', '#dc2626'];
