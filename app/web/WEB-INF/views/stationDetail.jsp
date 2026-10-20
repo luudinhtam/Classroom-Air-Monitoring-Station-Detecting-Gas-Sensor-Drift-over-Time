@@ -1,4 +1,4 @@
-
+﻿
 
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="util.Web"%>
@@ -18,7 +18,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Air Station Details</title>
-        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+        <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     </head>
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -98,3 +98,4 @@
         </div>
     </body>
 </html>
+

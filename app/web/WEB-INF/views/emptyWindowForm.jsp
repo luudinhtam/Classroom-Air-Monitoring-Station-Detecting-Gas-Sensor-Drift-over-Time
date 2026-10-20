@@ -1,4 +1,4 @@
-<%@page import="model.AirStation"%>
+﻿<%@page import="model.AirStation"%>
 <%@page import="dao.AirStationDAO"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="java.util.List"%>
@@ -39,7 +39,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title><%= isNew ? "Add Empty Window" : "Edit Empty Window" %></title>
-        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+        <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     </head>
 
     <body>

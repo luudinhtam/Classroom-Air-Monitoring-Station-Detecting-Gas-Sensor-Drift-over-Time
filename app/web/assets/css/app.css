@@ -45,8 +45,43 @@ body { margin: 0; font-family: Segoe UI, Arial, sans-serif; font-size: 14px;
 }
 
 .topbar-right { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
-.who { font-size: 13px; white-space: nowrap; }
 .who .out { color: #fff; margin-left: 14px; text-decoration: underline; }
+
+.nav-btn-3d {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    color: #059669;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #059669;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.nav-btn-3d:hover {
+    background: #ecfdf5;
+    transform: translateY(-1px);
+}
+
+.nav-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    color: #2563eb;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #2563eb;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.nav-map-btn:hover {
+    background: #eff6ff;
+    transform: translateY(-1px);
+}
 
 .wrap { max-width: 1120px; margin: 18px auto; padding: 0 18px; }
 h2 { margin: 6px 0 14px; font-size: 20px; }

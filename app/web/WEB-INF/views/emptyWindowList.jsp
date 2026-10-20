@@ -1,4 +1,4 @@
-<%@page import="java.time.format.DateTimeFormatter"%>
+﻿<%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="model.AirStation"%>
 <%@page import="dao.AirStationDAO"%>
 <%@page import="util.Web"%>
@@ -12,6 +12,8 @@
     int stationId = (int) request.getAttribute("stationId");
     int total = (int) request.getAttribute("total");
     String ctx = request.getContextPath();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
 
     AirStationDAO stations = new AirStationDAO();
     AirStation a = stations.findById(stationId);
@@ -20,7 +22,6 @@
     AppUser me = (AppUser) session.getAttribute("user");
     String myRole = (me != null) ? me.getRoleCode() : "";
     boolean canManageEmptyWindow = "ADMIN".equals(myRole) || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole);
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 %>
 
 <!DOCTYPE html>
@@ -29,7 +30,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Station Empty Windows</title>
-        <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+        <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     </head>
 
     <body>

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.AirAlert, model.AppUser, util.Web" %>
 <%
     AppUser me = (AppUser) session.getAttribute("user");
@@ -26,8 +26,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alert Management</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
-    <link rel="stylesheet" href="<%= ctx %>/css/alertList.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/alertList.css">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -262,3 +262,4 @@
 </script>
 </body>
 </html>
+

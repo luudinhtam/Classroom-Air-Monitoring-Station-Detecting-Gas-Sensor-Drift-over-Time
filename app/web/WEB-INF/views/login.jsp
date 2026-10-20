@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="util.Web" %>
 <% String error = (String) request.getAttribute("error");%>
 
@@ -9,7 +9,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Airroom – Sign in</title>
 
-        <link rel="stylesheet" href="<%= request.getContextPath() %>/css/login.css">
+        <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/login.css">
     </head>
 
     <body>

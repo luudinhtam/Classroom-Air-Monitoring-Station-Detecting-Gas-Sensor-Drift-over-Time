@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.AppUser, model.AppRole, util.Web" %>
 <%
     AppUser item = (AppUser) request.getAttribute("editUser");
@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= isNew ? "Add User" : "Edit User" %></title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -54,3 +54,4 @@
 </div>
 </body>
 </html>
+

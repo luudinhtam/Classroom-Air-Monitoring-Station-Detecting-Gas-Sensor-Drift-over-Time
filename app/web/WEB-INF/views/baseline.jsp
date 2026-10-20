@@ -1,4 +1,4 @@
-
+﻿
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.List"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
@@ -29,7 +29,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baseline Calculation - Air Station</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
 </head>
 <body style="padding: 30px min(5vw, 60px); max-width: 1200px; margin: 0 auto;">
 
@@ -184,3 +184,4 @@
 
 </body>
 </html>
+

@@ -110,7 +110,7 @@ CREATE TABLE Air_Station (
     co2_warning_threshold   DECIMAL(10,2) NOT NULL DEFAULT 0,
     max_baseline_drift      DECIMAL(10,2) NOT NULL DEFAULT 0,
 
-    device_code             NVARCHAR(128) NULL,
+    device_code              NVARCHAR(128) NULL,
 
     note                    NVARCHAR(400) NULL,
     is_active               BIT NOT NULL DEFAULT 1,

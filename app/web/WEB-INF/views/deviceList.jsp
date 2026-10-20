@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.Device, model.AppUser, util.Web" %>
 <%
     List<Device> rows = (List<Device>) request.getAttribute("rows");
@@ -21,7 +21,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devices</title>
-    <link rel="stylesheet" href="<%= ctx %>/css/app.css?v=2">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css?v=2">
 </head>
 <body>
 <jsp:include page="/WEB-INF/views/nav.jsp"/>
@@ -101,3 +101,4 @@
 </div>
 </body>
 </html>
+

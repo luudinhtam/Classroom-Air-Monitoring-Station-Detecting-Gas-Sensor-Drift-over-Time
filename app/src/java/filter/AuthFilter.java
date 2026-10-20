@@ -69,7 +69,7 @@ public class AuthFilter implements Filter {
         String path = req.getRequestURI().substring(req.getContextPath().length());
 
         if (path.startsWith("/api/") || path.startsWith("/login")
-            || path.startsWith("/css/") || path.startsWith("/js/")) {
+            || path.startsWith("/assets/") || path.startsWith("/css/") || path.startsWith("/js/")) {
             chain.doFilter(rq, rp);
             return;
         }
