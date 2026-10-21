@@ -20,13 +20,21 @@ public class AirStation {
     private boolean active;
     private Timestamp createdAt;
 
+    private Double latitude;
+    private Double longitude;
+
     public AirStation() {
     }
-
 
     public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
             float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
             Timestamp createdAt) {
+        this(stationId, code, name, location, coWarningThreshold, co2WarningThreshold, maxBaselineDrift, deviceCode, note, active, createdAt, null, null);
+    }
+
+    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
+            float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
+            Timestamp createdAt, Double latitude, Double longitude) {
         this.stationId = stationId;
         this.code = code;
         this.name = name;
@@ -38,6 +46,8 @@ public class AirStation {
         this.note = note;
         this.active = active;
         this.createdAt = createdAt;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public int getStationId() {
@@ -123,9 +133,24 @@ public class AirStation {
     public String getDeviceCode() {
         return deviceCode;
     }
-    
 
     public void setDeviceCode(String deviceCode) {
         this.deviceCode = deviceCode;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 }

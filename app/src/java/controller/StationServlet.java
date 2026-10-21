@@ -14,15 +14,15 @@ import model.AirStation;
 import util.Web;
 
 @WebServlet(urlPatterns = {
-                        "/admin/stations", 
-                        "/admin/stations/create", 
-                        "/admin/stations/edit", 
-                        "/admin/stations/save", 
-                        "/admin/stations/delete", 
-                        "/admin/stations/lock",
-                        "/admin/stations/detail"
+    "/admin/stations", 
+    "/admin/stations/create", 
+    "/admin/stations/edit", 
+    "/admin/stations/save", 
+    "/admin/stations/delete", 
+    "/admin/stations/lock",
+    "/admin/stations/detail",
+    "/admin/stations/update-coords"
 })
-
 public class StationServlet extends HttpServlet {
 
     private final AirStationDAO stations = new AirStationDAO();
@@ -48,7 +48,7 @@ public class StationServlet extends HttpServlet {
             return;
         }
         
-        if ("/detail".equals(action)) { 
+        if ("/detail".equals(action)) {
             AirStation a = stations.findById(Web.intParam(request, "id", 0));
             if (a == null) {
                 Web.flash(request, "Station not found");
@@ -56,34 +56,26 @@ public class StationServlet extends HttpServlet {
                 return;
             }
             showDetail(request, response, a);
-            return; 
+            return;
         }
-        
-        showList(request, response);
-    }
-    
-    private void showList(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
         
         String keyword = Web.trimmed(request, "keyword");
         String status = Web.trimmed(request, "status");
         
         List<AirStation> rows = stations.search(keyword, status);
-        int total = stations.count();
-        
         request.setAttribute("rows", rows);
-        request.setAttribute("total", Integer.valueOf(total));
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
-
+        request.setAttribute("total", stations.count());
+        
         request.getRequestDispatcher("/WEB-INF/views/stationList.jsp").forward(request, response);
     }
     
     private void showForm(HttpServletRequest request, HttpServletResponse response, AirStation a)
             throws ServletException, IOException {
-        request.setAttribute("editStation", a);
         DeviceDAO deviceDAO = new DeviceDAO();
         request.setAttribute("deviceList", deviceDAO.getActiveDevices());
+        request.setAttribute("editStation", a);
         request.getRequestDispatcher("/WEB-INF/views/stationForm.jsp").forward(request, response);
     }
     
@@ -99,6 +91,24 @@ public class StationServlet extends HttpServlet {
         
         String action = action(request);
 
+        if ("/update-coords".equals(action)) {
+            int id = Web.intParam(request, "stationId", 0);
+            try {
+                double lat = Double.parseDouble(request.getParameter("lat"));
+                double lng = Double.parseDouble(request.getParameter("lng"));
+                boolean ok = stations.updateCoordinates(id, lat, lng);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"success\":" + ok + "}");
+                return;
+            } catch (Exception e) {
+                response.setStatus(400);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"error\":\"" + e.getMessage() + "\"}");
+                return;
+            }
+        }
+
         if ("/save".equals(action)) {
             int id = Web.intParam(request, "stationId", 0);
             AirStation a = new AirStation();
@@ -108,9 +118,18 @@ public class StationServlet extends HttpServlet {
             a.setLocation(Web.trimmed(request, "location"));
             a.setCoWarningThreshold(Web.intParam(request, "coThreshold", 0));
             a.setCo2WarningThreshold(Web.intParam(request, "co2Threshold", 0));
-            a.setMaxBaselineDrift(Web.intParam(request, "maxBaselineDrift", 0));
+            a.setMaxBaselineDrift(Web.intParam(request, "maxBaselineDrift", 15));
             a.setDeviceCode(Web.trimmed(request, "deviceCode"));
             a.setNote(Web.trimmed(request, "note"));
+
+            String latStr = request.getParameter("latitude");
+            if (latStr != null && !latStr.trim().isEmpty()) {
+                try { a.setLatitude(Double.parseDouble(latStr.trim())); } catch (Exception ignored) {}
+            }
+            String lngStr = request.getParameter("longitude");
+            if (lngStr != null && !lngStr.trim().isEmpty()) {
+                try { a.setLongitude(Double.parseDouble(lngStr.trim())); } catch (Exception ignored) {}
+            }
 
             if (id == 0) {
                 if (stations.insert(a)) Web.flash(request, "Added station " + a.getName());
@@ -140,12 +159,10 @@ public class StationServlet extends HttpServlet {
         }
         
         response.sendRedirect(request.getContextPath() + "/admin/stations");
-        
     }
     
     private String action(HttpServletRequest req) {
         String path = req.getRequestURI().substring(req.getContextPath().length());
         return path.substring("/admin/stations".length());
     }
-
 }
