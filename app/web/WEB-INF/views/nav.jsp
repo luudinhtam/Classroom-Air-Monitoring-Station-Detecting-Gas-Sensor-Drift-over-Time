@@ -23,8 +23,8 @@
         <a href="<%= ctx %>/sessions">Sessions</a>
         <a href="<%= ctx %>/alerts">Alerts</a>
         
-        <!-- Mọi vai trò đều có quyền Xem (R) Trạm nên không ẩn menu này -->
-        <a href="<%= ctx %>/admin/stations">Stations</a>
+        <!-- Mọi vai trò đều có quyền Xem (R) Phòng nên không ẩn menu này -->
+        <a href="<%= ctx %>/admin/rooms">Rooms</a>
         
         <!-- Chỉ ADMIN mới được xem menu Quản lý Users và Devices -->
         <% if (isAdmin) { %>

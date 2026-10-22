@@ -1,14 +1,12 @@
-
 package model;
 
 import java.time.LocalDateTime;
-
 
 public class EmptyWindow {
     private int emptyWindowId;
     private String code;
     private String name;
-    private int stationId;
+    private int roomId;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private int markedBy;
@@ -21,11 +19,11 @@ public class EmptyWindow {
     public EmptyWindow() {
     }
 
-    public EmptyWindow(int emptyWindowId, String code, String name, int stationId, LocalDateTime startAt, LocalDateTime endAt, int markedBy, String note, LocalDateTime createdAt) {
+    public EmptyWindow(int emptyWindowId, String code, String name, int roomId, LocalDateTime startAt, LocalDateTime endAt, int markedBy, String note, LocalDateTime createdAt) {
         this.emptyWindowId = emptyWindowId;
         this.code = code;
         this.name = name;
-        this.stationId = stationId;
+        this.roomId = roomId;
         this.startAt = startAt;
         this.endAt = endAt;
         this.markedBy = markedBy;
@@ -40,8 +38,6 @@ public class EmptyWindow {
     public void setMarkedByUsername(String markedByUsername) {
         this.markedByUsername = markedByUsername;
     }
-    
-    
 
     public int getEmptyWindowId() {
         return emptyWindowId;
@@ -67,12 +63,21 @@ public class EmptyWindow {
         this.name = name;
     }
 
+    public int getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
+    }
+
+    // Alias compatibility
     public int getStationId() {
-        return stationId;
+        return roomId;
     }
 
     public void setStationId(int stationId) {
-        this.stationId = stationId;
+        this.roomId = stationId;
     }
 
     public LocalDateTime getStartAt() {
@@ -114,6 +119,4 @@ public class EmptyWindow {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
-    
 }

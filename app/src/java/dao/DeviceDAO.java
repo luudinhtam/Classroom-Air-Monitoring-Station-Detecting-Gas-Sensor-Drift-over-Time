@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import model.Device;
@@ -12,7 +13,7 @@ import util.DBContext;
 public class DeviceDAO {
     
     private static final String SELECT_BASE = 
-        "SELECT device_id, device_code, api_key, location, last_seen, is_active " +
+        "SELECT device_id, device_code, api_key, location, last_seen, is_active, room_id " +
         "FROM Device ";
 
     public Integer findIdByCodeAndKey(String code, String key) {
@@ -71,7 +72,7 @@ public class DeviceDAO {
         List<Device> list = new ArrayList<>();
 
         String sql = "SELECT device_id, device_code, api_key, "
-                   + "location, last_seen, is_active "
+                   + "location, last_seen, is_active, room_id "
                    + "FROM Device "
                    + "WHERE is_active = 1 "
                    + "ORDER BY device_code";
@@ -89,6 +90,7 @@ public class DeviceDAO {
                 device.setLocation(rs.getString("location"));
                 device.setLastSeen(rs.getTimestamp("last_seen"));
                 device.setIsActive(rs.getBoolean("is_active"));
+                device.setRoomId(rs.getObject("room_id") != null ? rs.getInt("room_id") : null);
 
                 list.add(device);
             }
@@ -162,7 +164,7 @@ public class DeviceDAO {
     }
 
     public boolean insert(Device d) {
-        String sql = "INSERT INTO Device(device_code, api_key, location, is_active) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Device(device_code, api_key, location, is_active, room_id) VALUES (?, ?, ?, ?, ?)";
         Connection cn = null; PreparedStatement ps = null;
         try {
             cn = DBContext.getConnection();
@@ -171,6 +173,11 @@ public class DeviceDAO {
             ps.setString(2, d.getApiKey());
             ps.setString(3, d.getLocation());
             ps.setBoolean(4, d.isIsActive());
+            if (d.getRoomId() != null) {
+                ps.setInt(5, d.getRoomId());
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         finally { close(null, ps, cn); }
@@ -178,7 +185,7 @@ public class DeviceDAO {
     }
 
     public boolean update(Device d) {
-        String sql = "UPDATE Device SET api_key = ?, location = ?, is_active = ? WHERE device_id = ?";
+        String sql = "UPDATE Device SET api_key = ?, location = ?, is_active = ?, room_id = ? WHERE device_id = ?";
         Connection cn = null; PreparedStatement ps = null;
         try {
             cn = DBContext.getConnection();
@@ -186,7 +193,12 @@ public class DeviceDAO {
             ps.setString(1, d.getApiKey());
             ps.setString(2, d.getLocation());
             ps.setBoolean(3, d.isIsActive());
-            ps.setInt(4, d.getDeviceId());
+            if (d.getRoomId() != null) {
+                ps.setInt(4, d.getRoomId());
+            } else {
+                ps.setNull(4, Types.INTEGER);
+            }
+            ps.setInt(5, d.getDeviceId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         finally { close(null, ps, cn); }
@@ -228,6 +240,7 @@ public class DeviceDAO {
         d.setLocation(rs.getString("location"));
         d.setLastSeen(rs.getTimestamp("last_seen"));
         d.setIsActive(rs.getBoolean("is_active"));
+        d.setRoomId(rs.getObject("room_id") != null ? rs.getInt("room_id") : null);
         return d;
     }
 

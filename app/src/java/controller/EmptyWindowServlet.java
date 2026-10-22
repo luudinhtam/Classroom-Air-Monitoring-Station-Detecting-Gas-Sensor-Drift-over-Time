@@ -1,10 +1,8 @@
-
 package controller;
 
 import dao.EmptyWindowDAO;
 import dao.UserDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -19,7 +17,6 @@ import model.AppUser;
 import model.EmptyWindow;
 import util.Web;
 
-
 @WebServlet(name = "EmptyWindowServlet", 
         urlPatterns = {"/admin/emptyWindows", 
                        "/admin/emptyWindows/create", 
@@ -32,16 +29,23 @@ public class EmptyWindowServlet extends HttpServlet {
     private final UserDAO users = new UserDAO();
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
-    
+    private int getRoomParam(HttpServletRequest request) {
+        int id = Web.intParam(request, "roomId", 0);
+        if (id <= 0) {
+            id = Web.intParam(request, "stationId", 0);
+        }
+        return id;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
 
         String action = action(request);
         if ("/create".equals(action)) { 
-            showForm(request, response, null, stationId);
+            showForm(request, response, null, roomId);
             return; 
         }
         
@@ -49,39 +53,30 @@ public class EmptyWindowServlet extends HttpServlet {
 
             int emptyWindowId = Web.intParam(request, "id", 0);
 
-            if (emptyWindowId <= 0 || stationId <= 0) {
-                Web.flash(request,
-                        "Invalid empty window information");
-                response.sendRedirect(
-                        request.getContextPath() + "/admin/stations");
+            if (emptyWindowId <= 0 || roomId <= 0) {
+                Web.flash(request, "Invalid empty window information");
+                response.sendRedirect(request.getContextPath() + "/admin/rooms");
                 return;
             }
 
             EmptyWindow ew = emptyWindows.findById(emptyWindowId);
 
             if (ew == null) {
-                Web.flash(request,
-                        "Empty window not found");
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/admin/emptyWindows?stationId=" + stationId);
+                Web.flash(request, "Empty window not found");
+                response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?roomId=" + roomId);
                 return;
             }
 
-            // Kiểm tra EmptyWindow có thuộc station này không
-            if (ew.getStationId() != stationId) {
-                Web.flash(request,
-                        "Empty window does not belong to this station");
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/admin/emptyWindows?stationId=" + stationId);
+            // Kiểm tra EmptyWindow có thuộc room này không
+            if (ew.getRoomId() != roomId) {
+                Web.flash(request, "Empty window does not belong to this room");
+                response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?roomId=" + roomId);
                 return;
             }
 
-            showForm(request, response, ew, stationId);
+            showForm(request, response, ew, roomId);
             return;
         }
-        
         
         showList(request, response);
     }
@@ -89,22 +84,24 @@ public class EmptyWindowServlet extends HttpServlet {
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
 
-        List<EmptyWindow> rows = emptyWindows.search(stationId);
-        int total = emptyWindows.count(stationId);
+        List<EmptyWindow> rows = emptyWindows.search(roomId);
+        int total = emptyWindows.count(roomId);
 
         request.setAttribute("rows", rows);
         request.setAttribute("total", Integer.valueOf(total));
-        request.setAttribute("stationId", stationId);
+        request.setAttribute("roomId", roomId);
+        request.setAttribute("stationId", roomId);
 
         request.getRequestDispatcher("/WEB-INF/views/emptyWindowList.jsp").forward(request, response);
     }
     
-    private void showForm(HttpServletRequest request, HttpServletResponse response, EmptyWindow ew, int stationId)
+    private void showForm(HttpServletRequest request, HttpServletResponse response, EmptyWindow ew, int roomId)
             throws ServletException, IOException {
         request.setAttribute("editEmptyWindow", ew);
-        request.setAttribute("stationId", stationId);
+        request.setAttribute("roomId", roomId);
+        request.setAttribute("stationId", roomId);
 
         List<AppUser> emptyWindowUsers = users.findCalibrationUser();
         request.setAttribute("emptyWindowUsers", emptyWindowUsers);
@@ -112,13 +109,12 @@ public class EmptyWindowServlet extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/emptyWindowForm.jsp").forward(request, response);
     }
 
-    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         String action = action(request);
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
         
         if ("/save".equals(action)) {
 
@@ -126,15 +122,14 @@ public class EmptyWindowServlet extends HttpServlet {
             
             HttpSession session = request.getSession(false);
             if (session == null) {
-                Web.flash(request,
-                        "Session expired. Please recalculate baseline.");
-                response.sendRedirect(request.getContextPath() + "/admin/stations");
+                Web.flash(request, "Session expired. Please recalculate baseline.");
+                response.sendRedirect(request.getContextPath() + "/admin/rooms");
                 return;
             }
 
             // Kiểm tra người dùng đã đăng nhập.
             AppUser me = (AppUser) session.getAttribute("user");
-            int userId = me.getUserId();
+            int userId = (me != null) ? me.getUserId() : 0;
 
             String code = Web.trimmed(request, "code");
             String name = Web.trimmed(request, "name");
@@ -143,16 +138,13 @@ public class EmptyWindowServlet extends HttpServlet {
             String note = Web.trimmed(request, "note");
 
             // Kiểm tra dữ liệu bắt buộc
-            if (stationId <= 0 || userId <= 0
+            if (roomId <= 0 || userId <= 0
                     || code.isEmpty() || name.isEmpty()
                     || startText.isEmpty() || endText.isEmpty()) {
 
-                Web.flash(request,
-                        "Please enter all required empty window details");
+                Web.flash(request, "Please enter all required empty window details");
 
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/admin/emptyWindows?stationId=" + stationId);
+                response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?roomId=" + roomId);
                 return;
             }
 
@@ -163,14 +155,14 @@ public class EmptyWindowServlet extends HttpServlet {
                 // Thời gian kết thúc phải sau thời gian bắt đầu
                 if (!endAt.isAfter(startAt)) {
                     Web.flash(request, "End time must be after start time");
-                    response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?stationId=" + stationId);
+                    response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?roomId=" + roomId);
                     return;
                 }
 
                 EmptyWindow ew = new EmptyWindow();
 
                 ew.setEmptyWindowId(emptyWindowId);
-                ew.setStationId(stationId);
+                ew.setRoomId(roomId);
                 ew.setCode(code);
                 ew.setName(name);
                 ew.setStartAt(startAt);
@@ -187,11 +179,11 @@ public class EmptyWindowServlet extends HttpServlet {
                     }
 
                 } else {
-                    // UPDATE: kiểm tra bản ghi tồn tại và thuộc đúng station
+                    // UPDATE: kiểm tra bản ghi tồn tại và thuộc đúng room
                     EmptyWindow existing = emptyWindows.findById(emptyWindowId);
 
-                    if (existing == null || existing.getStationId() != stationId) {
-                        Web.flash(request, "Empty window not found for this station");
+                    if (existing == null || existing.getRoomId() != roomId) {
+                        Web.flash(request, "Empty window not found for this room");
                     } else if (emptyWindows.update(ew)) {
                         Web.flash(request, "Empty window changes saved successfully");
                     } else {
@@ -208,26 +200,22 @@ public class EmptyWindowServlet extends HttpServlet {
 
             int emptyWindowId = Web.intParam(request, "emptyWindowId", 0);
 
-            if (emptyWindowId > 0 && stationId > 0) {
-                if (emptyWindows.delete(emptyWindowId, stationId)) {
+            if (emptyWindowId > 0 && roomId > 0) {
+                if (emptyWindows.delete(emptyWindowId, roomId)) {
                     Web.flash(request, "Empty window deleted successfully");
                 } else {
-                    Web.flash(request,
-                            "Empty window not found for this station");
+                    Web.flash(request, "Empty window not found for this room");
                 }
             } else {
                 Web.flash(request, "Invalid deletion request");
             }
         }
         
-        
-        
-        response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?stationId=" + stationId);
+        response.sendRedirect(request.getContextPath() + "/admin/emptyWindows?roomId=" + roomId);
         
     } 
 
     private String action(HttpServletRequest request) {
-
         String path = request.getRequestURI().substring(request.getContextPath().length());
         return path.substring("/admin/emptyWindows".length());
     }

@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.AirAlert, model.AppUser, util.Web" %>
 <%
     AppUser me = (AppUser) session.getAttribute("user");
@@ -154,7 +154,7 @@
                                         <input type="hidden" name="alertId" value="<%= a.getAlertId() %>">
                                         <input type="hidden" name="action" value="ack">
                                         <input type="hidden" name="backStatus" value="<%= currentStatus != null ? Web.esc(currentStatus) : "" %>">
-                                        <button type="submit" class="btn-action-ack" title="Confirm real issue">✓ Acknowledge</button>
+                                        <button type="submit" class="btn-action-ack" title="Confirm real issue">✓ Approved</button>
                                     </form>
 
                                     <!-- Nút bác bỏ -->

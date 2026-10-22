@@ -1,4 +1,3 @@
-
 package dao;
 
 import java.sql.Connection;
@@ -11,12 +10,11 @@ import java.util.List;
 import model.EmptyWindow;
 import util.DBContext;
 
-
 public class EmptyWindowDAO {
     
     private static final String SELECT_BASE =
         "SELECT e.empty_window_id, e.code, e.name, " +
-        "e.station_id, e.start_at, e.end_at, " +
+        "e.room_id, e.start_at, e.end_at, " +
         "e.marked_by, u.username, e.note, e.created_at " +
         "FROM Air_EmptyWindow e " +
         "JOIN AppUser u ON e.marked_by = u.user_id ";
@@ -44,12 +42,11 @@ public class EmptyWindowDAO {
         return null;
     }
     
-    
-    public List<EmptyWindow> search(int stationId) {
+    public List<EmptyWindow> search(int roomId) {
         List<EmptyWindow> list = new ArrayList<>();
 
         String sql = SELECT_BASE
-                + "WHERE e.station_id = ? "
+                + "WHERE e.room_id = ? "
                 + "ORDER BY e.start_at DESC";
 
         Connection cn = null;
@@ -60,7 +57,7 @@ public class EmptyWindowDAO {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql);
 
-            ps.setInt(1, stationId);
+            ps.setInt(1, roomId);
 
             rs = ps.executeQuery();
 
@@ -77,15 +74,14 @@ public class EmptyWindowDAO {
         return list;
     }
     
-    public int count(int stationId) {
-        
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Air_EmptyWindow e WHERE e.station_id = ?");
+    public int count(int roomId) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Air_EmptyWindow e WHERE e.room_id = ?");
         
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql.toString());
-            ps.setInt(1, stationId);
+            ps.setInt(1, roomId);
             rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) { e.printStackTrace(); }
@@ -95,7 +91,7 @@ public class EmptyWindowDAO {
     
     public boolean insert(EmptyWindow ew) {
         String sql = "INSERT INTO Air_EmptyWindow "
-                + "(code, name, station_id, start_at, end_at, marked_by, note) "
+                + "(code, name, room_id, start_at, end_at, marked_by, note) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         Connection cn = null;
@@ -107,7 +103,7 @@ public class EmptyWindowDAO {
 
             ps.setString(1, ew.getCode());
             ps.setString(2, ew.getName());
-            ps.setInt(3, ew.getStationId());
+            ps.setInt(3, ew.getRoomId());
             ps.setTimestamp(4, Timestamp.valueOf(ew.getStartAt()));
             ps.setTimestamp(5, Timestamp.valueOf(ew.getEndAt()));
             ps.setInt(6, ew.getMarkedBy());
@@ -131,7 +127,7 @@ public class EmptyWindowDAO {
                 + "marked_by = ?, "
                 + "note = ? "
                 + "WHERE empty_window_id = ? "
-                + "AND station_id = ?";
+                + "AND room_id = ?";
 
         Connection cn = null;
         PreparedStatement ps = null;
@@ -147,7 +143,7 @@ public class EmptyWindowDAO {
             ps.setInt(5, ew.getMarkedBy());
             ps.setString(6, ew.getNote());
             ps.setInt(7, ew.getEmptyWindowId());
-            ps.setInt(8, ew.getStationId());
+            ps.setInt(8, ew.getRoomId());
 
             return ps.executeUpdate() > 0;
 
@@ -159,10 +155,10 @@ public class EmptyWindowDAO {
         }
     }
     
-    public boolean delete(int emptyWindowId, int stationId) {
+    public boolean delete(int emptyWindowId, int roomId) {
         String sql = "DELETE FROM Air_EmptyWindow "
                 + "WHERE empty_window_id = ? "
-                + "AND station_id = ?";
+                + "AND room_id = ?";
 
         Connection cn = null;
         PreparedStatement ps = null;
@@ -172,7 +168,7 @@ public class EmptyWindowDAO {
             ps = cn.prepareStatement(sql);
 
             ps.setInt(1, emptyWindowId);
-            ps.setInt(2, stationId);
+            ps.setInt(2, roomId);
 
             return ps.executeUpdate() > 0;
 
@@ -185,13 +181,12 @@ public class EmptyWindowDAO {
     }
     
     private EmptyWindow map(ResultSet rs) throws SQLException {
-
         EmptyWindow ew = new EmptyWindow();
 
         ew.setEmptyWindowId(rs.getInt("empty_window_id"));
         ew.setCode(rs.getString("code"));
         ew.setName(rs.getString("name"));
-        ew.setStationId(rs.getInt("station_id"));
+        ew.setRoomId(rs.getInt("room_id"));
         ew.setStartAt(rs.getTimestamp("start_at").toLocalDateTime());
         ew.setEndAt(rs.getTimestamp("end_at").toLocalDateTime());
         ew.setMarkedBy(rs.getInt("marked_by"));
@@ -207,5 +202,4 @@ public class EmptyWindowDAO {
         try { if (ps != null) ps.close(); } catch (Exception e) {}
         try { if (cn != null) cn.close(); } catch (Exception e) {}
     }
-    
 }

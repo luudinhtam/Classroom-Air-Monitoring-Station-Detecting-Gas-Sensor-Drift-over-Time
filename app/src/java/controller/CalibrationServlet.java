@@ -3,7 +3,6 @@ package controller;
 import dao.CalibrationDAO;
 import dao.UserDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -25,15 +24,23 @@ public class CalibrationServlet extends HttpServlet {
     private final CalibrationDAO calibrations = new CalibrationDAO();
     private final UserDAO users = new UserDAO();
 
+    private int getRoomParam(HttpServletRequest request) {
+        int id = Web.intParam(request, "roomId", 0);
+        if (id <= 0) {
+            id = Web.intParam(request, "stationId", 0);
+        }
+        return id;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
 
         String action = action(request);
         if ("/create".equals(action)) {
-            showForm(request, response, null, stationId);
+            showForm(request, response, null, roomId);
             return;
         }
 
@@ -41,10 +48,10 @@ public class CalibrationServlet extends HttpServlet {
 
             int calibrationId = Web.intParam(request, "id", 0);
 
-            // Kiểm tra calibrationId và stationId
-            if (calibrationId <= 0 || stationId <= 0) {
+            // Kiểm tra calibrationId và roomId
+            if (calibrationId <= 0 || roomId <= 0) {
                 Web.flash(request, "Invalid calibration information");
-                response.sendRedirect(request.getContextPath() + "/admin/stations");
+                response.sendRedirect(request.getContextPath() + "/admin/rooms");
                 return;
             }
 
@@ -53,18 +60,18 @@ public class CalibrationServlet extends HttpServlet {
             // Không tìm thấy calibration
             if (c == null) {
                 Web.flash(request, "Calibration record not found");
-                response.sendRedirect(request.getContextPath() + "/admin/stations");
+                response.sendRedirect(request.getContextPath() + "/admin/rooms");
                 return;
             }
 
-            // Calibration không thuộc station hiện tại
-            if (c.getStationId() != stationId) {
-                Web.flash(request, "Calibration record does not belong to this station");
-                response.sendRedirect(request.getContextPath() + "/admin/stations");
+            // Calibration không thuộc room hiện tại
+            if (c.getRoomId() != roomId) {
+                Web.flash(request, "Calibration record does not belong to this room");
+                response.sendRedirect(request.getContextPath() + "/admin/rooms");
                 return;
             }
 
-            showForm(request, response, c, stationId);
+            showForm(request, response, c, roomId);
             return;
         }
 
@@ -75,22 +82,24 @@ public class CalibrationServlet extends HttpServlet {
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
 
-        List<Calibration> rows = calibrations.search(stationId);
-        int total = calibrations.count(stationId);
+        List<Calibration> rows = calibrations.search(roomId);
+        int total = calibrations.count(roomId);
 
         request.setAttribute("rows", rows);
         request.setAttribute("total", Integer.valueOf(total));
-        request.setAttribute("stationId", stationId);
+        request.setAttribute("roomId", roomId);
+        request.setAttribute("stationId", roomId);
 
         request.getRequestDispatcher("/WEB-INF/views/calibrationList.jsp").forward(request, response);
     }
 
-    private void showForm(HttpServletRequest request, HttpServletResponse response, Calibration c, int stationId)
+    private void showForm(HttpServletRequest request, HttpServletResponse response, Calibration c, int roomId)
             throws ServletException, IOException {
         request.setAttribute("editCalibration", c);
-        request.setAttribute("stationId", stationId);
+        request.setAttribute("roomId", roomId);
+        request.setAttribute("stationId", roomId);
 
         List<AppUser> calibrationUsers = users.findCalibrationUser();
         request.setAttribute("calibrationUsers", calibrationUsers);
@@ -103,7 +112,7 @@ public class CalibrationServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = action(request);
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
 
         if ("/save".equals(action)) {
 
@@ -113,7 +122,7 @@ public class CalibrationServlet extends HttpServlet {
             Calibration c = new Calibration();
 
             c.setCalibrationId(calibrationId);
-            c.setStationId(stationId);
+            c.setRoomId(roomId);
 
             c.setCode(Web.trimmed(request, "code"));
             c.setName(Web.trimmed(request, "name"));
@@ -134,18 +143,18 @@ public class CalibrationServlet extends HttpServlet {
         if ("/delete".equals(action)) {
             int calibrationId = Web.intParam(request, "calibrationId", 0);
 
-            if (calibrationId > 0 && stationId > 0) {
-                if (calibrations.delete(calibrationId, stationId)) {
+            if (calibrationId > 0 && roomId > 0) {
+                if (calibrations.delete(calibrationId, roomId)) {
                     Web.flash(request, "Calibration record deleted successfully");
                 } else {
-                    Web.flash(request, "Calibration record not found for this station");
+                    Web.flash(request, "Calibration record not found for this room");
                 }
             } else {
                 Web.flash(request, "Invalid deletion request");
             }
         }
 
-        response.sendRedirect(request.getContextPath() + "/admin/calibrations?stationId=" + stationId);
+        response.sendRedirect(request.getContextPath() + "/admin/calibrations?roomId=" + roomId);
 
     }
 

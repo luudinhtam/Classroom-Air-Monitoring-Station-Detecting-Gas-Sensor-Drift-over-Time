@@ -1,5 +1,3 @@
-﻿
-
 <%@page import="java.util.List"%>
 <%@page import="model.AppUser"%>
 <%@page import="util.Web"%>
@@ -9,9 +7,10 @@
 <%
     Calibration item = (Calibration) request.getAttribute("editCalibration");
     String error = (String) request.getAttribute("error");
-    Integer stationId = (Integer) request.getAttribute("stationId");
+    Integer rIdObj = (Integer) request.getAttribute("roomId");
+    int roomId = (rIdObj != null) ? rIdObj : (request.getAttribute("stationId") != null ? (Integer) request.getAttribute("stationId") : 0);
     String ctx = request.getContextPath();
-    boolean isNew = (item == null || item.getCalibrationId()== 0);
+    boolean isNew = (item == null || item.getCalibrationId() == 0);
 %>
 
 <!DOCTYPE html>
@@ -26,11 +25,11 @@
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         
         <div class="wrap">
-            <h2><%= isNew ? "Add Calibration" : "Edit Calibration" %> for Station ID: <%= stationId %></h2>
+            <h2><%= isNew ? "Add Calibration" : "Edit Calibration" %> for Room ID: <%= roomId %></h2>
             
             <% if (error != null) { %><div class="error"><%= Web.esc(error) %></div><% } %>
             
-            <form class="form" method="post" action="<%= ctx %>/admin/calibrations/save?stationId=<%= stationId %>">
+            <form class="form" method="post" action="<%= ctx %>/admin/calibrations/save?roomId=<%= roomId %>">
                 <input type="hidden" name="calibrationId" value="<%= isNew ? 0 : item.getCalibrationId() %>">
 
                 <label>Code</label>
@@ -53,7 +52,6 @@
                 <input type="number" name="co2Baseline"
                        value="<%= item == null ? "" : item.getCo2BaseLine() %>">
                 
-                
                 <label>Performed by</label>
                 <select name="userId" required>
                     <option value="">-- Select Performer --</option>
@@ -62,13 +60,15 @@
 
                         int performedBy = item == null ? 0 : item.getPerformedBy();
 
-                        for (AppUser u : calibrationUsers) {
+                        if (calibrationUsers != null) {
+                            for (AppUser u : calibrationUsers) {
                     %>
                         <option value="<%= u.getUserId() %>"
                                 <%= u.getUserId() == performedBy ? "selected" : "" %>>
                             <%= Web.esc(u.getUsername()) %>
                         </option>
-                    <%}%>
+                    <%      }
+                        } %>
                 </select>
                 
                 <label>Note</label>
@@ -77,11 +77,10 @@
 
                 <div class="actions">
                     <button type="submit" class="primary">Save</button>
-                    <a href="<%= ctx %>/admin/calibrations?stationId=<%= stationId %>" class="btn ghost">Cancel</a>
+                    <a href="<%= ctx %>/admin/calibrations?roomId=<%= roomId %>" class="btn ghost">Cancel</a>
                 </div>
             </form>
         </div>
         
     </body>
 </html>
-

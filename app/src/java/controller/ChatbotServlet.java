@@ -93,7 +93,7 @@ public class ChatbotServlet extends HttpServlet {
         conn.setConnectTimeout(2500);
         conn.setReadTimeout(4000);
 
-        String systemContext = "Bạn là trợ lý AI của dự án AirRoom - Trạm giám sát không khí và phát hiện trôi dạt cảm biến (Sensor Drift) tại các phòng học trường Đại học FPT TP.HCM. "
+        String systemContext = "Bạn là trợ lý AI của dự án AirRoom - Giám sát không khí và phát hiện trôi dạt cảm biến (Sensor Drift) tại các phòng học trường Đại học FPT TP.HCM. "
                 + "Hãy trả lời ngắn gọn (dưới 100 từ), lịch sự, chính xác bằng tiếng Việt.\\n\\n";
 
         String prompt = systemContext + "Câu hỏi: " + escapeJson(userQuestion);
@@ -131,11 +131,11 @@ public class ChatbotServlet extends HttpServlet {
         }
 
         if (query.contains("khí co") || query.contains("khi co") || query.contains("nồng độ co") || query.contains("nong do co") || query.contains("carbon monoxide") || query.contains(" co ")) {
-            return "Khí CO là khí độc không màu, không mùi. Trong môi trường phòng học bình thường, nồng độ CO an toàn ở mức 0 - 9 ppm. Khi nồng độ CO vượt ngưỡng 15 - 25 ppm, trạm đo AirRoom sẽ kích hoạt cảnh báo nguy hiểm mức độ WARN hoặc CRITICAL để nhân viên kiểm tra.";
+            return "Khí CO là khí độc không màu, không mùi. Trong môi trường phòng học bình thường, nồng độ CO an toàn ở mức 0 - 9 ppm. Khi nồng độ CO vượt ngưỡng 15 - 25 ppm, hệ thống giám sát AirRoom sẽ kích hoạt cảnh báo nguy hiểm mức độ WARN hoặc CRITICAL để nhân viên kiểm tra.";
         }
 
         if (query.contains("chào") || query.contains("chao") || query.contains("hello") || query.contains(" hi ") || query.contains("bạn là ai") || query.contains("ban la ai") || query.contains("ai tư vấn")) {
-            return "Xin chào! Tôi là trợ lý AI của trạm giám sát không khí AirRoom (Đại học FPT). Tôi có thể hỗ trợ giải đáp về các chỉ số CO, CO2, độ trôi cảm biến (Sensor Drift), chu kỳ hiệu chuẩn và tình trạng các phòng học. Bạn muốn hỏi gì? 😊";
+            return "Xin chào! Tôi là trợ lý AI của hệ thống giám sát không khí phòng học AirRoom (Đại học FPT). Tôi có thể hỗ trợ giải đáp về các chỉ số CO, CO2, độ trôi cảm biến (Sensor Drift), chu kỳ hiệu chuẩn và tình trạng các phòng học. Bạn muốn hỏi gì? 😊";
         }
 
         if (query.contains("độ trôi") || query.contains("do troi") || query.contains("drift") || query.contains("trôi") || query.contains("troi") || query.contains("sensor drift") || query.contains("mức nền") || query.contains("muc nen")) {

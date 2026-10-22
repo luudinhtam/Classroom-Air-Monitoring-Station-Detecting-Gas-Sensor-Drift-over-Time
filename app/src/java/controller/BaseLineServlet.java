@@ -1,4 +1,3 @@
-
 package controller;
 
 import dao.CalibrationDAO;
@@ -31,76 +30,84 @@ public class BaseLineServlet extends HttpServlet {
     private static final int MAX_SAMPLES = 1440;
     private static final String PREVIEW_KEY = "baselinePreview";
 
+    private int getRoomParam(HttpServletRequest request) {
+        int id = Web.intParam(request, "roomId", 0);
+        if (id <= 0) {
+            id = Web.intParam(request, "stationId", 0);
+        }
+        return id;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        int stationId = Web.intParam(request, "stationId", 0);
+        int roomId = getRoomParam(request);
         int emptyWindowId = Web.intParam(request, "emptyWindowId", 0);
 
-        if (stationId <= 0 || emptyWindowId <= 0) {
+        if (roomId <= 0 || emptyWindowId <= 0) {
             Web.flash(request,
-                    "Thong tin tram hoac khoang phong trong khong hop le");
+                    "Thông tin phòng hoặc khoảng phòng trống không hợp lệ");
             response.sendRedirect(
-                    request.getContextPath() + "/admin/stations");
+                    request.getContextPath() + "/admin/rooms");
             return;
         }
 
         EmptyWindow ew = emptyWindows.findById(emptyWindowId);
 
-        if (ew == null || ew.getStationId() != stationId) {
-            Web.flash(request, "Khoang phong trong khong hop le");
+        if (ew == null || ew.getRoomId() != roomId) {
+            Web.flash(request, "Khoảng phòng trống không hợp lệ");
             response.sendRedirect(request.getContextPath()
-                    + "/admin/emptyWindows?stationId=" + stationId);
+                    + "/admin/emptyWindows?roomId=" + roomId);
             return;
         }
 
         LocalDateTime startAt = ew.getStartAt();
         LocalDateTime endAt = ew.getEndAt();
 
-        if (startAt == null || endAt == null
-                || !endAt.isAfter(startAt)) {
-            Web.flash(request, "Invalid time range");
+        // Kiểm tra thời gian kết thúc phải sau thời gian bắt đầu.
+        if (startAt == null || endAt == null || !endAt.isAfter(startAt)) {
+            Web.flash(request,
+                    "Thời gian bắt đầu và kết thúc không hợp lệ");
             response.sendRedirect(request.getContextPath()
-                    + "/admin/emptyWindows?stationId=" + stationId);
+                    + "/admin/emptyWindows?roomId=" + roomId);
             return;
         }
 
-        // Sinh dữ liệu giả lập một lần cho kết quả xem trước.
+        // Sinh dữ liệu cảm biến giả lập trong khoảng phòng trống.
         List<SensorSample> samples =
                 generateMockSamples(startAt, endAt);
 
         if (samples.isEmpty()) {
-            Web.flash(request, "No data found to calculate baseline");
+            Web.flash(request,
+                    "Không thể tạo dữ liệu mẫu cho khoảng thời gian này");
             response.sendRedirect(request.getContextPath()
-                    + "/admin/emptyWindows?stationId=" + stationId);
+                    + "/admin/emptyWindows?roomId=" + roomId);
             return;
         }
 
-        // Tính baseline CO và CO2.
-        double totalCO = 0;
-        double totalCO2 = 0;
+        // Tính giá trị trung bình mức nền.
+        double avgCO = samples.stream()
+                .mapToDouble(SensorSample::getCoValue)
+                .average()
+                .orElse(0.0);
 
-        for (SensorSample sample : samples) {
-            totalCO += sample.getCoValue();
-            totalCO2 += sample.getCo2Value();
-        }
+        double avgCO2 = samples.stream()
+                .mapToDouble(SensorSample::getCo2Value)
+                .average()
+                .orElse(0.0);
 
-        double baselineCO = totalCO / samples.size();
-        double baselineCO2 = totalCO2 / samples.size();
+        double baselineCO =
+                Math.round(avgCO * 100.0) / 100.0;
+        double baselineCO2 =
+                Math.round(avgCO2 * 100.0) / 100.0;
 
-        // Lưu kết quả xem trước vào session, không dùng token.
         BaselinePreview preview = new BaselinePreview(
-                stationId,
-                ew,
-                samples,
-                baselineCO,
-                baselineCO2
-        );
+                roomId, ew, samples, baselineCO, baselineCO2);
 
-        HttpSession session = request.getSession();
-        session.setAttribute(PREVIEW_KEY, preview);
+        // Lưu kết quả xem trước vào session để dùng khi người dùng xác nhận lưu.
+        request.getSession().setAttribute(PREVIEW_KEY, preview);
 
         showPreview(request, response, preview, null);
     }
@@ -110,15 +117,13 @@ public class BaseLineServlet extends HttpServlet {
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-
         HttpSession session = request.getSession(false);
 
         if (session == null) {
             Web.flash(request,
                     "Session expired. Please recalculate baseline.");
             response.sendRedirect(
-                    request.getContextPath() + "/admin/stations");
+                    request.getContextPath() + "/admin/rooms");
             return;
         }
 
@@ -137,7 +142,7 @@ public class BaseLineServlet extends HttpServlet {
             Web.flash(request,
                     "Preview results not found. Please recalculate baseline.");
             response.sendRedirect(
-                    request.getContextPath() + "/admin/stations");
+                    request.getContextPath() + "/admin/rooms");
             return;
         }
 
@@ -158,7 +163,7 @@ public class BaseLineServlet extends HttpServlet {
                 + preview.getEmptyWindow().getName()
                 + " (simulated sensor data)");
 
-        calibration.setStationId(preview.getStationId());
+        calibration.setRoomId(preview.getRoomId());
         calibration.setPerformedBy(me.getUserId());
         calibration.setCoBaseLine((float) preview.getBaselineCO());
         calibration.setCo2BaseLine((float) preview.getBaselineCO2());
@@ -177,8 +182,8 @@ public class BaseLineServlet extends HttpServlet {
         Web.flash(request, "New baseline saved successfully");
 
         response.sendRedirect(request.getContextPath()
-                + "/admin/calibrations?stationId="
-                + preview.getStationId());
+                + "/admin/calibrations?roomId="
+                + preview.getRoomId());
     }
 
     private void showPreview(HttpServletRequest request,
@@ -189,8 +194,10 @@ public class BaseLineServlet extends HttpServlet {
 
         request.setAttribute("emptyWindow",
                 preview.getEmptyWindow());
+        request.setAttribute("roomId",
+                preview.getRoomId());
         request.setAttribute("stationId",
-                preview.getStationId());
+                preview.getRoomId());
         request.setAttribute("samples",
                 preview.getSamples());
         request.setAttribute("sampleCount",
@@ -249,27 +256,31 @@ public class BaseLineServlet extends HttpServlet {
     // Lưu dữ liệu xem trước trong HttpSession.
     private static class BaselinePreview {
 
-        private final int stationId;
+        private final int roomId;
         private final EmptyWindow emptyWindow;
         private final List<SensorSample> samples;
         private final double baselineCO;
         private final double baselineCO2;
 
-        BaselinePreview(int stationId,
+        BaselinePreview(int roomId,
                 EmptyWindow emptyWindow,
                 List<SensorSample> samples,
                 double baselineCO,
                 double baselineCO2) {
 
-            this.stationId = stationId;
+            this.roomId = roomId;
             this.emptyWindow = emptyWindow;
             this.samples = samples;
             this.baselineCO = baselineCO;
             this.baselineCO2 = baselineCO2;
         }
 
+        int getRoomId() {
+            return roomId;
+        }
+
         int getStationId() {
-            return stationId;
+            return roomId;
         }
 
         EmptyWindow getEmptyWindow() {

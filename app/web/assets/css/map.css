@@ -31,7 +31,8 @@ html, body {
     width: 380px;
 }
 
-/* Widget thẻ thông tin trạm nổi góc phải */
+/* Widget thẻ thông tin phòng nổi góc phải */
+.room-card,
 .station-card {
     position: absolute;
     top: 20px;

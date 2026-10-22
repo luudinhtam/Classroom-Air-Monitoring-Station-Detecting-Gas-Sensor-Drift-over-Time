@@ -1,4 +1,4 @@
-﻿
+
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.List"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
@@ -11,7 +11,10 @@
     List<SensorSample> samples =
             (List<SensorSample>) request.getAttribute("samples");
 
-    Integer stationId = (Integer) request.getAttribute("stationId");
+    Integer roomId = (Integer) request.getAttribute("roomId");
+    if (roomId == null) {
+        roomId = (Integer) request.getAttribute("stationId");
+    }
     Integer sampleCount = (Integer) request.getAttribute("sampleCount");
 
     Double baselineCO = (Double) request.getAttribute("baselineCO");
@@ -28,7 +31,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baseline Calculation - Air Station</title>
+    <title>Baseline Calculation - Room</title>
     <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
 </head>
 <body style="padding: 30px min(5vw, 60px); max-width: 1200px; margin: 0 auto;">
@@ -163,7 +166,7 @@
                 Confirm & Save New Baseline
             </button>
 
-            <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
+            <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?roomId=<%= roomId %>">
                 Back
             </a>
         </form>
@@ -172,12 +175,12 @@
 
         <p>No baseline results to display.</p>
 
-        <% if (stationId != null) { %>
-            <a href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
+        <% if (roomId != null) { %>
+            <a href="<%= ctx %>/admin/emptyWindows?roomId=<%= roomId %>">
                 Back to Empty Windows List
             </a>
         <% } else { %>
-            <a href="<%= ctx %>/admin/stations">Back to Stations List</a>
+            <a href="<%= ctx %>/admin/rooms">Back to Rooms List</a>
         <% } %>
 
     <% } %>

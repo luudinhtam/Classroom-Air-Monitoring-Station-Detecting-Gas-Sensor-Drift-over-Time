@@ -1,6 +1,6 @@
-﻿<%@page import="java.time.format.DateTimeFormatter"%>
-<%@page import="model.AirStation"%>
-<%@page import="dao.AirStationDAO"%>
+<%@page import="java.time.format.DateTimeFormatter"%>
+<%@page import="model.Room"%>
+<%@page import="dao.RoomDAO"%>
 <%@page import="util.Web"%>
 <%@page import="model.EmptyWindow"%>
 <%@page import="java.util.List"%>
@@ -9,14 +9,14 @@
 
 <%
     List<EmptyWindow> rows = (List<EmptyWindow>) request.getAttribute("rows");
-    int stationId = (int) request.getAttribute("stationId");
+    Integer rIdObj = (Integer) request.getAttribute("roomId");
+    int roomId = (rIdObj != null) ? rIdObj : (request.getAttribute("stationId") != null ? (Integer) request.getAttribute("stationId") : 0);
     int total = (int) request.getAttribute("total");
     String ctx = request.getContextPath();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-
-    AirStationDAO stations = new AirStationDAO();
-    AirStation a = stations.findById(stationId);
+    RoomDAO rooms = new RoomDAO();
+    Room r = rooms.findById(roomId);
 
     // Phân quyền hiển thị nút: Admin, Station Manager, Operator được quản lý; Reviewer/Viewer chỉ xem
     AppUser me = (AppUser) session.getAttribute("user");
@@ -29,7 +29,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Station Empty Windows</title>
+        <title>Room Empty Windows</title>
         <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     </head>
 
@@ -37,14 +37,14 @@
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
             <h2>
-                Empty Windows for Station:
-                <%= a.getCode() %> / <%= a.getName() %>
+                Empty Windows for Room:
+                <%= r != null ? (Web.esc(r.getCode()) + " / " + Web.esc(r.getName())) : ("ID: " + roomId) %>
                 (<%= total %>)
             </h2>
 
             <form class="filter" method="get" action="<%= ctx %>/admin/emptyWindows">
                 
-                <input type="hidden" name="stationId" value="<%= stationId %>">
+                <input type="hidden" name="roomId" value="<%= roomId %>">
 
                 <input type="text" name="keyword" placeholder="Empty window name..."
                        value="<%= request.getParameter("keyword") != null
@@ -53,17 +53,17 @@
 
                 <button type="submit">Filter</button>
 
-                <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>">
+                <a class="btn ghost" href="<%= ctx %>/admin/emptyWindows?roomId=<%= roomId %>">
                     Reset
                 </a>
 
                 <% if (canManageEmptyWindow) { %>
-                    <a class="btn" href="<%= ctx %>/admin/emptyWindows/create?stationId=<%= stationId %>">
+                    <a class="btn" href="<%= ctx %>/admin/emptyWindows/create?roomId=<%= roomId %>">
                         + Add Empty Window
                     </a>
                 <% } %>
 
-                <a class="btn ghost" href="<%= ctx %>/admin/stations">&larr; Stations List</a>
+                <a class="btn ghost" href="<%= ctx %>/admin/rooms">&larr; Rooms List</a>
             </form>
 
             <div class="table-responsive">
@@ -104,7 +104,7 @@
                         <td class="ops ops-group">
 
                             <button type="button" class="btn-block btn-blue"
-                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
+                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/edit?id=<%= ew.getEmptyWindowId() %>&roomId=<%= roomId %>'">
                                 Edit
                             </button>
 
@@ -115,8 +115,8 @@
                                 <input type="hidden" name="emptyWindowId"
                                        value="<%= ew.getEmptyWindowId() %>">
 
-                                <input type="hidden" name="stationId"
-                                       value="<%= stationId %>">
+                                <input type="hidden" name="roomId"
+                                       value="<%= roomId %>">
 
                                 <button type="submit" class="btn-block btn-red">
                                     Delete
@@ -124,7 +124,7 @@
                             </form>
 
                             <button type="button" class="btn-block btn-gray"
-                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&stationId=<%= stationId %>'">
+                                    onclick="window.location.href='<%= ctx %>/admin/emptyWindows/baseline?emptyWindowId=<%= ew.getEmptyWindowId() %>&roomId=<%= roomId %>'">
                                 Calculate Baseline
                             </button>
 

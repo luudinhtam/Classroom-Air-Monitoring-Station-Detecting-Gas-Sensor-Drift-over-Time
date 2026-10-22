@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, model.AirSession, model.Device, model.AirLabel, model.AppUser, util.Web" %>
 <%
     AirSession item = (AirSession) request.getAttribute("detail");
@@ -161,7 +161,7 @@
                     <span class="info-val"><%= device != null ? Web.esc(device.getDeviceCode()) : "ID #" + item.getDeviceId() %></span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Station / Location</span>
+                    <span class="info-label">Room / Location</span>
                     <span class="info-val"><%= device != null && device.getLocation() != null ? Web.esc(device.getLocation()) : "Unspecified" %></span>
                 </div>
             </div>

@@ -17,12 +17,13 @@ public class AuthFilter implements Filter {
         ALLOWED.put("/admin/users", roles("ADMIN"));
         ALLOWED.put("/admin/devices", roles("ADMIN"));
         
-        // 2. TRẠM, HIỆU CHUẨN, PHÒNG TRỐNG
-        ALLOWED.put("/admin/stations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
-        ALLOWED.put("/admin/stations/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
-        ALLOWED.put("/admin/stations/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
-        ALLOWED.put("/admin/stations/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
-        ALLOWED.put("/admin/stations/lock", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        // 2. PHÒNG, HIỆU CHUẨN, PHÒNG TRỐNG
+        ALLOWED.put("/admin/rooms/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/save", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/lock", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/update-coords", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         
         ALLOWED.put("/admin/calibrations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/calibrations/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
@@ -35,9 +36,9 @@ public class AuthFilter implements Filter {
         ALLOWED.put("/admin/emptyWindows/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/emptyWindows/baseline", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
 
-        // 3. QUYỀN XEM TRẠM, HIỆU CHUẨN, PHÒNG TRỐNG
-        ALLOWED.put("/admin/stations/detail", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
-        ALLOWED.put("/admin/stations", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        // 3. QUYỀN XEM PHÒNG, HIỆU CHUẨN, PHÒNG TRỐNG
+        ALLOWED.put("/admin/rooms/detail", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
+        ALLOWED.put("/admin/rooms", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/admin/calibrations", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         ALLOWED.put("/admin/emptyWindows", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
 

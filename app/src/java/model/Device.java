@@ -9,17 +9,23 @@ public class Device {
     private String location;
     private Timestamp lastSeen;
     private boolean isActive = true;
+    private Integer roomId;
 
     public Device() {
     }
 
     public Device(int deviceId, String deviceCode, String apiKey, String location, Timestamp lastSeen, boolean isActive) {
+        this(deviceId, deviceCode, apiKey, location, lastSeen, isActive, null);
+    }
+
+    public Device(int deviceId, String deviceCode, String apiKey, String location, Timestamp lastSeen, boolean isActive, Integer roomId) {
         this.deviceId = deviceId;
         this.deviceCode = deviceCode;
         this.apiKey = apiKey;
         this.location = location;
         this.lastSeen = lastSeen;
         this.isActive = isActive;
+        this.roomId = roomId;
     }
 
     public int getDeviceId() {
@@ -68,5 +74,13 @@ public class Device {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Integer getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Integer roomId) {
+        this.roomId = roomId;
     }
 }

@@ -1,39 +1,42 @@
 <%@page import="java.util.List"%>
 <%@page import="model.Device"%>
 <%@page import="util.Web"%>
-<%@page import="model.AirStation"%>
+<%@page import="model.Room"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <%
-    AirStation item = (AirStation) request.getAttribute("editStation");
+    Room item = (Room) request.getAttribute("editRoom");
+    if (item == null) {
+        item = (Room) request.getAttribute("editStation"); // Alias compatibility
+    }
     String error = (String) request.getAttribute("error");
     String ctx = request.getContextPath();
-    boolean isNew = (item == null || item.getStationId()== 0);
+    boolean isNew = (item == null || item.getRoomId() == 0);
 %>
 <!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><%= isNew ? "Add Station" : "Edit Station" %></title>
+        <title><%= isNew ? "Add Room" : "Edit Room" %></title>
         <link rel="stylesheet" href="<%= ctx %>/assets/css/app.css">
     </head>
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
-            <h2><%= isNew ? "Add Station" : "Edit Station" %></h2>
+            <h2><%= isNew ? "Add Room" : "Edit Room" %></h2>
             
             <% if (error != null) { %><div class="error"><%= Web.esc(error) %></div><% } %>
             
-            <form class="form" method="post" action="<%= ctx %>/admin/stations/save">
-                <input type="hidden" name="stationId" value="<%= isNew ? 0 : item.getStationId() %>">
+            <form class="form" method="post" action="<%= ctx %>/admin/rooms/save">
+                <input type="hidden" name="roomId" value="<%= isNew ? 0 : item.getRoomId() %>">
 
                 <label>Code</label>
                 <input type="text" name="code" required minlength="3"
                         <%= !isNew ? "readonly style=\"opacity:.55;cursor:not-allowed;\"" : "" %>
                         value="<%= item == null ? "" : Web.esc(item.getCode()) %>">
                     <% if (!isNew) { %>
-                    <small style="color:#888">Station code cannot be changed once created.</small>
+                    <small style="color:#888">Room code cannot be changed once created.</small>
                     <% } %>
 
                 <label>Name</label>
@@ -102,7 +105,7 @@
 
                 <div class="actions">
                     <button type="submit" class="primary">Save</button>
-                    <a href="<%= ctx %>/admin/stations" class="btn ghost">Cancel</a>
+                    <a href="<%= ctx %>/admin/rooms" class="btn ghost">Cancel</a>
                 </div>
             </form>
         </div>

@@ -25,7 +25,7 @@ public class DashboardStats {
     private int sampleSessions;
     private int liveSessions;
     private int totalDevices;
-    private int totalStations;
+    private int totalRooms;
 
     // 3. Mức nền & Độ trôi cảm biến (Mục IX.2)
     private double avgGasABase;
@@ -57,8 +57,8 @@ public class DashboardStats {
     private DatasetComparison sampleStats = new DatasetComparison();
     private DatasetComparison liveStats = new DatasetComparison();
 
-    // 9. Danh sách theo dõi hiệu chuẩn các trạm
-    private List<StationDriftInfo> stationDrifts = new ArrayList<>();
+    // 9. Danh sách theo dõi hiệu chuẩn các phòng
+    private List<RoomDriftInfo> roomDrifts = new ArrayList<>();
 
     // === LỚP CON DTO ===
 
@@ -179,9 +179,9 @@ public class DashboardStats {
         public void setConclusion(String conclusion) { this.conclusion = conclusion; }
     }
 
-    public static class StationDriftInfo {
-        private String stationCode;
-        private String stationName;
+    public static class RoomDriftInfo {
+        private String roomCode;
+        private String roomName;
         private String lastCalibratedAt;
         private double coBaseline;
         private double toleranceDrift;
@@ -189,10 +189,10 @@ public class DashboardStats {
         private double daysInTolerance;
         private String status;
 
-        public String getStationCode() { return stationCode; }
-        public void setStationCode(String stationCode) { this.stationCode = stationCode; }
-        public String getStationName() { return stationName; }
-        public void setStationName(String stationName) { this.stationName = stationName; }
+        public String getRoomCode() { return roomCode; }
+        public void setRoomCode(String roomCode) { this.roomCode = roomCode; }
+        public String getRoomName() { return roomName; }
+        public void setRoomName(String roomName) { this.roomName = roomName; }
         public String getLastCalibratedAt() { return lastCalibratedAt; }
         public void setLastCalibratedAt(String lastCalibratedAt) { this.lastCalibratedAt = lastCalibratedAt; }
         public double getCoBaseline() { return coBaseline; }
@@ -205,6 +205,15 @@ public class DashboardStats {
         public void setDaysInTolerance(double daysInTolerance) { this.daysInTolerance = daysInTolerance; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+
+        // Aliases for compatibility
+        public String getStationCode() { return roomCode; }
+        public void setStationCode(String code) { this.roomCode = code; }
+        public String getStationName() { return roomName; }
+        public void setStationName(String name) { this.roomName = name; }
+    }
+
+    public static class StationDriftInfo extends RoomDriftInfo {
     }
 
     // === GETTERS / SETTERS ===
@@ -232,8 +241,10 @@ public class DashboardStats {
     public void setLiveSessions(int liveSessions) { this.liveSessions = liveSessions; }
     public int getTotalDevices() { return totalDevices; }
     public void setTotalDevices(int totalDevices) { this.totalDevices = totalDevices; }
-    public int getTotalStations() { return totalStations; }
-    public void setTotalStations(int totalStations) { this.totalStations = totalStations; }
+    public int getTotalRooms() { return totalRooms; }
+    public void setTotalRooms(int totalRooms) { this.totalRooms = totalRooms; }
+    public int getTotalStations() { return totalRooms; }
+    public void setTotalStations(int totalStations) { this.totalRooms = totalStations; }
 
     public double getAvgGasABase() { return avgGasABase; }
     public void setAvgGasABase(double avgGasABase) { this.avgGasABase = avgGasABase; }
@@ -277,6 +288,8 @@ public class DashboardStats {
     public DatasetComparison getLiveStats() { return liveStats; }
     public void setLiveStats(DatasetComparison liveStats) { this.liveStats = liveStats; }
 
-    public List<StationDriftInfo> getStationDrifts() { return stationDrifts; }
-    public void setStationDrifts(List<StationDriftInfo> stationDrifts) { this.stationDrifts = stationDrifts; }
+    public List<RoomDriftInfo> getRoomDrifts() { return roomDrifts; }
+    public void setRoomDrifts(List<RoomDriftInfo> roomDrifts) { this.roomDrifts = roomDrifts; }
+    public List<RoomDriftInfo> getStationDrifts() { return roomDrifts; }
+    public void setStationDrifts(List<RoomDriftInfo> drifts) { this.roomDrifts = drifts; }
 }

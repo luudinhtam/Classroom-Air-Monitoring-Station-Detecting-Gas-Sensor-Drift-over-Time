@@ -1,5 +1,5 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="model.Device, util.Web" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="model.Device, model.Room, java.util.List, util.Web" %>
 <%
     Device item = (Device) request.getAttribute("editDevice");
     String error = (String) request.getAttribute("error");
@@ -38,6 +38,24 @@
         <label>Location</label>
         <input type="text" name="location" maxlength="150" placeholder="e.g. Lab Bench #1"
                value="<%= item == null || item.getLocation() == null ? "" : Web.esc(item.getLocation()) %>">
+
+        <label>Assigned Room</label>
+        <select name="roomId">
+            <option value="">-- No Room Assigned --</option>
+            <%
+                List<Room> roomList = (List<Room>) request.getAttribute("roomList");
+                Integer selectedRoomId = (item != null) ? item.getRoomId() : null;
+                if (roomList != null) {
+                    for (Room r : roomList) {
+            %>
+                <option value="<%= r.getRoomId() %>" <%= (selectedRoomId != null && selectedRoomId.equals(r.getRoomId())) ? "selected" : "" %>>
+                    <%= Web.esc(r.getCode()) %> - <%= Web.esc(r.getName()) %>
+                </option>
+            <%
+                    }
+                }
+            %>
+        </select>
 
         <label>Status</label>
         <select name="isActive">

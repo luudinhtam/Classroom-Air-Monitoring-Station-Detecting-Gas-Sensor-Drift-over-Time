@@ -1,4 +1,3 @@
-
 package dao;
 
 import java.sql.Connection;
@@ -10,13 +9,11 @@ import java.util.List;
 import model.Calibration;
 import util.DBContext;
 
-
-
 public class CalibrationDAO {
     
     private static final String SELECT_BASE =
         "SELECT c.calibration_id, c.code, c.name, " +
-        "c.station_id, c.co_baseline, c.co2_baseline, " +
+        "c.room_id, c.co_baseline, c.co2_baseline, " +
         "c.performed_by, u.username AS performed_by_username, " +
         "c.calibrated_at, c.note " +
         "FROM Air_Calibration c " +
@@ -35,17 +32,16 @@ public class CalibrationDAO {
         return null;
     }
     
-    public List<Calibration> search(int stationId) {
-        
+    public List<Calibration> search(int roomId) {
         List<Calibration> out = new ArrayList<>();
         StringBuilder sql = new StringBuilder(SELECT_BASE);
-        sql.append("WHERE c.station_id = ? ");
+        sql.append("WHERE c.room_id = ? ");
         
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql.toString());
-            ps.setInt(1, stationId);
+            ps.setInt(1, roomId);
             
             rs = ps.executeQuery();
             while (rs.next()) out.add(map(rs));
@@ -54,15 +50,14 @@ public class CalibrationDAO {
         return out;
     }
     
-    public int count(int stationId) {
-        
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Air_Calibration a WHERE a.station_id = ?");
+    public int count(int roomId) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Air_Calibration a WHERE a.room_id = ?");
         
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql.toString());
-            ps.setInt(1, stationId);
+            ps.setInt(1, roomId);
             rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) { e.printStackTrace(); }
@@ -72,7 +67,7 @@ public class CalibrationDAO {
     
     public boolean insert(Calibration c) {
         String sql = "INSERT INTO Air_Calibration "
-                + "(code, name, note, station_id, performed_by, "
+                + "(code, name, note, room_id, performed_by, "
                 + "co_baseline, co2_baseline) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -86,7 +81,7 @@ public class CalibrationDAO {
             ps.setString(1, c.getCode());
             ps.setString(2, c.getName());
             ps.setString(3, c.getNote());
-            ps.setInt(4, c.getStationId());
+            ps.setInt(4, c.getRoomId());
             ps.setInt(5, c.getPerformedBy());
             ps.setFloat(6, c.getCoBaseLine());
             ps.setFloat(7, c.getCo2BaseLine());
@@ -109,7 +104,7 @@ public class CalibrationDAO {
                      "performed_by = ?, " +
                      "note = ? " +
                      "WHERE calibration_id = ? " +
-                     "AND station_id = ?";
+                     "AND room_id = ?";
 
         Connection cn = null;
         PreparedStatement ps = null;
@@ -124,7 +119,7 @@ public class CalibrationDAO {
             ps.setInt(4, c.getPerformedBy());
             ps.setString(5, c.getNote());
             ps.setInt(6, c.getCalibrationId());
-            ps.setInt(7, c.getStationId());
+            ps.setInt(7, c.getRoomId());
 
             return ps.executeUpdate() > 0;
 
@@ -137,9 +132,9 @@ public class CalibrationDAO {
         return false;
     }
     
-    public boolean delete(int calibrationId, int stationId) {
+    public boolean delete(int calibrationId, int roomId) {
         String sql = "DELETE FROM Air_Calibration " +
-                     "WHERE calibration_id = ? AND station_id = ?";
+                     "WHERE calibration_id = ? AND room_id = ?";
 
         Connection cn = null;
         PreparedStatement ps = null;
@@ -149,7 +144,7 @@ public class CalibrationDAO {
             ps = cn.prepareStatement(sql);
 
             ps.setInt(1, calibrationId);
-            ps.setInt(2, stationId);
+            ps.setInt(2, roomId);
 
             return ps.executeUpdate() > 0;
 
@@ -161,13 +156,12 @@ public class CalibrationDAO {
         }
     }
     
-    
     private Calibration map(ResultSet rs) throws SQLException {
         Calibration c = new Calibration();
         c.setCalibrationId(rs.getInt("calibration_id"));
         c.setCode(rs.getString("code"));
         c.setName(rs.getString("name"));
-        c.setStationId(rs.getInt("station_id"));
+        c.setRoomId(rs.getInt("room_id"));
         c.setCoBaseLine(rs.getFloat("co_baseline"));
         c.setCo2BaseLine(rs.getFloat("co2_baseline"));
         c.setPerformedBy(rs.getInt("performed_by"));

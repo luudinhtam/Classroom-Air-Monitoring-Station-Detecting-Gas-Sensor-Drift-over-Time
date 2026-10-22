@@ -35,7 +35,7 @@ public class DashboardDAO {
             loadScatterPoints(cn, stats);
             loadTrendPoints(cn, stats);
             loadDatasetComparison(cn, stats);
-            loadStationCalibrationDrifts(cn, stats);
+            loadRoomCalibrationDrifts(cn, stats);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -96,13 +96,13 @@ public class DashboardDAO {
             e.printStackTrace();
         }
 
-        // Đếm thiết bị & trạm
+        // Đếm thiết bị & phòng
         try (Statement st = cn.createStatement()) {
             try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Device WHERE is_active = 1")) {
                 if (rs.next()) stats.setTotalDevices(rs.getInt(1));
             }
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Air_Station WHERE is_active = 1")) {
-                if (rs.next()) stats.setTotalStations(rs.getInt(1));
+            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Room WHERE is_active = 1")) {
+                if (rs.next()) stats.setTotalRooms(rs.getInt(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -395,27 +395,27 @@ public class DashboardDAO {
      * 7. Thời gian giữ được mức nền trong dung sai của mỗi lần hiệu chuẩn
      * TỐI ƯU: Thay FORMAT bằng CONVERT định dạng ngày chuẩn SQL.
      */
-    private void loadStationCalibrationDrifts(Connection cn, DashboardStats stats) {
+    private void loadRoomCalibrationDrifts(Connection cn, DashboardStats stats) {
         String sql = "SELECT " +
-                     "  s.code AS station_code, s.name AS station_name, " +
-                     "  s.max_baseline_drift, " +
+                     "  r.code AS room_code, r.name AS room_name, " +
+                     "  r.max_baseline_drift, " +
                      "  c.co_baseline, " +
                      "  CONVERT(VARCHAR(16), c.calibrated_at, 120) AS cal_time, " +
                      "  ISNULL(DATEDIFF(day, c.calibrated_at, SYSDATETIME()), 0) AS days_elapsed " +
-                     "FROM Air_Station s " +
-                     "LEFT JOIN Air_Calibration c ON c.station_id = s.station_id " +
-                     "WHERE s.is_active = 1";
+                     "FROM Room r " +
+                     "LEFT JOIN Air_Calibration c ON c.room_id = r.room_id " +
+                     "WHERE r.is_active = 1";
 
-        List<StationDriftInfo> list = new ArrayList<>();
+        List<DashboardStats.RoomDriftInfo> list = new ArrayList<>();
         double totalDays = 0;
         int countWithCal = 0;
 
         try (Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                StationDriftInfo info = new StationDriftInfo();
-                info.setStationCode(rs.getString("station_code"));
-                info.setStationName(rs.getString("station_name"));
+                DashboardStats.RoomDriftInfo info = new DashboardStats.RoomDriftInfo();
+                info.setRoomCode(rs.getString("room_code"));
+                info.setRoomName(rs.getString("room_name"));
 
                 double maxDrift = rs.getDouble("max_baseline_drift");
                 if (maxDrift <= 0) maxDrift = 15.0; // Dung sai mặc định 15%
@@ -449,7 +449,7 @@ public class DashboardDAO {
             e.printStackTrace();
         }
 
-        stats.setStationDrifts(list);
+        stats.setRoomDrifts(list);
         if (countWithCal > 0) {
             stats.setAvgDaysInTolerance(Math.round((totalDays / countWithCal) * 10.0) / 10.0);
         } else {

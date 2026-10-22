@@ -9,3 +9,9 @@ INSERT INTO Device (device_code, api_key, location, last_seen, is_active) VALUES
 ('Air-09', 'demo-key-air-0009', N'Khu vực Bãi xe ngầm', NULL, 0),
 ('Air-10', 'demo-key-air-0010', N'Phòng làm việc Giảng viên', '2026-10-10 09:10:05', 1),
 ('Air-11', 'demo-key-air-0011', N'Sân thượng Tòa B', '2026-10-10 06:00:00', 1);
+
+-- Đồng bộ room_id tương ứng từ bảng Room
+UPDATE d
+SET d.room_id = r.room_id
+FROM Device d
+INNER JOIN Room r ON d.device_code = r.device_code;

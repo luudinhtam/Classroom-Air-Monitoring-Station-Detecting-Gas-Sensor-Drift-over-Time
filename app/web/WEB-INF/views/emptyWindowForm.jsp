@@ -1,5 +1,5 @@
-﻿<%@page import="model.AirStation"%>
-<%@page import="dao.AirStationDAO"%>
+<%@page import="model.Room"%>
+<%@page import="dao.RoomDAO"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="java.util.List"%>
 <%@page import="model.AppUser"%>
@@ -10,10 +10,11 @@
 <%
     EmptyWindow item = (EmptyWindow) request.getAttribute("editEmptyWindow");
     String error = (String) request.getAttribute("error");
-    Integer stationId = (Integer) request.getAttribute("stationId");
+    Integer rIdObj = (Integer) request.getAttribute("roomId");
+    int roomId = (rIdObj != null) ? rIdObj : (request.getAttribute("stationId") != null ? (Integer) request.getAttribute("stationId") : 0);
     String ctx = request.getContextPath();
-    AirStationDAO stations = new AirStationDAO();
-    AirStation a = stations.findById(stationId);
+    RoomDAO rooms = new RoomDAO();
+    Room r = (roomId > 0) ? rooms.findById(roomId) : null;
 
     boolean isNew = (item == null || item.getEmptyWindowId() == 0);
 
@@ -45,14 +46,14 @@
     <body>
         <jsp:include page="/WEB-INF/views/nav.jsp"/>
         <div class="wrap">
-            <h2><%= isNew ? "Add Empty Window" : "Edit Empty Window" %> for Station: <%= a.getName() %></h2>
+            <h2><%= isNew ? "Add Empty Window" : "Edit Empty Window" %> for Room: <%= (r != null ? Web.esc(r.getName()) : ("ID: " + roomId)) %></h2>
 
             <% if (error != null) { %>
                 <div class="error"><%= Web.esc(error) %></div>
             <% } %>
 
             <form class="form" method="post" 
-                  action="<%= ctx %>/admin/emptyWindows/save?stationId=<%= stationId %>">
+                  action="<%= ctx %>/admin/emptyWindows/save?roomId=<%= roomId %>">
 
                 <input type="hidden" name="emptyWindowId" value="<%= isNew ? 0 : item.getEmptyWindowId() %>">
 
@@ -82,7 +83,7 @@
                         Save
                     </button>
 
-                    <a href="<%= ctx %>/admin/emptyWindows?stationId=<%= stationId %>" class="btn ghost">
+                    <a href="<%= ctx %>/admin/emptyWindows?roomId=<%= roomId %>" class="btn ghost">
                         Cancel
                     </a>
                 </div>

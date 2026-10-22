@@ -2,9 +2,9 @@ package model;
 
 import java.sql.Timestamp;
 
-public class AirStation {
+public class Room {
 
-    private int stationId;
+    private int roomId;
     private String code;
     private String name;
     private String location;
@@ -23,19 +23,19 @@ public class AirStation {
     private Double latitude;
     private Double longitude;
 
-    public AirStation() {
+    public Room() {
     }
 
-    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
+    public Room(int roomId, String code, String name, String location, float coWarningThreshold,
             float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
             Timestamp createdAt) {
-        this(stationId, code, name, location, coWarningThreshold, co2WarningThreshold, maxBaselineDrift, deviceCode, note, active, createdAt, null, null);
+        this(roomId, code, name, location, coWarningThreshold, co2WarningThreshold, maxBaselineDrift, deviceCode, note, active, createdAt, null, null);
     }
 
-    public AirStation(int stationId, String code, String name, String location, float coWarningThreshold,
+    public Room(int roomId, String code, String name, String location, float coWarningThreshold,
             float co2WarningThreshold, float maxBaselineDrift, String deviceCode, String note, boolean active,
             Timestamp createdAt, Double latitude, Double longitude) {
-        this.stationId = stationId;
+        this.roomId = roomId;
         this.code = code;
         this.name = name;
         this.location = location;
@@ -50,12 +50,12 @@ public class AirStation {
         this.longitude = longitude;
     }
 
-    public int getStationId() {
-        return stationId;
+    public int getRoomId() {
+        return roomId;
     }
 
-    public void setStationId(int stationId) {
-        this.stationId = stationId;
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
     }
 
     public String getCode() {

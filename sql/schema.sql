@@ -36,7 +36,8 @@ CREATE TABLE Device (
     api_key     NVARCHAR(64)  NOT NULL,  -- sent by the board in the X-API-Key header
     location    NVARCHAR(150) NULL,
     last_seen   DATETIME2(0)  NULL,
-    is_active   BIT NOT NULL DEFAULT 1
+    is_active   BIT NOT NULL DEFAULT 1,
+    room_id     INT NULL
 );
  
 CREATE TABLE RejectedPacket (
@@ -100,8 +101,8 @@ CREATE TABLE Air_Alert (
 );
  
 -- ===== 6. Cac bang rieng cua de tai =====
-CREATE TABLE Air_Station (
-    station_id INT IDENTITY(1,1) PRIMARY KEY,
+CREATE TABLE Room (
+    room_id                 INT IDENTITY(1,1) PRIMARY KEY,
     code                    NVARCHAR(32)  NOT NULL UNIQUE,
     name                    NVARCHAR(150) NOT NULL,
     location                NVARCHAR(250) NOT NULL,
@@ -110,77 +111,58 @@ CREATE TABLE Air_Station (
     co2_warning_threshold   DECIMAL(10,2) NOT NULL DEFAULT 0,
     max_baseline_drift      DECIMAL(10,2) NOT NULL DEFAULT 0,
 
-    device_code              NVARCHAR(128) NULL,
+    device_code             NVARCHAR(128) NULL,
 
     note                    NVARCHAR(400) NULL,
     is_active               BIT NOT NULL DEFAULT 1,
-    created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+    created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
+    latitude                DECIMAL(10,6) NULL,
+    longitude               DECIMAL(10,6) NULL
 );
 
-DROP TABLE Air_Station;
+ALTER TABLE Device
+ADD CONSTRAINT FK_Device_Room FOREIGN KEY (room_id) REFERENCES Room(room_id);
 
- 
 CREATE TABLE Air_Calibration (
     calibration_id      INT IDENTITY(1,1) PRIMARY KEY,
     code                NVARCHAR(32)  NOT NULL UNIQUE,
     name                NVARCHAR(150) NOT NULL,
     note                NVARCHAR(400) NULL,
 
-    station_id          INT NOT NULL,
+    room_id             INT NOT NULL,
     co_baseline         DECIMAL(10,2) NOT NULL DEFAULT 0,
     co2_baseline        DECIMAL(10,2) NOT NULL DEFAULT 0,
 
     performed_by        INT NOT NULL,
-    calibrated_at       DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+    calibrated_at       DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
 
+    CONSTRAINT FK_Air_Calibration_Room
+        FOREIGN KEY (room_id) REFERENCES Room(room_id),
+    CONSTRAINT FK_Air_Calibration_User
+        FOREIGN KEY (performed_by) REFERENCES AppUser(user_id)
 );
 
-ALTER TABLE Air_Calibration
-ADD CONSTRAINT FK_Air_Calibration_Station
-        FOREIGN KEY (station_id)
-        REFERENCES Air_Station(station_id)
-
-ALTER TABLE Air_Calibration
-ADD CONSTRAINT FK_Air_Calibration_User
-        FOREIGN KEY (performed_by)
-        REFERENCES AppUser(user_id);
-
-DROP TABLE Air_Calibration;
-
- 
 CREATE TABLE Air_EmptyWindow (
     empty_window_id INT IDENTITY(1,1) PRIMARY KEY,
     code            NVARCHAR(32) NOT NULL UNIQUE,
     name            NVARCHAR(150) NOT NULL,
 
-    station_id      INT NOT NULL,
+    room_id         INT NOT NULL,
 
     start_at        DATETIME2(0) NOT NULL,
     end_at          DATETIME2(0) NOT NULL,
 
     marked_by       INT NOT NULL,
-
     note            NVARCHAR(400) NULL,
-
     created_at      DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
 
-    
-
     CONSTRAINT CK_Air_EmptyWindow_Time
-        CHECK (end_at > start_at)
+        CHECK (end_at > start_at),
+    CONSTRAINT FK_Air_EmptyWindow_Room
+        FOREIGN KEY (room_id) REFERENCES Room(room_id),
+    CONSTRAINT FK_Air_EmptyWindow_User
+        FOREIGN KEY (marked_by) REFERENCES AppUser(user_id)
 );
-
-ALTER TABLE Air_EmptyWindow
-ADD CONSTRAINT FK_Air_EmptyWindow_Station
-        FOREIGN KEY (station_id)
-        REFERENCES Air_Station(station_id);
-
-ALTER TABLE Air_EmptyWindow
-ADD CONSTRAINT FK_Air_EmptyWindow_User
-        FOREIGN KEY (marked_by)
-        REFERENCES AppUser(user_id);
-
-DROP TABLE Air_EmptyWindow;
  
 -- ===== 7. Du lieu khoi tao =====
 INSERT INTO AppRole(role_code, role_name) VALUES

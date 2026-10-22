@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import dao.DeviceDAO;
+import dao.RoomDAO;
 import model.Device;
 import util.Web;
 
@@ -69,6 +70,7 @@ public class DeviceServlet extends HttpServlet {
 
     private void showForm(HttpServletRequest req, HttpServletResponse resp, Device d)
             throws ServletException, IOException {
+        req.setAttribute("roomList", RoomDAO.getInstance().findAllActive());
         req.setAttribute("editDevice", d);
         req.getRequestDispatcher("/WEB-INF/views/deviceForm.jsp").forward(req, resp);
     }
@@ -77,6 +79,7 @@ public class DeviceServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        req.setCharacterEncoding("UTF-8");
         String action = action(req);
 
         if ("/save".equals(action)) {
@@ -87,6 +90,7 @@ public class DeviceServlet extends HttpServlet {
             d.setApiKey(Web.trimmed(req, "apiKey"));
             d.setLocation(Web.trimmed(req, "location"));
             d.setIsActive("1".equals(req.getParameter("isActive")) || "true".equals(req.getParameter("isActive")));
+            d.setRoomId(Web.optionalInt(req, "roomId"));
 
             if (id == 0) {
                 if (devices.insert(d)) Web.flash(req, "Added device " + d.getDeviceCode());

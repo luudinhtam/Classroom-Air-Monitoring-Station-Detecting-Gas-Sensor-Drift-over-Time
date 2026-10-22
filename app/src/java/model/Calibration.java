@@ -1,8 +1,6 @@
-
 package model;
 
 import java.sql.Timestamp;
-
 
 public class Calibration {
     
@@ -11,14 +9,13 @@ public class Calibration {
     private String name;
     private String note;
     
-    
     private float coBaseLine;
     private float co2BaseLine;
     
     private Timestamp calibratedAt;
     
-    // Tham chieu den model AirStation.java
-    private int stationId;
+    // Tham chieu den model Room.java
+    private int roomId;
     // Tham chieu den model AppUser.java
     private int performedBy;
     
@@ -32,13 +29,11 @@ public class Calibration {
     public void setPerformedByUsername(String performedByUsername) {
         this.performedByUsername = performedByUsername;
     }
-    
-    
 
     public Calibration() {
     }
 
-    public Calibration(int calibrationId, String code, String name, String note, float coBaseLine, float co2BaseLine, boolean active, Timestamp calibratedAt, Timestamp createdAt, int stationId, int performedBy) {
+    public Calibration(int calibrationId, String code, String name, String note, float coBaseLine, float co2BaseLine, boolean active, Timestamp calibratedAt, Timestamp createdAt, int roomId, int performedBy) {
         this.calibrationId = calibrationId;
         this.code = code;
         this.name = name;
@@ -48,7 +43,7 @@ public class Calibration {
         
         this.calibratedAt = calibratedAt;
         
-        this.stationId = stationId;
+        this.roomId = roomId;
         this.performedBy = performedBy;
     }
 
@@ -100,8 +95,6 @@ public class Calibration {
         this.co2BaseLine = co2BaseLine;
     }
 
-    
-
     public Timestamp getCalibratedAt() {
         return calibratedAt;
     }
@@ -110,14 +103,21 @@ public class Calibration {
         this.calibratedAt = calibratedAt;
     }
 
-    
+    public int getRoomId() {
+        return roomId;
+    }
 
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
+    }
+
+    // Alias compatibility
     public int getStationId() {
-        return stationId;
+        return roomId;
     }
 
     public void setStationId(int stationId) {
-        this.stationId = stationId;
+        this.roomId = stationId;
     }
 
     public int getPerformedBy() {
@@ -127,16 +127,4 @@ public class Calibration {
     public void setPerformedBy(int performedBy) {
         this.performedBy = performedBy;
     }
-    
-    
-
-    
-
-    
-
-    
-    
-    
-    
-    
 }

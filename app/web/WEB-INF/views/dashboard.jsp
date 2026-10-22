@@ -402,7 +402,7 @@
                 <div class="kpi-card">
                     <div class="kpi-label">Total Sessions</div>
                     <div class="kpi-value"><%= String.format("%,d", stats.getTotalSessions())%></div>
-                    <div class="kpi-desc"><%= stats.getTotalDevices()%> devices &bull; <%= stats.getTotalStations()%> monitoring stations</div>
+                    <div class="kpi-desc"><%= stats.getTotalDevices()%> devices &bull; <%= stats.getTotalRooms()%> rooms</div>
                 </div>
             </div>
 
@@ -590,12 +590,12 @@
                 </div>
             </div>
 
-            <!-- MỤC 5: BẢNG THEO DÕI THỜI GIAN GIỮ DUNG SAI HIỆU CHUẨN CỦA CÁC TRẠM -->
+            <!-- MỤC 5: BẢNG THEO DÕI THỜI GIAN GIỮ DUNG SAI HIỆU CHUẨN CỦA CÁC PHÒNG -->
             <div class="section-panel">
                 <div class="panel-head">
                     <div>
-                        <h3 class="panel-title">Station Baseline Retention Time within Tolerance Since Calibration</h3>
-                        <div class="panel-note">Track sensor drift status across monitoring stations based on latest calibration records</div>
+                        <h3 class="panel-title">Room Baseline Retention Time within Tolerance Since Calibration</h3>
+                        <div class="panel-note">Track sensor drift status across rooms based on latest calibration records</div>
                     </div>
                 </div>
 
@@ -603,8 +603,8 @@
                     <table class="grid" style="margin-top: 8px;">
                         <thead>
                             <tr>
-                                <th>Station Code</th>
-                                <th>Station Name</th>
+                                <th>Room Code</th>
+                                <th>Room Name</th>
                                 <th>Last Calibration</th>
                                 <th class="c">CO Baseline</th>
                                 <th class="c">Allowed Tolerance</th>
@@ -614,10 +614,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <% for (StationDriftInfo s : stats.getStationDrifts()) {%>
+                            <% for (DashboardStats.RoomDriftInfo s : stats.getRoomDrifts()) {%>
                             <tr>
-                                <td><b><%= Web.esc(s.getStationCode())%></b></td>
-                                <td><%= Web.esc(s.getStationName())%></td>
+                                <td><b><%= Web.esc(s.getRoomCode())%></b></td>
+                                <td><%= Web.esc(s.getRoomName())%></td>
                                 <td><%= Web.esc(s.getLastCalibratedAt())%></td>
                                 <td class="c"><%= String.format("%.0f", s.getCoBaseline())%></td>
                                 <td class="c">&plusmn;<%= String.format("%.1f", s.getToleranceDrift())%>%</td>
