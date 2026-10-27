@@ -1,0 +1,13 @@
+# NetBeans / Java build outputs
+build/
+dist/
+
+# NetBeans user-specific settings
+**/nbproject/private/
+
+# Compiled class files
+*.class
+
+# Tracking / notes files
+AGENTS.md
+check.md
