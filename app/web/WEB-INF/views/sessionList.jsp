@@ -1,19 +1,25 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.List, model.AirSession, model.AppUser, util.Web" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List, model.AirSession, model.Device, model.AppUser, util.Web" %>
 <%
     List<AirSession> rows = (List<AirSession>) request.getAttribute("rows");
+    List<Device> devices = (List<Device>) request.getAttribute("devices");
     String labelFilter = (String) request.getAttribute("label");
+    String deviceCodeFilter = (String) request.getAttribute("deviceCode");
     String ctx = request.getContextPath();
     Integer currentPage = (Integer) request.getAttribute("page");
     Integer totalPages  = (Integer) request.getAttribute("pages");
     if (currentPage == null) currentPage = 1;
     if (totalPages  == null) totalPages  = 1;
     if (labelFilter == null) labelFilter = "";
+    if (deviceCodeFilter == null) deviceCodeFilter = "";
 
     AppUser me = (AppUser) session.getAttribute("user");
     String myRole = (me != null) ? me.getRoleCode() : "";
     boolean isAdmin = "ADMIN".equals(myRole);
     boolean canEdit = isAdmin || "STATION_MANAGER".equals(myRole) || "OPERATOR".equals(myRole) || "REVIEWER".equals(myRole);
+
+    String filterParams = (labelFilter != null && !labelFilter.isEmpty() ? "&label=" + Web.esc(labelFilter) : "")
+                        + (deviceCodeFilter != null && !deviceCodeFilter.isEmpty() ? "&deviceCode=" + Web.esc(deviceCodeFilter) : "");
 %>
 <!DOCTYPE html>
 <html>
@@ -29,6 +35,19 @@
     <h2>Measurement Sessions (<%= request.getAttribute("total") %>)</h2>
 
     <form class="filter" method="get" action="<%= ctx %>/sessions">
+        <select name="deviceCode">
+            <option value="">-- All Devices --</option>
+            <% if (devices != null) {
+                for (Device d : devices) {
+                    String dCode = d.getDeviceCode();
+            %>
+                <option value="<%= Web.esc(dCode) %>" <%= dCode.equals(deviceCodeFilter) ? "selected" : "" %>>
+                    <%= Web.esc(dCode) %><%= d.getLocation() != null && !d.getLocation().isEmpty() ? " (" + Web.esc(d.getLocation()) + ")" : "" %>
+                </option>
+            <%   }
+               } %>
+        </select>
+
         <select name="label">
             <option value="">-- All Labels --</option>
             <option value="BASE"        <%= "BASE".equals(labelFilter)        ? "selected" : "" %>>BASE</option>
@@ -45,7 +64,7 @@
             <a class="btn" href="<%= ctx %>/sessions/create">+ Add Session</a>
         <% } %>
 
-        <a class="btn btn-export" href="<%= ctx %>/sessions/export?label=<%= Web.esc(labelFilter) %>">
+        <a class="btn btn-export" href="<%= ctx %>/sessions/export?label=<%= Web.esc(labelFilter) %>&deviceCode=<%= Web.esc(deviceCodeFilter) %>">
             Export CSV
         </a>
     </form>
@@ -131,7 +150,7 @@
         %>
 
         <% if (startPage > 1) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=1">1</a>
+            <a href="?page=1<%= filterParams %>">1</a>
             <% if (startPage > 2) { %>
                 <span>...</span>
             <% } %>
@@ -141,7 +160,7 @@
             <% if (p == currentPage) { %>
                 <b><%= p %></b>
             <% } else { %>
-                <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= p %>"><%= p %></a>
+                <a href="?page=<%= p %><%= filterParams %>"><%= p %></a>
             <% } %>
         <% } %>
 
@@ -149,16 +168,21 @@
             <% if (endPage < totalPages - 1) { %>
                 <span>...</span>
             <% } %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>"><%= totalPages %></a>
+            <a href="?page=<%= totalPages %><%= filterParams %>"><%= totalPages %></a>
         <% } %>
 
         <% if (currentPage < totalPages) { %>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= currentPage + 1 %>">Next &rsaquo;</a>
-            <a href="?label=<%= Web.esc(labelFilter) %>&page=<%= totalPages %>">Last &raquo;</a>
+            <a href="?page=<%= currentPage + 1 %><%= filterParams %>">Next &rsaquo;</a>
+            <a href="?page=<%= totalPages %><%= filterParams %>">Last &raquo;</a>
         <% } %>
 
         <form method="get" action="<%= ctx %>/sessions" style="display: inline-block; margin-left: 15px;">
-            <input type="hidden" name="label" value="<%= Web.esc(labelFilter) %>">
+            <% if (!labelFilter.isEmpty()) { %>
+                <input type="hidden" name="label" value="<%= Web.esc(labelFilter) %>">
+            <% } %>
+            <% if (!deviceCodeFilter.isEmpty()) { %>
+                <input type="hidden" name="deviceCode" value="<%= Web.esc(deviceCodeFilter) %>">
+            <% } %>
             <input type="number" name="page" min="1" max="<%= totalPages %>" placeholder="Page..." required style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;">
             <button type="submit" style="padding: 4px 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; background: #eee; color: black;">Go</button>
         </form>

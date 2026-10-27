@@ -25,7 +25,10 @@ public class DashboardStats {
     private int sampleSessions;
     private int liveSessions;
     private int totalDevices;
+    private int activeDevices;
+    private int inactiveDevices;
     private int totalRooms;
+    private int totalUsers;
 
     // 3. Mức nền & Độ trôi cảm biến (Mục IX.2)
     private double avgGasABase;
@@ -69,15 +72,25 @@ public class DashboardStats {
         private String severity;
         private String message;
         private String createdAt;
+        private String roomCode;
+        private String status;
 
         public OpenAlertInfo() {}
         public OpenAlertInfo(int alertId, int sessionId, String ruleCode, String severity, String message, String createdAt) {
+            this(alertId, sessionId, ruleCode, severity, message, createdAt, "", "OPENING");
+        }
+        public OpenAlertInfo(int alertId, int sessionId, String ruleCode, String severity, String message, String createdAt, String roomCode) {
+            this(alertId, sessionId, ruleCode, severity, message, createdAt, roomCode, "OPENING");
+        }
+        public OpenAlertInfo(int alertId, int sessionId, String ruleCode, String severity, String message, String createdAt, String roomCode, String status) {
             this.alertId = alertId;
             this.sessionId = sessionId;
             this.ruleCode = ruleCode;
             this.severity = severity;
             this.message = message;
             this.createdAt = createdAt;
+            this.roomCode = roomCode;
+            this.status = status;
         }
 
         public int getAlertId() { return alertId; }
@@ -92,6 +105,10 @@ public class DashboardStats {
         public void setMessage(String message) { this.message = message; }
         public String getCreatedAt() { return createdAt; }
         public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+        public String getRoomCode() { return roomCode != null ? roomCode : ""; }
+        public void setRoomCode(String roomCode) { this.roomCode = roomCode; }
+        public String getStatus() { return status != null ? status : "OPENING"; }
+        public void setStatus(String status) { this.status = status; }
     }
 
     public static class ScatterPoint {
@@ -241,10 +258,16 @@ public class DashboardStats {
     public void setLiveSessions(int liveSessions) { this.liveSessions = liveSessions; }
     public int getTotalDevices() { return totalDevices; }
     public void setTotalDevices(int totalDevices) { this.totalDevices = totalDevices; }
+    public int getActiveDevices() { return activeDevices; }
+    public void setActiveDevices(int activeDevices) { this.activeDevices = activeDevices; }
+    public int getInactiveDevices() { return inactiveDevices; }
+    public void setInactiveDevices(int inactiveDevices) { this.inactiveDevices = inactiveDevices; }
     public int getTotalRooms() { return totalRooms; }
     public void setTotalRooms(int totalRooms) { this.totalRooms = totalRooms; }
     public int getTotalStations() { return totalRooms; }
     public void setTotalStations(int totalStations) { this.totalRooms = totalStations; }
+    public int getTotalUsers() { return totalUsers; }
+    public void setTotalUsers(int totalUsers) { this.totalUsers = totalUsers; }
 
     public double getAvgGasABase() { return avgGasABase; }
     public void setAvgGasABase(double avgGasABase) { this.avgGasABase = avgGasABase; }

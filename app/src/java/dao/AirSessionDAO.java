@@ -9,21 +9,19 @@ import util.DBContext;
 public class AirSessionDAO {
 
     private static final String SELECT_BASE = 
-        "SELECT s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, " +
-        "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, " +
-        "(SELECT TOP 1 l.label_code FROM Air_Label l WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code, " +
-        "(SELECT d.device_code FROM Device d WHERE d.device_id = s.device_id) AS device_code " +
-        "FROM Air_Session s ";
+        "SELECT s.session_id, s.device_id, s.device_seq, s.measured_at, " +
+        "s.co, s.co2, s.temperature, s.humid, s.note, " +
+        "d.device_code " +
+        "FROM Air_Session s " +
+        "LEFT JOIN Device d ON d.device_id = s.device_id ";
 
     /** READ, one page of rows with optional filters. */
-    public List<AirSession> search(String label, Integer deviceId, int page, int size) {
+    public List<AirSession> search(String label, String deviceCode, Integer deviceId, int page, int size) {
         List<AirSession> out = new ArrayList<AirSession>();
         StringBuilder sb = new StringBuilder(SELECT_BASE).append("WHERE 1 = 1 ");
         
-        if (label != null && !label.isEmpty()) {
-            sb.append("AND EXISTS (SELECT 1 FROM Air_Label l2 WHERE l2.session_id = s.session_id ")
-              .append("AND l2.label_code = ? AND l2.label_id = ")
-              .append("(SELECT MAX(l3.label_id) FROM Air_Label l3 WHERE l3.session_id = s.session_id)) ");
+        if (deviceCode != null && !deviceCode.trim().isEmpty()) {
+            sb.append("AND d.device_code = ? ");
         }
         
         if (deviceId != null) sb.append("AND s.device_id = ? ");
@@ -35,7 +33,7 @@ public class AirSessionDAO {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sb.toString());
             int i = 1;
-            if (label != null && !label.isEmpty()) ps.setString(i++, label);
+            if (deviceCode != null && !deviceCode.trim().isEmpty()) ps.setString(i++, deviceCode.trim());
             if (deviceId != null) ps.setInt(i++, deviceId.intValue());
             ps.setInt(i++, (page - 1) * size);
             ps.setInt(i++, size);
@@ -49,10 +47,17 @@ public class AirSessionDAO {
         return out;
     }
 
-    public int count(String label, Integer deviceId) {
-        String sql = "SELECT COUNT(*) FROM Air_Session s WHERE 1 = 1 "
-            + (label != null && !label.isEmpty()
-                ? "AND EXISTS (SELECT 1 FROM Air_Label l2 WHERE l2.session_id = s.session_id AND l2.label_code = ?) " : "")
+    public List<AirSession> search(String label, Integer deviceId, int page, int size) {
+        return search(label, null, deviceId, page, size);
+    }
+
+    public List<AirSession> search(String label, String deviceCode, int page, int size) {
+        return search(label, deviceCode, null, page, size);
+    }
+
+    public int count(String label, String deviceCode, Integer deviceId) {
+        String sql = "SELECT COUNT(*) FROM Air_Session s LEFT JOIN Device d ON d.device_id = s.device_id WHERE 1 = 1 "
+            + (deviceCode != null && !deviceCode.trim().isEmpty() ? "AND d.device_code = ? " : "")
             + (deviceId != null ? "AND s.device_id = ? " : "");
             
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
@@ -60,7 +65,7 @@ public class AirSessionDAO {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql);
             int i = 1;
-            if (label != null && !label.isEmpty()) ps.setString(i++, label);
+            if (deviceCode != null && !deviceCode.trim().isEmpty()) ps.setString(i++, deviceCode.trim());
             if (deviceId != null) ps.setInt(i++, deviceId.intValue());
             rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
@@ -70,6 +75,14 @@ public class AirSessionDAO {
             close(rs, ps, cn);
         }
         return 0;
+    }
+
+    public int count(String label, Integer deviceId) {
+        return count(label, null, deviceId);
+    }
+
+    public int count(String label, String deviceCode) {
+        return count(label, deviceCode, null);
     }
 
     public AirSession findById(int id) {
@@ -90,11 +103,12 @@ public class AirSessionDAO {
     
     public List<AirSession> findTimeline(int deviceId, int limit) {
         List<AirSession> list = new ArrayList<>();
-        String sql = "SELECT TOP (?) s.session_id, s.device_id, s.device_seq, s.measured_at, s.ingested_at, "
-                   + "s.is_sample, s.gas_a_raw, s.gas_b_raw, s.gas_a_base, s.gas_a_delta, s.temp_c, s.humid_pct, s.base_shift, s.warm, s.note, "
-                   + "(SELECT TOP 1 l.label_code FROM Air_Label l WHERE l.session_id = s.session_id ORDER BY l.label_id DESC) AS label_code, "
-                   + "(SELECT d.device_code FROM Device d WHERE d.device_id = s.device_id) AS device_code "
-                   + "FROM Air_Session s WHERE s.device_id = ? ORDER BY s.measured_at DESC";
+        String sql = "SELECT TOP (?) s.session_id, s.device_id, s.device_seq, s.measured_at, "
+                   + "s.co, s.co2, s.temperature, s.humid, s.note, "
+                   + "d.device_code "
+                   + "FROM Air_Session s "
+                   + "LEFT JOIN Device d ON d.device_id = s.device_id "
+                   + "WHERE s.device_id = ? ORDER BY s.measured_at DESC";
         Connection cn = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             cn = DBContext.getConnection();
@@ -111,177 +125,121 @@ public class AirSessionDAO {
             close(rs, ps, cn);
         }
         return list;
+        
     }
-    
     public List<model.Device> listDevices() {
-    List<model.Device> list = new ArrayList<>();
-    String sql = "SELECT device_id, device_code, location FROM Device WHERE is_active = 1 ORDER BY device_code";
-    try (java.sql.Connection cn = util.DBContext.getConnection();
-         java.sql.PreparedStatement ps = cn.prepareStatement(sql);
-         java.sql.ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-            model.Device d = new model.Device();
-            d.setDeviceId(rs.getInt("device_id"));
-            d.setDeviceCode(rs.getString("device_code"));
-            d.setLocation(rs.getString("location"));
-            list.add(d);
+        List<model.Device> list = new ArrayList<>();
+        String sql = "SELECT device_id, device_code, note FROM Device WHERE is_active = 1 ORDER BY device_code";
+        try (java.sql.Connection cn = util.DBContext.getConnection();
+             java.sql.PreparedStatement ps = cn.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                model.Device d = new model.Device();
+                d.setDeviceId(rs.getInt("device_id"));
+                d.setDeviceCode(rs.getString("device_code"));
+                d.setNote(rs.getString("note"));
+                list.add(d);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
+        return list;
     }
-    return list;
-}
-    
-    
 
-    /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
-    /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
-    /** CREATE. Returns the new key, or -1 when the sequence number already exists. */
+    /** CREATE. Returns the new key, or -1 when sequence already exists or insert fails. */
     public int insert(AirSession o) {
-        // Kiểm tra nếu deviceId chưa có nhưng có deviceCode thì tự tra cứu device_id từ bảng Device
-        if (o.getDeviceId() <= 0 && o.getDeviceCode() != null && !o.getDeviceCode().isEmpty()) {
+        if (o == null) return -1;
+        try (Connection cn = util.DBContext.getConnection()) {
+            return insert(o, cn);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    /**
+     * Insert mot Air_Session nhan Connection tu ngoai de chay trong transaction.
+     * Tu sinh device_seq = MAX(device_seq)+1 cua thiet bi trong transaction.
+     */
+    public int insert(AirSession o, Connection cn) throws SQLException {
+        if (o == null || cn == null) return -1;
+
+        // Tra cứu device_id nếu chưa có nhưng có deviceCode
+        if (o.getDeviceId() <= 0 && o.getDeviceCode() != null && !o.getDeviceCode().trim().isEmpty()) {
             String sqlFindDev = "SELECT device_id FROM Device WHERE device_code = ? AND is_active = 1";
-            try (Connection cn = util.DBContext.getConnection();
-                 PreparedStatement psDev = cn.prepareStatement(sqlFindDev)) {
-                psDev.setString(1, o.getDeviceCode());
+            try (PreparedStatement psDev = cn.prepareStatement(sqlFindDev)) {
+                psDev.setString(1, o.getDeviceCode().trim());
                 try (ResultSet rsDev = psDev.executeQuery()) {
                     if (rsDev.next()) {
                         o.setDeviceId(rsDev.getInt("device_id"));
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
 
-        String sqlSession = "INSERT INTO Air_Session(device_id, device_seq, measured_at, is_sample, gas_a_raw, gas_b_raw, gas_a_base, "
-                   + "gas_a_delta, temp_c, humid_pct, base_shift, warm, note) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                   
-        String sqlLabel = "INSERT INTO Air_Label(session_id, label_code, source) VALUES (?, ?, 'RULE')";
+        // Tự động sinh device_seq tiếp theo nếu chưa có hoặc <= 0
+        if (o.getDeviceSeq() <= 0 && o.getDeviceId() >= 0) {
+            String sqlSeq = "SELECT ISNULL(MAX(device_seq), 0) + 1 FROM Air_Session WHERE device_id = ?";
+            try (PreparedStatement psSeq = cn.prepareStatement(sqlSeq)) {
+                psSeq.setInt(1, o.getDeviceId());
+                try (ResultSet rsSeq = psSeq.executeQuery()) {
+                    if (rsSeq.next()) {
+                        o.setDeviceSeq(rsSeq.getInt(1));
+                    }
+                }
+            }
+        }
+        if (o.getDeviceSeq() <= 0) {
+            o.setDeviceSeq(1);
+        }
 
-        java.sql.Connection cn = null; 
-        java.sql.PreparedStatement ps = null; 
-        java.sql.ResultSet rs = null;
-        try {
-            cn = util.DBContext.getConnection();
-            cn.setAutoCommit(false); 
-            
-            // 1. Insert vào bảng Air_Session
-            ps = cn.prepareStatement(sqlSession, java.sql.Statement.RETURN_GENERATED_KEYS);
+        String sqlSession = "INSERT INTO Air_Session(device_id, device_seq, measured_at, co, co2, temperature, humid, note) "
+                   + "VALUES (?, ?, COALESCE(?, SYSDATETIME()), ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = cn.prepareStatement(sqlSession, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, o.getDeviceId());
-            ps.setInt(2, o.getDeviceSeq()); 
-            ps.setTimestamp(3, o.getMeasuredAt());
-            ps.setBoolean(4, o.isSample()); 
-            ps.setInt(5, o.getGasARaw());
-            ps.setInt(6, o.getGasBRaw());
-            ps.setInt(7, o.getGasABase());
-            ps.setDouble(8, o.getGasADelta());
-            ps.setDouble(9, o.getTempC());
-            ps.setDouble(10, o.getHumidPct());
-            ps.setDouble(11, o.getBaseShift());
-            ps.setBoolean(12, o.isWarm());
-            ps.setString(13, o.getNote()); 
+            ps.setInt(2, o.getDeviceSeq());
+            if (o.getMeasuredAt() != null) ps.setTimestamp(3, o.getMeasuredAt()); else ps.setNull(3, Types.TIMESTAMP);
+            if (o.getCo() != null) ps.setInt(4, o.getCo()); else ps.setNull(4, Types.INTEGER);
+            if (o.getCo2() != null) ps.setInt(5, o.getCo2()); else ps.setNull(5, Types.INTEGER);
+            if (o.getTemperature() != null) ps.setDouble(6, o.getTemperature()); else ps.setNull(6, Types.DECIMAL);
+            if (o.getHumid() != null) ps.setDouble(7, o.getHumid()); else ps.setNull(7, Types.DECIMAL);
+            ps.setString(8, o.getNote());
             ps.executeUpdate();
-            
-            // Lấy ID vừa được tạo
-            rs = ps.getGeneratedKeys();
-            int newSessionId = -1;
-            if (rs.next()) {
-                newSessionId = rs.getInt(1);
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int newSessionId = rs.getInt(1);
+                    o.setSessionId(newSessionId);
+                    return newSessionId;
+                }
             }
-            rs.close();
-            ps.close();
-
-            // 2. Insert nhãn mặc định ban đầu nếu có
-            if (newSessionId > 0 && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
-                ps = cn.prepareStatement(sqlLabel);
-                ps.setInt(1, newSessionId);
-                ps.setString(2, o.getLabelCode());
-                ps.executeUpdate();
-                ps.close();
-            }
-
-            cn.commit(); 
-            return newSessionId;
-
-        } catch (Exception e) {
-            try { if (cn != null) cn.rollback(); } catch (Exception ignored) {}
-            System.out.println("====== LỖI KHI THÊM MỚI PHIÊN ĐO ======");
-            e.printStackTrace();
-        } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
-            try { if (ps != null) ps.close(); } catch (Exception ignored) {}
-            try { if (cn != null) cn.close(); } catch (Exception ignored) {}
         }
         return -1;
     }
 
+
     /** UPDATE, used by the screens that let a staff member fix a reading. */
     public boolean update(AirSession o) {
-        String sqlSession = "UPDATE Air_Session SET device_id = ?, gas_a_raw = ?, gas_b_raw = ?, gas_a_base = ?, gas_a_delta = ?, temp_c = ?, "
-                           + "humid_pct = ?, base_shift = ?, warm = ?, note = ? WHERE session_id = ?";
+        String sqlSession = "UPDATE Air_Session SET device_id = ?, co = ?, co2 = ?, temperature = ?, humid = ?, note = ? WHERE session_id = ?";
         Connection cn = null;
         PreparedStatement psSession = null;
-        PreparedStatement psLabel = null;
         try {
             cn = DBContext.getConnection();
-            cn.setAutoCommit(false);
-            
             psSession = cn.prepareStatement(sqlSession);
             psSession.setInt(1, o.getDeviceId());
-            psSession.setInt(2, o.getGasARaw());
-            psSession.setInt(3, o.getGasBRaw());
-            psSession.setInt(4, o.getGasABase());
-            psSession.setDouble(5, o.getGasADelta());
-            psSession.setDouble(6, o.getTempC());
-            psSession.setDouble(7, o.getHumidPct());
-            psSession.setDouble(8, o.getBaseShift());
-            psSession.setBoolean(9, o.isWarm());
-            psSession.setString(10, o.getNote());
-            psSession.setInt(11, o.getSessionId());
-            
-            boolean ok = psSession.executeUpdate() > 0;
-
-            if (ok && o.getLabelCode() != null && !o.getLabelCode().isEmpty()) {
-                String currentLabel = null;
-                try (PreparedStatement psCheck = cn.prepareStatement(
-                        "SELECT TOP 1 label_code FROM Air_Label WHERE session_id = ? ORDER BY label_id DESC")) {
-                    psCheck.setInt(1, o.getSessionId());
-                    try (ResultSet rsCheck = psCheck.executeQuery()) {
-                        if (rsCheck.next()) currentLabel = rsCheck.getString(1);
-                    }
-                }
-
-                if (currentLabel == null || !currentLabel.trim().equals(o.getLabelCode().trim())) {
-                    psLabel = cn.prepareStatement(
-                        "INSERT INTO Air_Label(session_id, label_code, source, reason) VALUES (?, ?, 'REVIEWER', ?)");
-                    psLabel.setInt(1, o.getSessionId());
-                    psLabel.setString(2, o.getLabelCode());
-                    String labelReason = o.getNote();
-                    if (labelReason != null) {
-                        if (labelReason.contains("----------------")) {
-                            labelReason = labelReason.split("----------------")[0];
-                        }
-                        labelReason = labelReason.replaceFirst("^\\[[^\\]]+\\]\\s*", "");
-                        labelReason = labelReason.replace("\r", "").replace("\n", " ").trim();
-                        labelReason = labelReason.replaceAll("[-=]+$", "").trim();
-                    }
-                    psLabel.setString(3, labelReason);
-                    psLabel.executeUpdate();
-                }
-            }
-            cn.commit();
-            return ok;
+            if (o.getCo() != null) psSession.setInt(2, o.getCo()); else psSession.setNull(2, Types.INTEGER);
+            if (o.getCo2() != null) psSession.setInt(3, o.getCo2()); else psSession.setNull(3, Types.INTEGER);
+            if (o.getTemperature() != null) psSession.setDouble(4, o.getTemperature()); else psSession.setNull(4, Types.DECIMAL);
+            if (o.getHumid() != null) psSession.setDouble(5, o.getHumid()); else psSession.setNull(5, Types.DECIMAL);
+            psSession.setString(6, o.getNote());
+            psSession.setInt(7, o.getSessionId());
+            return psSession.executeUpdate() > 0;
         } catch (SQLException e) {
-            try { if (cn != null) cn.rollback(); } catch (Exception ex) {}
-            System.out.println("====== LỖI KHI UPDATE PHIÊN ĐO ======");
             e.printStackTrace(); 
             return false;
         } finally {
-            try { if (psLabel != null) psLabel.close(); } catch (Exception ex) {}
-            try { if (psSession != null) psSession.close(); } catch (Exception ex) {}
-            try { if (cn != null) cn.close(); } catch (Exception ex) {}
+            close(null, psSession, cn);
         }
     }
 
@@ -292,7 +250,6 @@ public class AirSessionDAO {
             cn = DBContext.getConnection();
             cn.setAutoCommit(false);
             exec(cn, "DELETE FROM Air_Alert WHERE session_id = ?", id);
-            exec(cn, "DELETE FROM Air_Label WHERE session_id = ?", id);
             exec(cn, "DELETE FROM Air_Session WHERE session_id = ?", id);
             cn.commit();
             return true;
@@ -304,10 +261,6 @@ public class AirSessionDAO {
         }
         return false;
     }
-    
-    
-    
-    
 
     private void exec(Connection cn, String sql, int id) throws SQLException {
         PreparedStatement ps = cn.prepareStatement(sql);
@@ -322,22 +275,20 @@ public class AirSessionDAO {
         o.setDeviceId(rs.getInt("device_id"));
         o.setDeviceSeq(rs.getInt("device_seq"));
         o.setMeasuredAt(rs.getTimestamp("measured_at"));
-        o.setIngestedAt(rs.getTimestamp("ingested_at"));
-        o.setSample(rs.getBoolean("is_sample"));
-        o.setLabelCode(rs.getString("label_code"));
-        o.setGasARaw(rs.getInt("gas_a_raw"));
-        o.setGasBRaw(rs.getInt("gas_b_raw"));
-        o.setGasABase(rs.getInt("gas_a_base"));
-        o.setGasADelta(rs.getDouble("gas_a_delta"));
-        o.setTempC(rs.getDouble("temp_c"));
-        o.setHumidPct(rs.getDouble("humid_pct"));
-        o.setBaseShift(rs.getDouble("base_shift"));
-        o.setWarm(rs.getBoolean("warm"));
+        
+        Double temp = rs.getObject("temperature") != null ? rs.getDouble("temperature") : null;
+        Double hum = rs.getObject("humid") != null ? rs.getDouble("humid") : null;
+        Integer co2 = rs.getObject("co2") != null ? rs.getInt("co2") : null;
+        Integer co = rs.getObject("co") != null ? rs.getInt("co") : null;
+        
+        o.setTemperature(temp);
+        o.setHumid(hum);
+        o.setCo2(co2);
+        o.setCo(co);
         o.setNote(rs.getString("note"));
         try {
             o.setDeviceCode(rs.getString("device_code"));
         } catch (SQLException ignored) {
-            // device_code may not be present in all queries
         }
         return o;
     }

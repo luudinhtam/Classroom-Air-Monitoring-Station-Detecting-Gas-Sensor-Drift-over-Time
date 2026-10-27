@@ -1,12 +1,14 @@
+USE master;
+GO
 
+IF DB_ID('AirRoomDB') IS NOT NULL
+BEGIN
+    ALTER DATABASE AirRoomDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE AirRoomDB;
+END
+GO
 
--- Xoa DATABASE neu exist
-DROP DATABASE IF EXISTS ten_database;
-
-
-
-IF DB_ID('AirRoomDB') IS NULL
-    CREATE DATABASE AirRoomDB;
+CREATE DATABASE AirRoomDB;
 GO
 
 USE AirRoomDB;
@@ -18,28 +20,47 @@ CREATE TABLE AppRole (
     role_code NVARCHAR(32)  NOT NULL UNIQUE,
     role_name NVARCHAR(100) NOT NULL
 );
- 
+
 CREATE TABLE AppUser (
     user_id    INT IDENTITY(1,1) PRIMARY KEY,
     username   NVARCHAR(64)  NOT NULL UNIQUE,
-    pass_hash  NVARCHAR(200) NOT NULL,   -- PBKDF2 value, never the plain text
+    pass_hash  NVARCHAR(200) NOT NULL,   -- PBKDF2: iterations:salt:hash
     full_name  NVARCHAR(150) NOT NULL,
     role_id    INT NOT NULL FOREIGN KEY REFERENCES AppRole(role_id),
     is_locked  BIT NOT NULL DEFAULT 0,
     created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
 );
- 
--- ===== 2. Thiet bi =====
+
+-- ===== 2. Phong hoc =====
+CREATE TABLE Room (
+    room_id                 INT IDENTITY(1,1) PRIMARY KEY,
+    room_code               NVARCHAR(32)  NOT NULL UNIQUE,
+    name                    NVARCHAR(150) NOT NULL,
+    location                NVARCHAR(250) NOT NULL,
+
+    temp_warning_threshold  DECIMAL(10,2) NOT NULL DEFAULT 32,    -- do C
+    humid_warning_threshold DECIMAL(10,2) NOT NULL DEFAULT 80,    -- %
+    co_warning_threshold    DECIMAL(10,2) NOT NULL DEFAULT 9,     -- ppm
+    co2_warning_threshold   DECIMAL(10,2) NOT NULL DEFAULT 1000,  -- ppm
+
+    device_code             NVARCHAR(128) NULL,  -- trung voi Device.room_id, giu de tuong thich DAO
+    note                    NVARCHAR(400) NULL,
+    is_active               BIT NOT NULL DEFAULT 1,
+    created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+);
+
+-- ===== 3. Thiet bi =====
 CREATE TABLE Device (
     device_id   INT IDENTITY(1,1) PRIMARY KEY,
     device_code NVARCHAR(32)  NOT NULL UNIQUE,
-    api_key     NVARCHAR(64)  NOT NULL,  -- sent by the board in the X-API-Key header
-    location    NVARCHAR(150) NULL,
+    api_key     NVARCHAR(64)  NOT NULL,   -- board gui qua header X-API-Key
+    note        NVARCHAR(150) NULL,
     last_seen   DATETIME2(0)  NULL,
     is_active   BIT NOT NULL DEFAULT 1,
-    room_id     INT NULL
+    room_id     INT NULL,
+    CONSTRAINT FK_Device_Room FOREIGN KEY (room_id) REFERENCES Room(room_id)
 );
- 
+
 CREATE TABLE RejectedPacket (
     reject_id   INT IDENTITY(1,1) PRIMARY KEY,
     raw_body    NVARCHAR(MAX) NULL,
@@ -47,145 +68,78 @@ CREATE TABLE RejectedPacket (
     reason      NVARCHAR(200) NOT NULL,
     received_at DATETIME2(0)  NOT NULL DEFAULT SYSDATETIME()
 );
- 
--- ===== 3. Bang phien, bang chinh cua de tai =====
+
+-- ===== 4. Phien do (bang chinh cua de tai) =====
 CREATE TABLE Air_Session (
     session_id  INT IDENTITY(1,1) PRIMARY KEY,
     device_id   INT NOT NULL FOREIGN KEY REFERENCES Device(device_id),
-    device_seq  INT NOT NULL,             -- counter kept by the board, used to drop duplicates
-    measured_at DATETIME2(0) NOT NULL,    -- when the board took the measurement
-    ingested_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
-    gas_a_raw INT NULL,
-    gas_b_raw INT NULL,
-    gas_a_base INT NULL,
-    gas_a_delta DECIMAL(9,2) NULL,
-    temp_c DECIMAL(9,2) NULL,
-    humid_pct DECIMAL(9,2) NULL,
-    base_shift DECIMAL(9,2) NULL,
-    warm BIT NULL,
-    note NVARCHAR(1000) NULL,
-    is_sample   BIT NOT NULL DEFAULT 0,   -- 1 for seeded rows, 0 for rows from the device
+    device_seq  INT NOT NULL,            -- bo dem tren board, dung de loai ban ghi trung
+    measured_at DATETIME2(0) NOT NULL,   -- thoi diem board do
+    co          INT NULL,
+    co2         INT NULL,
+    temperature DECIMAL(9,2) NULL,
+    humid       DECIMAL(9,2) NULL,
+    note        NVARCHAR(1000) NULL,
     CONSTRAINT UQ_Air_Session_seq UNIQUE (device_id, device_seq)
 );
 
--- Add them cot note vao bang Session
-ALTER TABLE Air_Session
-ADD note NVARCHAR(MAX) DEFAULT NULL;
- 
 CREATE INDEX IX_Air_Session_measured ON Air_Session(measured_at DESC);
- 
--- ===== 4. Bang nhan, tach rieng khoi bang phien =====
-CREATE TABLE Air_Label (
-    label_id   INT IDENTITY(1,1) PRIMARY KEY,
-    session_id INT NOT NULL FOREIGN KEY REFERENCES Air_Session(session_id),
-    label_code NVARCHAR(24) NOT NULL,
-    source     NVARCHAR(16) NOT NULL,     -- RULE when set by the engine, REVIEWER when corrected
-    reason     NVARCHAR(400) NULL,
-    labeled_by INT NULL FOREIGN KEY REFERENCES AppUser(user_id),
-    labeled_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
+CREATE INDEX IX_Air_Session_device   ON Air_Session(device_id, measured_at DESC);
+
+-- Command --
+CREATE TABLE Device_Command (
+    command_id INT IDENTITY(1,1) PRIMARY KEY,
+    device_id  INT NOT NULL FOREIGN KEY REFERENCES Device(device_id),
+    room_id    INT NOT NULL FOREIGN KEY REFERENCES Room(room_id),
+    command    NVARCHAR(16) NOT NULL DEFAULT N'START',
+    status     NVARCHAR(16) NOT NULL DEFAULT N'PENDING',
+    created_at DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
+    sent_at    DATETIME2(0) NULL,
+    done_at    DATETIME2(0) NULL,
+    session_id INT NULL FOREIGN KEY REFERENCES Air_Session(session_id),
+    CONSTRAINT CK_Device_Command_status
+        CHECK (status IN (N'PENDING', N'SENT', N'DONE', N'TIMEOUT'))
 );
- 
-CREATE INDEX IX_Air_Label_session ON Air_Label(session_id, label_id DESC);
- 
--- ===== 5. Bang canh bao =====
+CREATE INDEX IX_Device_Command_poll ON Device_Command(device_id, status, created_at);
+
+-- ===== 5. Canh bao =====
 CREATE TABLE Air_Alert (
     alert_id    INT IDENTITY(1,1) PRIMARY KEY,
     session_id  INT NULL FOREIGN KEY REFERENCES Air_Session(session_id),
-    rule_code   NVARCHAR(32)  NOT NULL,
-    severity    NVARCHAR(16)  NOT NULL,   -- INFO, WARN, CRITICAL
+    alert_code  NVARCHAR(16)  NOT NULL UNIQUE,   -- A001, A002, ...
+    alert_type  NVARCHAR(16)  NOT NULL,          -- TEMPERATURE, HUMID, CO2, CO
     message     NVARCHAR(400) NOT NULL,
-    status      NVARCHAR(16)  NOT NULL DEFAULT 'OPEN',  -- OPEN, ACKED, REJECTED
+    status      NVARCHAR(16)  NOT NULL DEFAULT N'OPENING',  -- OPENING, APPROVED, REJECTED
     handled_by  INT NULL FOREIGN KEY REFERENCES AppUser(user_id),
-    handled_note NVARCHAR(400) NULL,
-    created_at  DATETIME2(0) NOT NULL DEFAULT SYSDATETIME()
-);
- 
--- ===== 6. Cac bang rieng cua de tai =====
-CREATE TABLE Room (
-    room_id                 INT IDENTITY(1,1) PRIMARY KEY,
-    code                    NVARCHAR(32)  NOT NULL UNIQUE,
-    name                    NVARCHAR(150) NOT NULL,
-    location                NVARCHAR(250) NOT NULL,
-
-    co_warning_threshold    DECIMAL(10,2) NOT NULL DEFAULT 0,
-    co2_warning_threshold   DECIMAL(10,2) NOT NULL DEFAULT 0,
-    max_baseline_drift      DECIMAL(10,2) NOT NULL DEFAULT 0,
-
-    device_code             NVARCHAR(128) NULL,
-
-    note                    NVARCHAR(400) NULL,
-    is_active               BIT NOT NULL DEFAULT 1,
-    created_at              DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
-    latitude                DECIMAL(10,6) NULL,
-    longitude               DECIMAL(10,6) NULL
+    note        NVARCHAR(400) NULL,
+    created_at  DATETIME2(0)  NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT CK_Air_Alert_type   CHECK (alert_type IN (N'TEMPERATURE', N'HUMID', N'CO2', N'CO')),
+    CONSTRAINT CK_Air_Alert_status CHECK (status IN (N'OPENING', N'APPROVED', N'REJECTED'))
 );
 
-ALTER TABLE Device
-ADD CONSTRAINT FK_Device_Room FOREIGN KEY (room_id) REFERENCES Room(room_id);
+CREATE INDEX IX_Air_Alert_status  ON Air_Alert(status, created_at DESC);
+CREATE INDEX IX_Air_Alert_session ON Air_Alert(session_id);
+GO
 
-CREATE TABLE Air_Calibration (
-    calibration_id      INT IDENTITY(1,1) PRIMARY KEY,
-    code                NVARCHAR(32)  NOT NULL UNIQUE,
-    name                NVARCHAR(150) NOT NULL,
-    note                NVARCHAR(400) NULL,
-
-    room_id             INT NOT NULL,
-    co_baseline         DECIMAL(10,2) NOT NULL DEFAULT 0,
-    co2_baseline        DECIMAL(10,2) NOT NULL DEFAULT 0,
-
-    performed_by        INT NOT NULL,
-    calibrated_at       DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
-
-    CONSTRAINT FK_Air_Calibration_Room
-        FOREIGN KEY (room_id) REFERENCES Room(room_id),
-    CONSTRAINT FK_Air_Calibration_User
-        FOREIGN KEY (performed_by) REFERENCES AppUser(user_id)
-);
-
-CREATE TABLE Air_EmptyWindow (
-    empty_window_id INT IDENTITY(1,1) PRIMARY KEY,
-    code            NVARCHAR(32) NOT NULL UNIQUE,
-    name            NVARCHAR(150) NOT NULL,
-
-    room_id         INT NOT NULL,
-
-    start_at        DATETIME2(0) NOT NULL,
-    end_at          DATETIME2(0) NOT NULL,
-
-    marked_by       INT NOT NULL,
-    note            NVARCHAR(400) NULL,
-    created_at      DATETIME2(0) NOT NULL DEFAULT SYSDATETIME(),
-
-    CONSTRAINT CK_Air_EmptyWindow_Time
-        CHECK (end_at > start_at),
-    CONSTRAINT FK_Air_EmptyWindow_Room
-        FOREIGN KEY (room_id) REFERENCES Room(room_id),
-    CONSTRAINT FK_Air_EmptyWindow_User
-        FOREIGN KEY (marked_by) REFERENCES AppUser(user_id)
-);
- 
--- ===== 7. Du lieu khoi tao =====
+-- ===== 6. Du lieu khoi tao =====
 INSERT INTO AppRole(role_code, role_name) VALUES
-    (N'ADMIN', N'ADMIN'),
+    (N'ADMIN',           N'ADMIN'),
     (N'STATION_MANAGER', N'STATION_MANAGER'),
-    (N'OPERATOR', N'OPERATOR'),
-    (N'REVIEWER', N'REVIEWER'),
-    (N'VIEWER', N'VIEWER');
- 
--- Every seeded account has the password 123456.
--- The value below is a PBKDF2 hash in the form iterations:salt:hash, produced by
--- PasswordUtil.main. Replace it with your own before the defence.
+    (N'OPERATOR',        N'OPERATOR'),
+    (N'REVIEWER',        N'REVIEWER'),
+    (N'VIEWER',          N'VIEWER');
+
+-- Moi tai khoan co mat khau 123456.
 DECLARE @h NVARCHAR(200) = N'20000:a0dee5aba0d8cc258ed13fa22d6b729e:7cc4e6fd505db9217ae726189980404174314d771379ca4d98798889d015a124';
+
 INSERT INTO AppUser(username, pass_hash, full_name, role_id)
 SELECT v.u, @h, v.n, r.role_id
 FROM (VALUES
-    (N'admin', N'Tai khoan ADMIN', N'ADMIN'),
+    (N'admin',           N'Tai khoan ADMIN',           N'ADMIN'),
     (N'station_manager', N'Tai khoan STATION_MANAGER', N'STATION_MANAGER'),
-    (N'operator', N'Tai khoan OPERATOR', N'OPERATOR'),
-    (N'reviewer', N'Tai khoan REVIEWER', N'REVIEWER'),
-    (N'viewer', N'Tai khoan VIEWER', N'VIEWER')
+    (N'operator',        N'Tai khoan OPERATOR',        N'OPERATOR'),
+    (N'reviewer',        N'Tai khoan REVIEWER',        N'REVIEWER'),
+    (N'viewer',          N'Tai khoan VIEWER',          N'VIEWER')
 ) AS v(u, n, rc)
 JOIN AppRole r ON r.role_code = v.rc;
- 
-INSERT INTO Device(device_code, api_key, location) VALUES
-    (N'Air-01', N'demo-key-air-0001', N'Ban thuc hanh so 1');
+GO

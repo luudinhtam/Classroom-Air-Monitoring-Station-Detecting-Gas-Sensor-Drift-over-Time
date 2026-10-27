@@ -50,20 +50,28 @@ public class DeviceServlet extends HttpServlet {
             throws ServletException, IOException {
         String keyword = Web.trimmed(req, "keyword");
         String activeState = Web.trimmed(req, "activeState");
-        int page = Web.intParam(req, "page", 1);
-        if (page < 1) page = 1;
 
-        int offset = (page - 1) * PAGE_SIZE;
-        List<Device> rows = devices.search(keyword, activeState, offset, PAGE_SIZE);
-        int total = devices.count(keyword, activeState);
-        int pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
+        List<Device> allDevices = devices.getAllDevicesWithDetails();
+        if (allDevices == null) allDevices = new java.util.ArrayList<>();
 
-        req.setAttribute("rows", rows);
+        int total = allDevices.size();
+        int page = 1;
+        int pages = (total + 13) / 14;
+        if (pages < 1) pages = 1;
+
+        int openAlertCount = 0;
+        try {
+            openAlertCount = dao.DashboardDAO.getInstance().getDashboardStats().getOpenAlerts();
+        } catch (Exception ignored) {}
+
+        req.setAttribute("allDevices", allDevices);
+        req.setAttribute("rows", allDevices);
         req.setAttribute("keyword", keyword);
         req.setAttribute("activeState", activeState);
         req.setAttribute("page", Integer.valueOf(page));
         req.setAttribute("pages", Integer.valueOf(pages));
         req.setAttribute("total", Integer.valueOf(total));
+        req.setAttribute("openAlertCount", Integer.valueOf(openAlertCount));
 
         req.getRequestDispatcher("/WEB-INF/views/deviceList.jsp").forward(req, resp);
     }
@@ -88,7 +96,11 @@ public class DeviceServlet extends HttpServlet {
             d.setDeviceId(id);
             d.setDeviceCode(Web.trimmed(req, "deviceCode"));
             d.setApiKey(Web.trimmed(req, "apiKey"));
-            d.setLocation(Web.trimmed(req, "location"));
+            String note = Web.trimmed(req, "note");
+            if (note == null || note.isEmpty()) {
+                note = Web.trimmed(req, "location");
+            }
+            d.setNote(note);
             d.setIsActive("1".equals(req.getParameter("isActive")) || "true".equals(req.getParameter("isActive")));
             d.setRoomId(Web.optionalInt(req, "roomId"));
 

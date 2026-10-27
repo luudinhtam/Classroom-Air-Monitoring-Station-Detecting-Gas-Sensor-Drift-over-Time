@@ -26,7 +26,6 @@ public class IngestServlet extends HttpServlet {
     private final AirSessionDAO dao = new AirSessionDAO();
     private final AirRuleEngine engine = new AirRuleEngine();
     private final DeviceDAO devices = new DeviceDAO();
-    private final LabelDAO labels = new LabelDAO();
     private final AlertDAO alerts = new AlertDAO();
 
     @Override
@@ -50,22 +49,57 @@ public class IngestServlet extends HttpServlet {
         try {
             AirSession o = new AirSession();
             o.setDeviceId(deviceId.intValue());
-            o.setDeviceSeq((int) num(body, "seq"));
-            o.setMeasuredAt(new Timestamp((long) num(body, "measured_at") * 1000L));
-            o.setGasARaw((int) num(body, "gas_a_raw"));
-            o.setGasBRaw((int) num(body, "gas_b_raw"));
-            o.setGasABase((int) num(body, "gas_a_base"));
-            o.setGasADelta(num(body, "gas_a_delta"));
-            o.setTempC(num(body, "temp_c"));
-            o.setHumidPct(num(body, "humid_pct"));
-            o.setBaseShift(num(body, "base_shift"));
+            o.setDeviceCode(code);
+
+            Double seqVal = optNum(body, "seq");
+            if (seqVal == null) seqVal = optNum(body, "device_seq");
+            o.setDeviceSeq(seqVal != null ? seqVal.intValue() : 0);
+
+            Double timeVal = optNum(body, "measured_at");
+            Timestamp measuredAt = (timeVal != null && timeVal > 0)
+                    ? new Timestamp((long) (timeVal * 1000L))
+                    : new Timestamp(System.currentTimeMillis());
+            o.setMeasuredAt(measuredAt);
+
+            // CO2 (hoặc gas_a_raw)
+            Double co2Val = optNum(body, "co2");
+            if (co2Val == null) co2Val = optNum(body, "gas_a_raw");
+            int co2 = co2Val != null ? co2Val.intValue() : 0;
+            o.setCo2(co2);
+            o.setGasARaw(co2);
+
+            // CO (hoặc gas_b_raw)
+            Double coVal = optNum(body, "co");
+            if (coVal == null) coVal = optNum(body, "gas_b_raw");
+            int co = coVal != null ? coVal.intValue() : 0;
+            o.setCo(co);
+            o.setGasBRaw(co);
+
+            // Temperature (hoặc temp_c)
+            Double tempVal = optNum(body, "temperature");
+            if (tempVal == null) tempVal = optNum(body, "temp_c");
+            double temp = tempVal != null ? tempVal : 0.0;
+            o.setTemperature(temp);
+            o.setTempC(temp);
+
+            // Humid (hoặc humid_pct)
+            Double humidVal = optNum(body, "humid");
+            if (humidVal == null) humidVal = optNum(body, "humid_pct");
+            double hum = humidVal != null ? humidVal : 0.0;
+            o.setHumid(hum);
+            o.setHumidPct(hum);
+
+            // Optional fields nếu có
+            Double gasABase = optNum(body, "gas_a_base");
+            if (gasABase != null) o.setGasABase(gasABase.intValue());
+            Double gasADelta = optNum(body, "gas_a_delta");
+            if (gasADelta != null) o.setGasADelta(gasADelta);
+            Double baseShift = optNum(body, "base_shift");
+            if (baseShift != null) o.setBaseShift(baseShift);
             o.setWarm("1".equals(str(body, "warm")));
-            
-            // CAUTION: Hien tai dang test data nen data hien tai la sample
             o.setSample(true);
-            // CAUTION:
             
-            // Luu vao table Session
+            // Luu vao table Air_Session
             int id = dao.insert(o);
             if (id == -1) { // same sequence number arrived twice
                 resp.getWriter().write("{\"ok\":true,\"duplicate\":true}");
@@ -73,19 +107,27 @@ public class IngestServlet extends HttpServlet {
             }
             o.setSessionId(id);
             
-            // Gan nhan cho Session, luu vao table Label
-            String label = engine.classify(o);
-            labels.insert(id, label, "RULE", null, null);
-            
-            // Cap nhat gia tri Last Seen cho object Device
+            // Cap nhat gia tri Last Seen cho thiet bi
             devices.touch(deviceId.intValue());
             
-            // Khai bao tinh trang/muc do nghiem trong cua object Label
-            String sev = engine.severityOf(label);
-            // Kiem tra tinh trang/muc do nghiem cua object Label
-            if (!"INFO".equals(sev)) {
-                alerts.insert(id, label, sev, engine.messageOf(label));
+            // Phan loai rule engine
+            String label = engine.classify(o);
+            o.setLabelCode(label);
+
+            // Kiem tra nguong an toan de tao Air_Alert (alert_code IN ('TEMPERATURE', 'HUMID', 'CO2', 'CO'))
+            if (temp >= 32.0) {
+                alerts.insert(id, "TEMPERATURE", "Room temperature exceeded warning threshold: " + temp + "°C");
             }
+            if (hum >= 80.0) {
+                alerts.insert(id, "HUMID", "Room humidity exceeded warning threshold: " + hum + "%");
+            }
+            if (co2 >= 1000 || "HIGH".equals(label) || "DRIFTED".equals(label)) {
+                alerts.insert(id, "CO2", "Room CO2 level exceeded warning threshold: " + co2 + " ppm");
+            }
+            if (co >= 9) {
+                alerts.insert(id, "CO", "Room CO concentration exceeded safety threshold: " + co + " ppm");
+            }
+
             resp.getWriter().write("{\"ok\":true,\"session_id\":" + id
                     + ",\"label\":\"" + label + "\"}");
 
@@ -93,6 +135,14 @@ public class IngestServlet extends HttpServlet {
             devices.logRejected(body, code, "bad payload: " + e.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write("{\"ok\":false,\"error\":\"payload\"}");
+        }
+    }
+
+    private Double optNum(String json, String field) {
+        try {
+            return num(json, field);
+        } catch (Exception e) {
+            return null;
         }
     }
 

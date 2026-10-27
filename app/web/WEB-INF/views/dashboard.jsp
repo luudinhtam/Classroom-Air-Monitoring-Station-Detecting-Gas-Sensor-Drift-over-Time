@@ -1,768 +1,704 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, model.AppUser, model.DashboardStats, model.DashboardStats.*, util.Web" %>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="java.util.*, model.AppUser, model.DashboardStats, model.ClassroomTempInfo, util.Web"%>
 <%
-    AppUser me = (AppUser) session.getAttribute("user");
     String ctx = request.getContextPath();
+    AppUser me = (AppUser) session.getAttribute("user");
+    String userName = (me != null && me.getFullName() != null) ? me.getFullName() : "Admin";
+    String userRole = (me != null && me.getRoleCode() != null) ? me.getRoleCode() : "ADMIN";
+    boolean isAdmin = "ADMIN".equals(userRole);
+
     DashboardStats stats = (DashboardStats) request.getAttribute("stats");
-    if (stats == null) {
-        stats = new DashboardStats();
+    if (stats == null) stats = new DashboardStats();
+
+    List<ClassroomTempInfo> classroomList = (List<ClassroomTempInfo>) request.getAttribute("classroomList");
+    if (classroomList == null) classroomList = new ArrayList<>();
+
+    java.time.ZonedDateTime nowZdt = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+    String jDateStr = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", java.util.Locale.ENGLISH));
+    String jTimeStr = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+    String jSidebarDateTime = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy, HH:mm", java.util.Locale.ENGLISH));
+
+    // Calculate stats directly from real database room list
+    int totalRoomsCount = classroomList.size();
+    int normalRooms = 0;
+    int warningRooms = 0;
+    int dangerRooms = 0;
+    int noDataRooms = 0;
+
+    double sumTemp = 0, sumHum = 0, sumCo = 0;
+    long sumCo2 = 0;
+    int roomsWithDataCount = 0;
+
+    String defaultImg = ctx + "/assets/images/classroom_default.png";
+    StringBuilder roomsJson = new StringBuilder("[");
+    for (int i = 0; i < classroomList.size(); i++) {
+        ClassroomTempInfo c = classroomList.get(i);
+        String code = (c.getRoomCode() != null && !c.getRoomCode().trim().isEmpty()) ? c.getRoomCode().trim() : ("R" + c.getRoomId());
+        String name = (c.getRoomName() != null && !c.getRoomName().trim().isEmpty()) ? c.getRoomName().trim() : code;
+        String bld = (c.getBuilding() != null) ? c.getBuilding() : "A";
+        int flr = c.getFloor() > 0 ? c.getFloor() : 1;
+        boolean hasData = c.isHasData();
+        Double temp = c.getTemperature();
+        Double hum = c.getHumidity();
+        Integer co2 = c.getCo2();
+        Double co = c.getCo();
+        String status = c.getStatus() != null ? c.getStatus() : "NO_DATA";
+
+        if (hasData) {
+            roomsWithDataCount++;
+            if (temp != null) sumTemp += temp;
+            if (hum != null) sumHum += hum;
+            if (co2 != null) sumCo2 += co2;
+            if (co != null) sumCo += co;
+
+            if ("NORMAL".equalsIgnoreCase(status)) normalRooms++;
+            else if ("WARNING".equalsIgnoreCase(status)) warningRooms++;
+            else if ("DANGER".equalsIgnoreCase(status)) dangerRooms++;
+            else normalRooms++;
+        } else {
+            noDataRooms++;
+        }
+
+        code = code.replace("\\", "\\\\").replace("\"", "\\\"");
+        name = name.replace("\\", "\\\\").replace("\"", "\\\"");
+
+        if (i > 0) roomsJson.append(",");
+        roomsJson.append("{")
+                 .append("\"dbId\":").append(c.getRoomId()).append(",")
+                 .append("\"id\":\"").append(code).append("\",")
+                 .append("\"name\":\"").append(name).append("\",")
+                 .append("\"building\":\"").append(bld).append("\",")
+                 .append("\"floor\":").append(flr).append(",")
+                 .append("\"hasData\":").append(hasData).append(",")
+                 .append("\"temp\":").append(temp != null ? String.format(Locale.US, "%.1f", temp) : "null").append(",")
+                 .append("\"humidity\":").append(hum != null ? String.format(Locale.US, "%.0f", hum) : "null").append(",")
+                 .append("\"co2\":").append(co2 != null ? co2 : "null").append(",")
+                 .append("\"co\":").append(co != null ? String.format(Locale.US, "%.1f", co) : "null").append(",")
+                 .append("\"status\":\"").append(status).append("\",")
+                 .append("\"image\":\"").append(defaultImg).append("\"")
+                 .append("}");
     }
+    roomsJson.append("]");
 
-    DatasetComparison sample = stats.getSampleStats();
-    DatasetComparison live = stats.getLiveStats();
+    // Sensor & Classroom counts from database
+    int displayTotalRooms = stats.getTotalRooms() > 0 ? stats.getTotalRooms() : totalRoomsCount;
 
+    // Recent alerts serialization from database
+    StringBuilder alertsJson = new StringBuilder("[");
+    List<DashboardStats.OpenAlertInfo> openAlerts = stats.getOpenAlertsList();
+    if (openAlerts != null && !openAlerts.isEmpty()) {
+        for (int i = 0; i < openAlerts.size(); i++) {
+            DashboardStats.OpenAlertInfo a = openAlerts.get(i);
+            String rawType = a.getRuleCode() != null ? a.getRuleCode() : "Alert";
+            String dispType = rawType;
+            if ("TEMPERATURE".equalsIgnoreCase(rawType)) dispType = "Overheat";
+            else if ("CO2".equalsIgnoreCase(rawType)) dispType = "CO₂ High";
+            else if ("CO".equalsIgnoreCase(rawType)) dispType = "CO High";
+            else if ("HUMID".equalsIgnoreCase(rawType)) dispType = "Humid High";
 
+            String timeStr = "--:--";
+            if (a.getCreatedAt() != null && a.getCreatedAt().length() >= 16) {
+                timeStr = a.getCreatedAt().substring(11, 16);
+            }
+            String roomStr = (a.getRoomCode() != null && !a.getRoomCode().isEmpty()) ? a.getRoomCode() : ("Session #" + a.getSessionId());
+            String valStr = a.getMessage() != null ? a.getMessage() : rawType;
+            String st = a.getStatus() != null ? a.getStatus() : "OPEN";
+
+            valStr = valStr.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+            roomStr = roomStr.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+            dispType = dispType.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+            st = st.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", " ").replace("\n", " ");
+
+            if (i > 0) alertsJson.append(",");
+            alertsJson.append("{")
+                      .append("\"time\":\"").append(timeStr).append("\",")
+                      .append("\"room\":\"").append(roomStr).append("\",")
+                      .append("\"type\":\"").append(dispType).append("\",")
+                      .append("\"value\":\"").append(valStr).append("\",")
+                      .append("\"status\":\"").append(st).append("\"")
+                      .append("}");
+        }
+    }
+    alertsJson.append("]");
+
+    // Recent session history serialization from database
+    List<java.util.Map<String, Object>> sessionHistory = (List<java.util.Map<String, Object>>) request.getAttribute("sessionHistory");
+    StringBuilder historyJson = new StringBuilder("[");
+    if (sessionHistory != null) {
+        for (int i = 0; i < sessionHistory.size(); i++) {
+            java.util.Map<String, Object> m = sessionHistory.get(i);
+            if (i > 0) historyJson.append(",");
+            historyJson.append("{")
+                       .append("\"time\":\"").append(m.get("time")).append("\",")
+                       .append("\"temp\":").append(m.get("temp") != null ? m.get("temp") : "null").append(",")
+                       .append("\"humidity\":").append(m.get("humid") != null ? m.get("humid") : "null").append(",")
+                       .append("\"co2\":").append(m.get("co2") != null ? m.get("co2") : "null").append(",")
+                       .append("\"co\":").append(m.get("co") != null ? m.get("co") : "null")
+                       .append("}");
+        }
+    }
+    historyJson.append("]");
 %>
-
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dashboard</title>
-        <link rel="stylesheet" href="<%= ctx%>/assets/css/app.css">
-        <link rel="stylesheet" href="<%= ctx%>/assets/css/dashboard.css">
-    </head>
-    <body>
-        <jsp:include page="/WEB-INF/views/nav.jsp"/>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Classroom Air Monitoring System</title>
+    <link rel="shortcut icon" href="<%= ctx %>/favicon.ico" type="image/x-icon">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<%= ctx %>/assets/css/dashboard.css">
+</head>
+<body>
 
-        <div class="wrap">
-            <!-- TIÊU ĐỀ DASHBOARD -->
-            <div class="dashboard-header">
-                <div>
-                    <h2>Dashboard & Sensor Drift Analytics Over Time</h2>
-                </div>
-                <div class="actions" style="margin: 0;">
-                    <a href="<%= ctx%>/sessions" class="btn">Lookup Sessions</a>
-                    <a href="<%= ctx%>/sessions?label=DRIFTED" class="btn ghost" style="border-color: #9333ea; color: #9333ea;">Filter DRIFTED</a>
-                    <a href="<%= ctx%>/sessions?label=TEMP_EFFECT" class="btn ghost" style="border-color: #d97706; color: #d97706;">Filter TEMP_EFFECT</a>
-                </div>
+    <!-- 1. FIXED LEFT SIDEBAR (235px) -->
+    <aside class="sidebar" id="sidebar">
+        <!-- Logo Header -->
+        <div class="sidebar-logo">
+            <div class="logo-box">
+                <!-- Thermometer SVG Icon -->
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                    <circle cx="11.5" cy="17.5" r="1.5" fill="#2563eb"/>
+                </svg>
             </div>
-
-            <!-- MỤC 2: ĐỒNG HỒ ĐO TỨC THỜI (REAL-TIME GAUGES) -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <!-- ================= REAL HARDWARE CONNECTIVITY STATUS ================= -->
-                <%
-                    // KIỂM TRA KẾT NỐI THẬT:
-                    // Lấy thời điểm hiện tại so với thời điểm của phiên đo gần nhất
-                    // Chu kỳ gửi của ESP32 là 2 phút (120s). Nếu quá 3 phút (180s) không có dữ liệu -> Báo Offline
-                    long currentServerTime = System.currentTimeMillis();
-
-                    // Mặc định lấy từ thời gian đo của hệ thống (nếu có dữ liệu live)
-                    // Bạn có thể chỉnh diffSeconds này hoặc kết nối trực tiếp với timestamp của phiên đo
-                    boolean isDeviceOnline = (stats.getLiveSessions() > 0);
-                %>
-
-                <div style="
-                     background: #ffffff;
-                     border: 1px solid #e2e8f0;
-                     border-radius: 10px;
-                     padding: 10px 16px;
-                     margin-bottom: 16px;
-                     display: flex;
-                     flex-wrap: wrap;
-                     align-items: center;
-                     justify-content: space-between;
-                     gap: 12px;
-                     box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-                     ">
-                    <!-- Bên trái: Trạng thái Online / Offline thật của thiết bị -->
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <% if (isDeviceOnline) { %>
-                        <span class="live-pulse-dot"></span>
-                        <span style="font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">
-                            HARDWARE TELEMETRY
-                        </span>
-                        <span style="font-size: 12px; color: #15803d; background: #dcfce7; padding: 2px 10px; border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
-                            ● Online (Connected)
-                        </span>
-                        <span style="font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 6px;">
-                            Device: <b>Air-01</b>
-                        </span>
-                        <% } else { %>
-                        <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block;"></span>
-                        <span style="font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">
-                            HARDWARE TELEMETRY
-                        </span>
-                        <span style="font-size: 12px; color: #b91c1c; background: #fee2e2; padding: 2px 10px; border-radius: 20px; font-weight: 700;">
-                            ○ Offline (No active telemetry)
-                        </span>
-                        <span style="font-size: 12px; color: #64748b;">
-                            (Waiting for ESP32 packets on <code>/api/ingest</code>)
-                        </span>
-                        <% } %>
-                    </div>
-
-                    <!-- Bên phải: Giao thức nhận tin thực tế của đề tài -->
-                    <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: #475569;">
-                        <div>
-                            Endpoint: <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">POST /api/ingest</code>
-                        </div>
-                        <div style="color: #64748b;">
-                            Cycle: <b>120s (2 mins)</b>
-                        </div>
-                    </div>
-                </div>
+            <div class="logo-text">
+                <span class="brand-title">Classroom Temp</span>
+                <span class="brand-sub">Monitoring System</span>
             </div>
-
-            <%
-                // 1. Tính góc quay kim cho MQ-135 (Air Quality): dải chuẩn từ 100 tới 600
-                int valA = stats.getLatestGasARaw();
-                int baseA = stats.getLatestGasABase();
-                int deltaA = valA - baseA;
-                // Chuẩn hóa góc kim từ -90 độ (trái) tới +90 độ (phải)
-                double percentA = Math.max(0, Math.min(100, ((double) (valA - 100) / 500.0) * 100.0));
-                double angleA = -90.0 + (percentA / 100.0) * 180.0;
-                String colorA = percentA < 40 ? "#10b981" : (percentA < 70 ? "#f59e0b" : "#ef4444");
-                String statusA = percentA < 40 ? "Fresh" : (percentA < 70 ? "Moderate" : "Poor");
-
-                // 2. Tính góc quay kim cho MQ-7 (Carbon Monoxide - CO): dải chuẩn từ 50 tới 400
-                int valB = stats.getLatestGasBRaw();
-                double percentB = Math.max(0, Math.min(100, ((double) (valB - 50) / 350.0) * 100.0));
-                double angleB = -90.0 + (percentB / 100.0) * 180.0;
-                String colorB = percentB < 35 ? "#10b981" : (percentB < 65 ? "#f59e0b" : "#ef4444");
-                String statusB = percentB < 35 ? "Safe" : (percentB < 65 ? "RAISED" : "CRITICAL");
-
-                // 3. Nhiệt độ và Độ ẩm
-                double temp = stats.getLatestTempC();
-                double humid = stats.getLatestHumidPct();
-            %>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
-
-                <!-- ĐỒNG HỒ 1: AIR QUALITY (MQ-135) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); text-align: center; position: relative;">
-                    <div style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
-                        Air Quality / VOCs (MQ-135)
-                    </div>
-
-                    <!-- Hình vòng cung bán nguyệt SVG -->
-                    <div style="width: 180px; height: 100px; margin: 0 auto; position: relative; overflow: hidden;">
-                        <svg viewBox="0 0 100 55" style="width: 100%; height: 100%;">
-                        <!-- Vòng cung dải màu Xanh - Vàng - Đỏ -->
-                        <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
-                        <path d="M 10 50 A 40 40 0 0 1 45 13" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round"/>
-                        <path d="M 45 13 A 40 40 0 0 1 70 19" fill="none" stroke="#f59e0b" stroke-width="8"/>
-                        <path d="M 70 19 A 40 40 0 0 1 90 50" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
-                        <!-- Trục tròn tâm kim -->
-                        <circle cx="50" cy="50" r="4" fill="#0f172a"/>
-                        <!-- Kim chỉ xoay -->
-                        <line x1="50" y1="50" x2="50" y2="18" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"
-                              style="transform-origin: 50px 50px; transform: rotate(<%= angleA%>deg); transition: transform 1s ease-in-out;"/>
-                        </svg>
-                    </div>
-
-                    <!-- Giá trị số hiển thị dưới đồng hồ -->
-                    <div style="font-size: 26px; font-weight: 800; color: <%= colorA%>; margin-top: -8px;">
-                        <%= valA%> <span style="font-size: 13px; font-weight: 500; color: #64748b;">Raw</span>
-                    </div>
-                    <div style="font-size: 12px; font-weight: 600; color: <%= colorA%>; margin-top: 2px;">
-                        <%= statusA%>
-                    </div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; border-top: 1px dashed #f1f5f9; padding-top: 6px;">
-                        Baseline: <b><%= baseA%></b> | Delta: <b><%= deltaA >= 0 ? "+" : ""%><%= deltaA%></b>
-                    </div>
-                </div>
-
-                <!-- ĐỒNG HỒ 2: CARBON MONOXIDE (MQ-7) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); text-align: center; position: relative;">
-                    <div style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
-                        Carbon Monoxide - CO
-                    </div>
-
-                    <div style="width: 180px; height: 100px; margin: 0 auto; position: relative; overflow: hidden;">
-                        <svg viewBox="0 0 100 55" style="width: 100%; height: 100%;">
-                        <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
-                        <path d="M 10 50 A 40 40 0 0 1 45 13" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round"/>
-                        <path d="M 45 13 A 40 40 0 0 1 70 19" fill="none" stroke="#f59e0b" stroke-width="8"/>
-                        <path d="M 70 19 A 40 40 0 0 1 90 50" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
-                        <circle cx="50" cy="50" r="4" fill="#0f172a"/>
-                        <line x1="50" y1="50" x2="50" y2="18" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"
-                              style="transform-origin: 50px 50px; transform: rotate(<%= angleB%>deg); transition: transform 1s ease-in-out;"/>
-                        </svg>
-                    </div>
-
-                    <div style="font-size: 26px; font-weight: 800; color: <%= colorB%>; margin-top: -8px;">
-                        <%= valB%> <span style="font-size: 13px; font-weight: 500; color: #64748b;">Raw</span>
-                    </div>
-                    <div style="font-size: 12px; font-weight: 600; color: <%= colorB%>; margin-top: 2px;">
-                        <%= statusB%>
-                    </div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; border-top: 1px dashed #f1f5f9; padding-top: 6px;">
-                        Reference Baseline: <b><%= stats.getLatestGasBBase()%></b>
-                    </div>
-                </div>
-
-                <!-- Ô 3: NHIỆT ĐỘ & ĐỘ ẨM (DHT22) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase;">
-                        Room
-                    </div>
-
-                    <div style="display: flex; justify-content: space-around; align-items: center; margin: 15px 0;">
-                        <!-- Nhiệt độ -->
-                        <div style="text-align: center;">
-                            <div style="font-size: 32px;">🌡️</div>
-                            <div style="font-size: 22px; font-weight: 800; color: #0284c7;"><%= String.format("%.1f", temp)%>°C</div>
-                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">Temperature</div>
-                        </div>
-                        <!-- Vạch ngăn -->
-                        <div style="width: 1px; height: 50px; background: #e2e8f0;"></div>
-                        <!-- Độ ẩm -->
-                        <div style="text-align: center;">
-                            <div style="font-size: 32px;">💧</div>
-                            <div style="font-size: 22px; font-weight: 800; color: #0d9488;"><%= String.format("%.1f", humid)%>%</div>
-                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">Humidity</div>
-                        </div>
-                    </div>
-
-                    <div style="font-size: 11px; color: #94a3b8; border-top: 1px dashed #f1f5f9; padding-top: 6px; text-align: center;">
-                        Temperature Compensation: <b><%= temp >= 33.0 ? "Temperature Alert" : "Stable"%></b>
-                    </div>
-                </div>
-
-                <!-- Ô 4: DRIFT MONITORING (TỶ LỆ TRÔI NỀN) -->
-                <div style="background: #ffffff; border-radius: 12px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase;">
-                        Baseline Drift Status
-                    </div>
-
-                    <%
-                        double shift = stats.getLatestBaseShift();
-                        boolean isDrifted = Math.abs(shift) >= 14.0;
-                        String shiftColor = isDrifted ? "#dc2626" : (Math.abs(shift) >= 8.0 ? "#d97706" : "#16a34a");
-                    %>
-
-                    <div style="text-align: center; margin: 10px 0;">
-                        <div style="font-size: 30px; font-weight: 800; color: <%= shiftColor%>;">
-                            <%= shift >= 0 ? "+" : ""%><%= String.format("%.1f", shift)%>%
-                        </div>
-                        <div style="font-size: 12px; font-weight: 700; color: <%= shiftColor%>; text-transform: uppercase; margin-top: 4px;">
-                            <%= isDrifted ? "⚠️ SENSOR DRIFTED" : (Math.abs(shift) >= 8.0 ? "DRIFTED" : "Baseline")%>
-                        </div>
-                    </div>
-
-                    <div style="font-size: 11px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px; text-align: center;">
-                        Evaluate: <b><%= Math.abs(shift) > 15.0 ? "⚠ Exceed the threshold" : "✓ Safety margin"%></b>            </div>
-                </div>
-
-            </div>
-
-            <!-- ================= SMART CLASSROOM AIR ADVISOR WIDGET ================= -->
-            <%
-                // Phân tích trạng thái phòng học tự động
-                String advisorStatus = "OPTIMAL";
-                String advisorBadge = "Normal & Healthy";
-                String advisorBadgeBg = "#dcfce7";
-                String advisorBadgeColor = "#15803d";
-                String advisorBorderColor = "#22c55e";
-                String advisorTitle = "Optimal Classroom Environment";
-                String advisorMessage = "Indoor air quality is fresh and within safe baseline boundaries. Thermal and VOC levels are ideal for students' health, alertness, and academic focus.";
-                String actionBtnText = "View Detailed Sessions";
-                String actionBtnUrl = ctx + "/sessions";
-
-                if (Math.abs(shift) >= 14.0) {
-                    advisorStatus = "DRIFTED";
-                    advisorBadge = "Action Required";
-                    advisorBadgeBg = "#fee2e2";
-                    advisorBadgeColor = "#b91c1c";
-                    advisorBorderColor = "#ef4444";
-                    advisorTitle = "Sensor Baseline Drift Detected (" + String.format("%.1f", shift) + "%)";
-                    advisorMessage = "The primary MQ-135 gas sensor baseline has shifted beyond acceptable tolerance compared to the last calibration. Recommendation: Mark an unoccupied period via Empty Window and perform a recalibration.";
-                    actionBtnText = "Calibrate Station";
-                    actionBtnUrl = ctx + "/admin/emptyWindows";
-                } else if (valA >= 620 || valB >= 340) {
-                    advisorStatus = "CRITICAL";
-                    advisorBadge = "Hazardous Air Quality";
-                    advisorBadgeBg = "#fee2e2";
-                    advisorBadgeColor = "#b91c1c";
-                    advisorBorderColor = "#ef4444";
-                    advisorTitle = "High Concentration of VOCs or CO Detected";
-                    advisorMessage = "Indoor gas readings exceed the classroom safety threshold. Immediate action recommended: Activate the 5V ventilation exhaust fan and open classroom windows to dilute airborne contaminants.";
-                    actionBtnText = "Check Active Alerts";
-                    actionBtnUrl = ctx + "/alerts";
-                } else if (temp >= 33.0 && deltaA >= 30) {
-                    advisorStatus = "TEMP_EFFECT";
-                    advisorBadge = "Thermal Interference";
-                    advisorBadgeBg = "#fef3c7";
-                    advisorBadgeColor = "#b45309";
-                    advisorBorderColor = "#f59e0b";
-                    advisorTitle = "Elevated Temperature Effect Suspected (" + String.format("%.1f", temp) + "°C)";
-                    advisorMessage = "The gas sensor reading increase correlates directly with ambient room heat rather than actual hazardous pollution. Rule engine has classified this as TEMP_EFFECT to prevent false alarms.";
-                    actionBtnText = "Analyze Heat Correlation";
-                    actionBtnUrl = ctx + "/sessions?label=TEMP_EFFECT";
-                } else if (valA >= 300) {
-                    advisorStatus = "RAISED";
-                    advisorBadge = "Mild Odor / Fumes";
-                    advisorBadgeBg = "#fef3c7";
-                    advisorBadgeColor = "#b45309";
-                    advisorBorderColor = "#f59e0b";
-                    advisorTitle = "Slightly Elevated Air Contaminants";
-                    advisorMessage = "Detectable levels of alcohol sanitizers, cleaning solvents, or transient odor detected. Classroom ventilation is recommended if levels persist.";
-                    actionBtnText = "Filter Raised Sessions";
-                    actionBtnUrl = ctx + "/sessions?label=RAISED";
-                }
-            %>
-
-            <div style="
-                 background: #ffffff;
-                 border-radius: 12px;
-                 padding: 18px 24px;
-                 margin-bottom: 24px;
-                 border-left: 6px solid <%= advisorBorderColor%>;
-                 box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-                 display: flex;
-                 flex-wrap: wrap;
-                 align-items: center;
-                 justify-content: space-between;
-                 gap: 16px;
-                 ">
-                <!-- Bên trái: Avatar AI & Lời khuyên -->
-                <div style="display: flex; align-items: flex-start; gap: 16px; flex: 1; min-width: 320px;">
-                    <div style="
-                         width: 48px;
-                         height: 48px;
-                         border-radius: 12px;
-                         background: <%= advisorBadgeBg%>;
-                         color: <%= advisorBadgeColor%>;
-                         display: flex;
-                         align-items: center;
-                         justify-content: center;
-                         font-size: 24px;
-                         flex-shrink: 0;
-                         ">
-                        🤖
-                    </div>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                            <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">
-                                Smart Air Quality Advisor
-                            </span>
-                            <span style="
-                                  font-size: 11px;
-                                  font-weight: 700;
-                                  background: <%= advisorBadgeBg%>;
-                                  color: <%= advisorBadgeColor%>;
-                                  padding: 2px 8px;
-                                  border-radius: 12px;
-                                  ">
-                                <%= advisorBadge%>
-                            </span>
-                        </div>
-                        <h4 style="margin: 0 0 6px; font-size: 16px; color: #0f172a; font-weight: 700;">
-                            <%= advisorTitle%>
-                        </h4>
-                        <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.5; max-width: 780px;">
-                            <%= advisorMessage%>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Bên phải: Nút hành động nhanh -->
-                <div>
-                    <a href="<%= actionBtnUrl%>" class="btn" style="
-                       display: inline-flex;
-                       align-items: center;
-                       gap: 6px;
-                       font-size: 13px;
-                       padding: 9px 18px;
-                       background: #0f172a;
-                       color: #ffffff;
-                       border-radius: 8px;
-                       text-decoration: none;
-                       font-weight: 600;
-                       white-space: nowrap;
-                       transition: opacity 0.2s;
-                       ">
-                        <%= actionBtnText%> &rarr;
-                    </a>
-                </div>
-            </div>
-
-            <!-- MỤC IX.2 ĐỀ TÀI: CÁC CON SỐ THỐNG KÊ BÁO CÁO & ĐỘ TRÔI CẢM BIẾN -->
-            <div class="kpi-grid" style="margin-bottom: 22px;">
-                <div class="kpi-card purple">
-                    <div class="kpi-label">Drifted Sessions</div>
-                    <div class="kpi-value"><%= stats.getDriftedCount()%></div>
-                    <div class="kpi-desc">Rate: <b><%= stats.getDriftedRate()%>%</b></div>
-                </div>
-
-                <div class="kpi-card green">
-                    <div class="kpi-label">Days in Tolerance</div>
-                    <div class="kpi-value"><%= String.format("%.1f", stats.getAvgDaysInTolerance())%><span style="font-size: 15px; font-weight: normal; color: #64748b;"> days</span></div>
-                    <div class="kpi-desc">Baseline retained within tolerance</div>
-                </div>
-
-                <div class="kpi-card amber">
-                    <div class="kpi-label">Alerts & Rejection Rate</div>
-                    <div class="kpi-value"><%= stats.getTotalAlerts()%></div>
-                    <div class="kpi-desc">Rejected: <b><%= stats.getAlertRejectionRate()%>%</b></div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-label">Total Sessions</div>
-                    <div class="kpi-value"><%= String.format("%,d", stats.getTotalSessions())%></div>
-                    <div class="kpi-desc"><%= stats.getTotalDevices()%> devices &bull; <%= stats.getTotalRooms()%> rooms</div>
-                </div>
-            </div>
-
-           
-            <!-- MỤC 2: BIỂU ĐỒ PHÂN TÁN (SCATTER PLOT) TƯƠNG QUAN KHÍ VÀ NHIỆT ĐỘ -->
-            <div class="section-panel">
-                <div class="panel-head">
-                    <div>
-                        <h3 class="panel-title">Scatter Plot: Gas Concentration vs Temperature Correlation</h3>
-                    </div>
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background: #3b82f6;"></span> BASE (Normal)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #ef4444;"></span> HIGH (Poor Air Quality)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #f97316;"></span> TEMP_EFFECT (Thermal Interference)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #a855f7;"></span> DRIFTED (Sensor Drift)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #64748b;"></span> WARMUP (Warming Up)</div>
-                        <div class="legend-item"><span class="legend-dot" style="background: #06b6d4;"></span> RAISED (Elevated Gas)</div>
-                    </div>
-                </div>
-
-                <div class="canvas-wrapper">
-                    <canvas id="scatterCanvas" width="1080" height="340"></canvas>
-                </div>
-
-                <div class="scatter-analysis-box">
-                    <b>Thermal Effect Decoupling Analysis:</b> 
-                    When temperature exceeds <b>30°C</b> and humidity drops sharply, measured gas levels rise in-phase along the scatter slope (orange dots <b>TEMP_EFFECT</b>). 
-                    The system detects this co-variance between temperature and gas readings to <b>avoid falsely diagnosing poor air quality</b>, effectively preventing false alarm triggers.
-                </div>
-            </div>
-
-            <!-- MỤC 2: XU HƯỚNG MỨC NỀN & PHÂN BỔ CẢNH BÁO (2 CỘT) -->
-            <div class="dual-grid">
-                <!-- Biểu đồ đường Xu hướng mức nền & độ dịch -->
-                <div class="section-panel" style="margin-bottom: 0;">
-                    <div class="panel-head">
-                        <div>
-                            <h3 class="panel-title">Baseline & Shift (%) Trend Over Time</h3>
-                        </div>
-                    </div>
-                    <div class="chart-legend" style="margin-top: 0;">
-                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;background:#2563eb;margin-right:4px;"></span> Baseline (left axis)</div>
-                        <div class="legend-item"><span style="display:inline-block;width:16px;height:3px;border-top:2px dashed #dc2626;margin-right:4px;"></span> Base Shift % (right axis)</div>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="trendCanvas" width="510" height="230"></canvas>
-                    </div>
-                </div>
-
-                <!-- Biểu đồ phân bổ loại cảnh báo và người duyệt bác bỏ -->
-                <div class="section-panel" style="margin-bottom: 0;">
-                    <div class="panel-head">
-                        <div>
-                            <h3 class="panel-title">Alert Distribution & Rejection Breakdown</h3>
-                        </div>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="alertBarCanvas" width="510" height="230"></canvas>
-                    </div>
-                </div>
-            </div>
-
-             <!-- MỤC 3 ĐỀ TÀI: DANH SÁCH CẢNH BÁO CHƯA XỬ LÝ (OPEN ALERTS) -->
-            <div class="section-panel" style="margin-bottom: 24px; border-left: 4px solid #f59e0b;">
-                <div class="panel-head">
-                    <div>
-                        <h3 class="panel-title" style="display: flex; align-items: center; gap: 8px;">
-                            <span>⚠️ Open Alerts</span>
-                            <span class="badge-status <%= stats.getOpenAlertsList().isEmpty() ? "good" : "warn"%>">
-                                <%= stats.getOpenAlertsList().size()%> open alerts
-                            </span>
-                        </h3>
-                        <div class="panel-note">Automated incidents detected by 5 alert rules requiring operator/reviewer action</div>
-                    </div>
-                    <a href="<%= ctx%>/alerts?status=OPEN" class="btn ghost">View & Manage Alerts &rarr;</a>
-                </div>
-
-                <% if (stats.getOpenAlertsList().isEmpty()) { %>
-                <div style="padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; color: #166534; font-size: 13px;">
-                    ✓ <b>System normal:</b> No unresolved alerts at this time. All alerts have been acknowledged (ACKED) or rejected (REJECTED).
-                </div>
-                <% } else { %>
-                <table class="grid" style="margin-top: 6px;">
-                    <thead>
-                        <tr>
-                            <th style="width: 70px;">ID</th>
-                            <th style="width: 100px;">Session</th>
-                            <th style="width: 130px;">Alert Rule</th>
-                            <th class="c" style="width: 100px;">Severity</th>
-                            <th>Alert Message</th>
-                            <th style="width: 150px;">Detected At</th>
-                            <th class="c" style="width: 90px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% for (OpenAlertInfo a : stats.getOpenAlertsList()) {%>
-                        <tr>
-                            <td>#<%= a.getAlertId()%></td>
-                            <td>
-                                <a href="<%= ctx%>/sessions/detail?id=<%= a.getSessionId()%>" style="color: #2563eb; font-weight: 600;">
-                                    Session #<%= a.getSessionId()%>
-                                </a>
-                            </td>
-                            <td><span class="tag"><%= Web.esc(a.getRuleCode())%></span></td>
-                            <td class="c">
-                                <% if ("CRITICAL".equals(a.getSeverity())) { %>
-                                <span class="badge-status danger">CRITICAL</span>
-                                <% } else if ("WARN".equals(a.getSeverity())) { %>
-                                <span class="badge-status warn">WARN</span>
-                                <% } else { %>
-                                <span class="badge-status good">INFO</span>
-                                <% }%>
-                            </td>
-                            <td><%= Web.esc(a.getMessage())%></td>
-                            <td class="muted"><%= Web.esc(a.getCreatedAt())%></td>
-                            <td class="c">
-                                <a href="<%= ctx%>/sessions/detail?id=<%= a.getSessionId()%>" class="btn ghost" style="padding: 3px 8px; font-size: 12px;">View</a>
-                            </td>
-                        </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-                <% }%>
-            </div>
-
-            
-            <!-- MỤC 4: BẢNG ĐỐI CHIẾU MỨC TRÔI (UCI BENCHMARK VS DỮ LIỆU TỰ THU) -->
-            <div class="section-panel" style="margin-top: 24px;">
-                <div class="panel-head">
-                    <div>
-                        <h3 class="panel-title">Benchmark vs. Field Data Drift Comparison Table</h3>
-                        <div class="panel-note">Empirical evaluation between FPTU classroom field data and UCI Air Quality benchmark dataset</div>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table-comparison">
-                        <thead>
-                            <tr>
-                                <th class="metric-col">Evaluation Metric</th>
-                                <th>Benchmark Dataset (UCI Benchmark)</th>
-                                <th>Field Collected Data (Classroom)</th>
-                                <th>Technical Observations & Conclusions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="metric-col">Total Observation Samples</td>
-                                <td class="bench-col"><%= String.format("%,d", sample.getRecordCount())%> records</td>
-                                <td class="live-col"><%= String.format("%,d", live.getRecordCount())%> records</td>
-                                <td>Benchmark dataset provides large-scale training baseline; field data validates operational deployment.</td>
-                            </tr>
-                            <tr>
-                                <td class="metric-col">Average Temperature & Humidity</td>
-                                <td class="bench-col"><%= sample.getAvgTemp()%>°C &bull; <%= sample.getAvgHumid()%>%</td>
-                                <td class="live-col"><%= live.getAvgTemp()%>°C &bull; <%= live.getAvgHumid()%>%</td>
-                                <td>Classroom in tropical climate exhibits higher average temperature and humidity than temperate benchmark.</td>
-                            </tr>
-                            <tr>
-                                <td class="metric-col">Average Gas A Baseline</td>
-                                <td class="bench-col"><%= String.format("%.1f", sample.getAvgGasABase())%></td>
-                                <td class="live-col"><%= String.format("%.1f", live.getAvgGasABase())%></td>
-                                <td>Field sensor baseline fluctuates more visibly under tropical environmental shifts.</td>
-                            </tr>
-                            <tr>
-                                <td class="metric-col">Observed Baseline Drift (Base Shift)</td>
-                                <td class="bench-col">+<%= String.format("%.2f", sample.getAvgBaseShift())%>% (Max: +<%= String.format("%.1f", sample.getMaxBaseShift())%>%)</td>
-                                <td class="live-col">+<%= String.format("%.2f", live.getAvgBaseShift())%>% (Max: +<%= String.format("%.1f", live.getMaxBaseShift())%>%)</td>
-                                <td><b>Field data drift rate is higher</b> due to frequent AC toggling causing repeated thermal shocks.</td>
-                            </tr>
-                            <tr>
-                                <td class="metric-col">Drifted Session Rate (DRIFTED)</td>
-                                <td class="bench-col"><%= sample.getDriftRate()%>% (<%= sample.getDriftCount()%> sessions)</td>
-                                <td class="live-col"><%= live.getDriftRate()%>% (<%= live.getDriftCount()%> sessions)</td>
-                                <td>Higher drift incidence in classroom conditions necessitates more frequent calibration cycles.</td>
-                            </tr>
-                            <tr>
-                                <td class="metric-col">Estimated Calibration Retention Time</td>
-                                <td class="bench-col"><b>> 90 days</b> (within &plusmn;15% tolerance)</td>
-                                <td class="live-col"><b>30 – 45 days</b> (within &plusmn;15% tolerance)</td>
-                                <td><b>Conclusion:</b> Field sensors require recalibration every 30–45 days of classroom operation.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- MỤC 5: BẢNG THEO DÕI THỜI GIAN GIỮ DUNG SAI HIỆU CHUẨN CỦA CÁC PHÒNG -->
-            <div class="section-panel">
-                <div class="panel-head">
-                    <div>
-                        <h3 class="panel-title">Room Baseline Retention Time within Tolerance Since Calibration</h3>
-                        <div class="panel-note">Track sensor drift status across rooms based on latest calibration records</div>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="grid" style="margin-top: 8px;">
-                        <thead>
-                            <tr>
-                                <th>Room Code</th>
-                                <th>Room Name</th>
-                                <th>Last Calibration</th>
-                                <th class="c">CO Baseline</th>
-                                <th class="c">Allowed Tolerance</th>
-                                <th class="c">Current Drift</th>
-                                <th class="c">Days in Tolerance</th>
-                                <th class="c">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (DashboardStats.RoomDriftInfo s : stats.getRoomDrifts()) {%>
-                            <tr>
-                                <td><b><%= Web.esc(s.getRoomCode())%></b></td>
-                                <td><%= Web.esc(s.getRoomName())%></td>
-                                <td><%= Web.esc(s.getLastCalibratedAt())%></td>
-                                <td class="c"><%= String.format("%.0f", s.getCoBaseline())%></td>
-                                <td class="c">&plusmn;<%= String.format("%.1f", s.getToleranceDrift())%>%</td>
-                                <td class="c" style="font-weight: 600; color: <%= s.getCurrentShift() > s.getToleranceDrift() ? "#dc2626" : "#2563eb"%>;">
-                                    <%= s.getCurrentShift() >= 0 ? "+" : ""%><%= String.format("%.2f", s.getCurrentShift())%>%
-                                </td>
-                                <td class="c">
-                                    <% if (s.getDaysInTolerance() > 0) {%>
-                                    <b><%= String.format("%.0f", s.getDaysInTolerance())%> days</b>
-                                    <% } else { %>
-                                    <span class="muted">–</span>
-                                    <% } %>
-                                </td>
-                                <td class="c">
-                                    <% if ("ON_TRACK".equals(s.getStatus())) { %>
-                                    <span class="badge-status good">In Tolerance</span>
-                                    <% } else if ("DRIFTED_ALERT".equals(s.getStatus())) { %>
-                                    <span class="badge-status danger">Drifted</span>
-                                    <% } else { %>
-                                    <span class="badge-status warn">Not Calibrated</span>
-                                    <% } %>
-                                </td>
-                            </tr>
-                            <% }%>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
 
-        <script src="<%= ctx%>/assets/js/app.js"></script>
-        <script src="<%= ctx%>/assets/js/dashboardCharts.js"></script>
-        <script>
-            // 1. DỮ LIỆU ĐIỂM SCATTER PLOT
-            var scatterPoints = [
-            <%
-                List<ScatterPoint> pts = stats.getScatterPoints();
-                for (int i = 0; i < pts.size(); i++) {
-                    ScatterPoint p = pts.get(i);
-            %>
-            { tempC: <%= p.getTempC()%>, gasARaw: <%= p.getGasARaw()%>, gasADelta: <%= p.getGasADelta()%>, humidPct: <%= p.getHumidPct()%>, labelCode: '<%= p.getLabelCode()%>' }<%= i < pts.size() - 1 ? "," : ""%>
+        <!-- Vertical Menu Navigation -->
+        <nav class="sidebar-menu">
+            <!-- ACTIVE: Dashboard -->
+            <a href="<%= ctx %>/dashboard" class="menu-item active" title="Dashboard">
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <!-- Classrooms -->
+            <a href="<%= ctx %>/admin/rooms" class="menu-item" title="Classrooms">
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+                <span>Classrooms</span>
+            </a>
+
+            <!-- Alerts -->
+            <a href="<%= ctx %>/alerts" class="menu-item" title="Alerts">
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span>Alerts</span>
+                <span class="sidebar-badge" id="sidebarAlertBadge" style="<%= stats.getOpenAlerts() > 0 ? "" : "display:none;" %>"><%= stats.getOpenAlerts() %></span>
+            </a>
+
+            <!-- Devices -->
+            <% if (isAdmin) { %>
+            <a href="<%= ctx %>/admin/devices" class="menu-item" title="Devices">
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    <rect x="9" y="9" width="6" height="6"/>
+                    <line x1="9" y1="1" x2="9" y2="4"/>
+                    <line x1="15" y1="1" x2="15" y2="4"/>
+                    <line x1="9" y1="20" x2="9" y2="23"/>
+                    <line x1="15" y1="20" x2="15" y2="23"/>
+                    <line x1="20" y1="9" x2="23" y2="9"/>
+                    <line x1="20" y1="14" x2="23" y2="14"/>
+                    <line x1="1" y1="9" x2="4" y2="9"/>
+                    <line x1="1" y1="14" x2="4" y2="14"/>
+                </svg>
+                <span>Devices</span>
+            </a>
+
+            <!-- Users -->
+            <a href="<%= ctx %>/admin/users" class="menu-item" title="Users">
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Users</span>
+            </a>
             <% } %>
-            ];
+        </nav>
 
-            if (typeof initScatterPlot === 'function') {
-                initScatterPlot('scatterCanvas', scatterPoints);
-            }
+        <!-- Sidebar Footer Status -->
+        <div class="sidebar-footer">
+            <div class="status-live">
+                <span class="live-dot"></span>
+                <span class="live-text">System Online</span>
+            </div>
+            <div class="status-time" id="sidebarLastUpdate"><%= jSidebarDateTime %></div>
+        </div>
+    </aside>
 
-            // 2. DỮ LIỆU ĐƯỜNG XU HƯỚNG MỨC NỀN & ĐỘ TRÔI
-            var trendData = [
-            <%
-                List<TrendPoint> tpts = stats.getTrendPoints();
-                for (int j = 0; j < tpts.size(); j++) {
-                    TrendPoint tp = tpts.get(j);
-            %>
-            { timeLabel: '<%= tp.getTimeLabel()%>', gasABase: <%= tp.getGasABase()%>, baseShift: <%= tp.getBaseShift()%> }<%= j < tpts.size() - 1 ? "," : ""%>
-            <% }%>
-            ];
+    <!-- 2. MAIN CONTENT AREA -->
+    <main class="main-content" id="mainContent">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <!-- Left: Hamburger Toggle & Breadcrumb -->
+            <div class="top-bar-left">
+                <button class="hamburger-btn" id="btnSidebarToggle" title="Toggle Sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
 
-            if (typeof initTrendChart === 'function') {
-                initTrendChart('trendCanvas', trendData);
-            }
+                <nav class="breadcrumb">
+                    <a href="<%= ctx %>/dashboard" class="breadcrumb-item breadcrumb-home" title="Home">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </a>
+                    <span class="breadcrumb-separator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </span>
+                    <span class="breadcrumb-item breadcrumb-current">Dashboard</span>
+                </nav>
+            </div>
 
-            // 3. VẼ BIỂU ĐỒ CỘT CẢNH BÁO & TỶ LỆ BÁC BỎ
-            function drawAlertBars(canvasId) {
-                var cv = document.getElementById(canvasId);
-                if (!cv)
-                    return;
-                var ctx = cv.getContext('2d');
-                var w = cv.width, h = cv.height;
+            <!-- Right: Notifications & User Profile -->
+            <div class="top-bar-right">
+                <a href="<%= ctx %>/alerts" class="icon-btn-round" title="Notifications">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notif-badge" id="topBellBadge" style="<%= stats.getOpenAlerts() > 0 ? "" : "display:none;" %>"><%= stats.getOpenAlerts() %></span>
+                </a>
 
-                var labels = ['Poor Air', 'Temp Effect', 'Drifted', 'Warmup', 'Rejected'];
-                var values = [
-            <%= stats.getAlertsByType().getOrDefault("HIGH", 0)%>,
-            <%= stats.getAlertsByType().getOrDefault("TEMP_EFFECT", 0)%>,
-            <%= stats.getAlertsByType().getOrDefault("DRIFTED", 0)%>,
-            <%= stats.getAlertsByType().getOrDefault("WARMUP", 0)%>,
-            <%= stats.getRejectedAlerts()%>
-                ];
-                var colors = ['#ef4444', '#f97316', '#a855f7', '#64748b', '#dc2626'];
+                <div class="user-profile-badge" id="userMenuToggle">
+                    <div class="user-avatar-circle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <span class="user-name"><%= Web.esc(userName) %></span>
+                    <svg class="dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
 
-                var padL = 40, padB = 40, padT = 20, padR = 15;
-                var max = 1;
-                for (var i = 0; i < values.length; i++)
-                    if (values[i] > max)
-                        max = values[i];
+                    <!-- User Dropdown Menu -->
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="user-dropdown-header">
+                            Role: <%= Web.esc(userRole) %>
+                        </div>
+                        <a href="<%= ctx %>/logout" class="user-dropdown-item logout">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-                ctx.clearRect(0, 0, w, h);
+        <!-- 3. PAGE TITLE SECTION -->
+        <section class="page-title-section">
+            <div class="title-left-group">
+                <div class="title-icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                    </svg>
+                </div>
+                <div class="title-text-group">
+                    <h1 class="page-main-heading">Dashboard</h1>
+                    <p class="page-subheading">Overview of classroom environment and system status</p>
+                </div>
+            </div>
 
-                // Trục
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.beginPath();
-                ctx.moveTo(padL, padT);
-                ctx.lineTo(padL, h - padB);
-                ctx.lineTo(w - padR, h - padB);
-                ctx.stroke();
+            <!-- Date & Time Card -->
+            <div class="datetime-card">
+                <div class="datetime-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span class="datetime-date" id="currentDateText"><%= jDateStr %></span>
+                </div>
+                <div class="datetime-divider"></div>
+                <div class="datetime-item">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="datetime-time" id="currentTimeText"><%= jTimeStr %></span>
+                </div>
+            </div>
+        </section>
 
-                var slot = (w - padL - padR) / values.length;
-                var barW = Math.min(48, slot * 0.65);
+        <!-- 4. FOUR STATS CARDS -->
+        <section class="stats-cards-grid">
+            <!-- Card 1: Total Rooms -->
+            <div class="stat-card">
+                <div class="stat-icon-wrapper bg-blue-soft">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                        <path d="M9 22v-4h6v4"/>
+                        <path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Rooms</span>
+                    <div class="stat-number-row">
+                        <span class="stat-big-num" id="statTotal"><%= displayTotalRooms %></span>
+                    </div>
+                    <span class="stat-subtext">All rooms in system</span>
+                </div>
+            </div>
 
-                for (var j = 0; j < values.length; j++) {
-                    var cx = padL + slot * j + slot / 2;
-                    var bh = (h - padB - padT) * values[j] / max;
-                    ctx.fillStyle = colors[j];
-                    ctx.fillRect(cx - barW / 2, (h - padB) - bh, barW, bh);
+            <!-- Card 2: Total Opening Alerts -->
+            <div class="stat-card">
+                <div class="stat-icon-wrapper bg-amber-soft">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Opening Alerts</span>
+                    <div class="stat-number-row">
+                        <span class="stat-big-num" id="statOpeningAlerts" style="color: #f59e0b;"><%= stats.getOpenAlerts() %></span>
+                    </div>
+                    <span class="stat-subtext">Requires immediate attention</span>
+                </div>
+            </div>
 
-                    ctx.fillStyle = '#0f172a';
-                    ctx.font = 'bold 11px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(String(values[j]), cx, (h - padB) - bh - 5);
+            <!-- Card 3: Active / Inactive Devices (Combined) -->
+            <div class="stat-card">
+                <div class="stat-icon-wrapper bg-green-soft">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                        <line x1="9" y1="1" x2="9" y2="4"/>
+                        <line x1="15" y1="1" x2="15" y2="4"/>
+                        <line x1="9" y1="20" x2="9" y2="23"/>
+                        <line x1="15" y1="20" x2="15" y2="23"/>
+                        <line x1="20" y1="9" x2="23" y2="9"/>
+                        <line x1="20" y1="14" x2="23" y2="14"/>
+                        <line x1="1" y1="9" x2="4" y2="9"/>
+                        <line x1="1" y1="14" x2="4" y2="14"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Active / Inactive Devices</span>
+                    <div class="stat-number-row" style="display: flex; align-items: baseline; gap: 6px;">
+                        <span class="stat-big-num" id="statActiveDevices" style="color: #16a34a;"><%= stats.getActiveDevices() %></span>
+                        <span style="font-size: 13px; font-weight: 600; color: #16a34a; margin-right: 2px;">Active</span>
+                        <span style="color: #cbd5e1; font-weight: 300; font-size: 20px;">/</span>
+                        <span class="stat-big-num" id="statInactiveDevices" style="color: #64748b; font-size: 22px;"><%= stats.getInactiveDevices() %></span>
+                        <span style="font-size: 13px; font-weight: 600; color: #64748b;">Inactive</span>
+                    </div>
+                    <span class="stat-subtext">Total <%= stats.getTotalDevices() %> registered devices</span>
+                </div>
+            </div>
 
-                    ctx.fillStyle = '#475569';
-                    ctx.font = '10px sans-serif';
-                    ctx.fillText(labels[j], cx, h - padB + 16);
+            <!-- Card 4: Total Users -->
+            <div class="stat-card">
+                <div class="stat-icon-wrapper" style="background: #f5f3ff;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Users</span>
+                    <div class="stat-number-row">
+                        <span class="stat-big-num" id="statTotalUsers" style="color: #7c3aed;"><%= stats.getTotalUsers() %></span>
+                    </div>
+                    <span class="stat-subtext">All users in system</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. MAIN TWO-COLUMN DASHBOARD LAYOUT -->
+        <div class="dashboard-main-grid">
+            <!-- LEFT COLUMN (~780px) -->
+            <div class="dashboard-left-col">
+                <!-- A. AIR QUALITY OVERVIEW -->
+                <section class="content-card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="mini-icon-circle bg-green-soft">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                                    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Air Quality Overview</h2>
+                                <p class="card-subtitle">Current average values across classrooms with active data</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Horizontal Metric Blocks -->
+                    <div class="air-metrics-row">
+                        <!-- Metric 1: CO2 -->
+                        <div class="air-metric-box">
+                            <div class="air-box-top">
+                                <div class="metric-mini-circle bg-green-soft">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                    </svg>
+                                </div>
+                                <span class="air-metric-label">CO₂</span>
+                            </div>
+                            <div class="air-metric-val-wrap">
+                                <span class="air-metric-val" id="avgCo2Val"><%= roomsWithDataCount > 0 ? String.valueOf(Math.round((double)sumCo2 / roomsWithDataCount)) : "--" %></span>
+                                <span class="air-metric-unit">ppm</span>
+                            </div>
+                            <span class="air-metric-range" id="avgCo2Range">(≤ 1000 ppm)</span>
+                        </div>
+
+                        <!-- Metric 2: CO -->
+                        <div class="air-metric-box">
+                            <div class="air-box-top">
+                                <div class="metric-mini-circle bg-purple-soft">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <path d="M12 7v10M7 12h10"/>
+                                    </svg>
+                                </div>
+                                <span class="air-metric-label">CO</span>
+                            </div>
+                            <div class="air-metric-val-wrap">
+                                <span class="air-metric-val" id="avgCoVal"><%= roomsWithDataCount > 0 ? String.format(Locale.US, "%.1f", sumCo / roomsWithDataCount) : "--" %></span>
+                                <span class="air-metric-unit">ppm</span>
+                            </div>
+                            <span class="air-metric-range" id="avgCoRange">(≤ 10 ppm)</span>
+                        </div>
+
+                        <!-- Metric 3: Temperature -->
+                        <div class="air-metric-box">
+                            <div class="air-box-top">
+                                <div class="metric-mini-circle bg-blue-soft">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                                        <circle cx="11.5" cy="17.5" r="1.5" fill="#2563eb"/>
+                                    </svg>
+                                </div>
+                                <span class="air-metric-label">Temperature</span>
+                            </div>
+                            <div class="air-metric-val-wrap">
+                                <span class="air-metric-val" id="avgTempVal"><%= roomsWithDataCount > 0 ? String.format(Locale.US, "%.1f", sumTemp / roomsWithDataCount) : "--" %></span>
+                                <span class="air-metric-unit">°C</span>
+                            </div>
+                            <span class="air-metric-range" id="avgTempRange">(20 – 28°C)</span>
+                        </div>
+
+                        <!-- Metric 4: Humidity -->
+                        <div class="air-metric-box">
+                            <div class="air-box-top">
+                                <div class="metric-mini-circle bg-blue-soft">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="air-metric-label">Humidity</span>
+                            </div>
+                            <div class="air-metric-val-wrap">
+                                <span class="air-metric-val" id="avgHumidVal"><%= roomsWithDataCount > 0 ? String.valueOf(Math.round(sumHum / roomsWithDataCount)) : "--" %></span>
+                                <span class="air-metric-unit">%</span>
+                            </div>
+                            <span class="air-metric-range" id="avgHumidRange">(40 – 70%)</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- B. ENVIRONMENT TREND -->
+                <section class="content-card">
+                    <div class="card-header trend-header">
+                        <div class="card-header-left">
+                            <div class="mini-icon-circle bg-blue-soft">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Environment Trend <span class="trend-range-subtitle" id="trendSubtitle">(Last 24 hours)</span></h2>
+                            </div>
+                        </div>
+
+                        <!-- Metric pills & Time range dropdown -->
+                        <div class="trend-controls">
+                            <div class="metric-pill-group" id="metricPills">
+                                <button class="metric-pill active" data-metric="co2">CO₂</button>
+                                <button class="metric-pill" data-metric="co">CO</button>
+                                <button class="metric-pill" data-metric="temp">Temperature</button>
+                                <button class="metric-pill" data-metric="humidity">Humidity</button>
+                            </div>
+                            <div class="range-select-wrapper">
+                                <select id="rangeSelect" class="trend-range-select">
+                                    <option value="6h">Last 6 hours</option>
+                                    <option value="24h" selected>Last 24 hours</option>
+                                    <option value="7d">Last 7 days</option>
+                                </select>
+                                <svg class="select-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trend Card Body: Chart (~510px) + Summary (~230px) -->
+                    <div class="trend-body-layout">
+                        <!-- Left: Pure SVG Chart -->
+                        <div class="chart-container" id="chartContainer">
+                            <div class="chart-y-title" id="chartYTitle">CO₂ (ppm)</div>
+                            <svg class="trend-svg" id="trendSvg" viewBox="0 0 510 240" preserveAspectRatio="none">
+                                <!-- Populated dynamically by script.js -->
+                            </svg>
+                            <!-- Interactive Guide Line and Tooltip -->
+                            <div class="chart-guide-line" id="chartGuideLine"></div>
+                            <div class="chart-tooltip" id="chartTooltip"></div>
+
+                            <!-- Legend -->
+                            <div class="chart-legend">
+                                <div class="legend-item"><span class="legend-dot dot-blue"></span>Average of All Classrooms</div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Trend Summary Card (~230px) -->
+                        <div class="trend-summary-card">
+                            <div class="summary-top-row">
+                                <div class="metric-mini-circle" id="summaryIconBox">
+                                    <!-- Populated by JS -->
+                                </div>
+                                <span class="summary-metric-name" id="summaryMetricName">CO₂</span>
+                            </div>
+                            <div class="summary-current-row">
+                                <span class="summary-val" id="summaryMetricVal">688</span>
+                                <span class="summary-unit" id="summaryMetricUnit">ppm</span>
+                            </div>
+                            <div class="summary-range-text" id="summaryRangeText">Allowed: ≤ 1000 ppm</div>
+
+                            <!-- Mini Sparkline SVG -->
+                            <div class="sparkline-wrapper">
+                                <svg class="sparkline-svg" id="sparklineSvg" viewBox="0 0 200 50" preserveAspectRatio="none">
+                                    <!-- Populated by JS -->
+                                </svg>
+                            </div>
+
+                            <!-- Suggestion Box with hand pointer -->
+                            <div class="suggestion-box">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
+                                    <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
+                                    <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+                                    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+                                </svg>
+                                <span>Select another metric to view its trend</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN (~480px): CLASSROOM OVERVIEW -->
+            <div class="dashboard-right-col">
+                <section class="content-card classroom-overview-card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="mini-icon-circle bg-blue-soft">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                                    <path d="M9 22v-4h6v4"/>
+                                    <path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Classroom Overview</h2>
+                                <p class="card-subtitle">Current status of classrooms</p>
+                            </div>
+                        </div>
+                        <a href="<%= ctx %>/admin/rooms" class="card-view-all">
+                            <span>View all (<%= totalRoomsCount %>)</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <!-- Room Cards Grid / List -->
+                    <div class="classroom-overview-grid" id="classroomOverviewGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Global dynamic data injected for dashboard.js -->
+    <script>
+        window.DASHBOARD_DATA = {
+            now: "<%= nowZdt.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME) %>",
+            contextPath: "<%= ctx %>",
+            roomDetailUrl: "<%= ctx %>/admin/rooms/detail",
+            defaultImage: "<%= defaultImg %>",
+            devicesUrl: "<%= ctx %>/admin/devices",
+            alertsUrl: "<%= ctx %>/alerts",
+            stats: {
+                totalRooms: <%= displayTotalRooms %>,
+                openAlerts: <%= stats.getOpenAlerts() %>,
+                activeDevices: <%= stats.getActiveDevices() %>,
+                inactiveDevices: <%= stats.getInactiveDevices() %>,
+                totalUsers: <%= stats.getTotalUsers() %>
+            },
+            rooms: <%= roomsJson.toString() %>,
+            alerts: <%= alertsJson.toString() %>,
+            history: <%= historyJson.toString() %>
+        };
+    </script>
+    <script src="<%= ctx %>/assets/js/dashboard.js?v=<%= System.currentTimeMillis() %>"></script>
+    <script>
+        (function() {
+            function updateLiveClock() {
+                const now = new Date();
+                const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const dEl = document.getElementById("currentDateText");
+                const tEl = document.getElementById("currentTimeText");
+                if (dEl) dEl.innerText = days[now.getDay()] + ", " + now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear();
+                if (tEl) {
+                    const hh = String(now.getHours()).padStart(2, '0');
+                    const mm = String(now.getMinutes()).padStart(2, '0');
+                    tEl.innerText = hh + ":" + mm;
                 }
             }
-
-            drawAlertBars('alertBarCanvas');
-        </script>
-        <script>
-            // BỘ ĐẾM THỜI GIAN THỰC CHO LIVE TELEMETRY
-            (function () {
-                let seconds = 3;
-                const counterEl = document.getElementById('liveCounter');
-                if (!counterEl)
-                    return;
-
-                setInterval(() => {
-                    seconds++;
-                    if (seconds < 60) {
-                        counterEl.textContent = seconds + 's ago';
-                    } else {
-                        let mins = Math.floor(seconds / 60);
-                        counterEl.textContent = mins + 'm ago';
-                    }
-
-                    // Chu kỳ gửi gói tin của đề tài là 2 phút (120 giây)
-                    // Giả lập nhận gói tin mới hoặc reset khi có request
-                    if (seconds >= 120) {
-                        seconds = 1;
-                    }
-                }, 1000);
-            })();
-        </script>
-    </body>
+            window.renderHeaderDate = updateLiveClock;
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+        })();
+    </script>
+</body>
 </html>
-

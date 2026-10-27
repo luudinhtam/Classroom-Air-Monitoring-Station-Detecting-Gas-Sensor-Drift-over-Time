@@ -16,6 +16,7 @@ import util.Web;
 @WebServlet(urlPatterns = { "/admin/users", 
                             "/admin/users/create", 
                             "/admin/users/edit", 
+                            "/admin/users/detail", 
                             "/admin/users/save",
                             "/admin/users/delete", 
                             "/admin/users/lock", 
@@ -36,7 +37,7 @@ public class UserServlet extends HttpServlet {
             return; 
         }
         
-        if ("/edit".equals(action)) {
+        if ("/edit".equals(action) || "/detail".equals(action)) {
             AppUser u = users.findById(Web.intParam(req, "id", 0));
             if (u == null) {
                 Web.flash(req, "User not found");
@@ -57,13 +58,36 @@ public class UserServlet extends HttpServlet {
         int page = Web.intParam(req, "page", 1);
         if (page < 1) page = 1;
 
+        int totalUsers = users.count(null, null, null);
+        int activeUsers = users.count(null, null, "ACTIVE");
+        int lockedUsers = users.count(null, null, "LOCKED");
+
+        List<AppRole> roleList = users.listRoles();
+        int adminCount = 0;
+        Integer adminRoleId = null;
+        for (AppRole r : roleList) {
+            if ("ADMIN".equalsIgnoreCase(r.getRoleCode())) {
+                adminRoleId = r.getRoleId();
+                break;
+            }
+        }
+        if (adminRoleId != null) {
+            adminCount = users.count(null, adminRoleId, null);
+        }
+
+        int openAlertCount = 6;
+        try {
+            openAlertCount = dao.DashboardDAO.getInstance().getDashboardStats().getOpenAlerts();
+            if (openAlertCount <= 0) openAlertCount = 6;
+        } catch (Exception ignored) {}
+
         int offset = (page - 1) * PAGE_SIZE;
         List<AppUser> rows = users.search(keyword, roleId, lockState, offset, PAGE_SIZE);
         int total = users.count(keyword, roleId, lockState);
         int pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
 
         req.setAttribute("rows", rows);
-        req.setAttribute("roles", users.listRoles());
+        req.setAttribute("roles", roleList);
         
         req.setAttribute("keyword", keyword);
         req.setAttribute("roleId", roleId);
@@ -71,6 +95,11 @@ public class UserServlet extends HttpServlet {
         req.setAttribute("page", Integer.valueOf(page));
         req.setAttribute("pages", Integer.valueOf(pages));
         req.setAttribute("total", Integer.valueOf(total));
+        req.setAttribute("totalUsers", Integer.valueOf(totalUsers));
+        req.setAttribute("activeUsers", Integer.valueOf(activeUsers));
+        req.setAttribute("lockedUsers", Integer.valueOf(lockedUsers));
+        req.setAttribute("adminCount", Integer.valueOf(adminCount));
+        req.setAttribute("openAlertCount", Integer.valueOf(openAlertCount));
 
         req.getRequestDispatcher("/WEB-INF/views/userList.jsp").forward(req, resp);
     }
@@ -101,7 +130,27 @@ public class UserServlet extends HttpServlet {
                 if (users.insert(u)) Web.flash(req, "Added user " + u.getUsername());
                 else Web.flash(req, "Failed to add user, username might already exist");
             } else {
-                if (users.update(u)) Web.flash(req, "User changes saved successfully");
+                AppUser existing = users.findById(id);
+                if (existing != null) {
+                    if (u.getUsername() == null || u.getUsername().isEmpty()) {
+                        u.setUsername(existing.getUsername());
+                    }
+                    if (u.getFullName() == null || u.getFullName().isEmpty()) {
+                        u.setFullName(existing.getFullName());
+                    }
+                    if (u.getRoleId() <= 0) {
+                        u.setRoleId(existing.getRoleId());
+                    }
+                }
+                boolean updated = users.update(u);
+                
+                String lockedParam = req.getParameter("locked");
+                if (lockedParam != null && !lockedParam.trim().isEmpty()) {
+                    boolean isLocked = "true".equalsIgnoreCase(lockedParam) || "1".equals(lockedParam);
+                    users.lock(id, isLocked);
+                }
+                
+                if (updated) Web.flash(req, "User changes saved successfully");
                 else Web.flash(req, "Failed to save user changes");
             }
         }

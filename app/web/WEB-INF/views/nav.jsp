@@ -20,18 +20,14 @@
     <!-- Menu nằm đối xứng ở chính giữa thanh navbar -->
     <div class="menu" id="navMenu" style="background: transparent;">
         <a href="<%= ctx %>/dashboard">Dashboard</a>
-        <a href="<%= ctx %>/sessions">Sessions</a>
+        <a href="<%= ctx %>/admin/rooms">Classrooms</a>
         <a href="<%= ctx %>/alerts">Alerts</a>
         
-        <!-- Mọi vai trò đều có quyền Xem (R) Phòng nên không ẩn menu này -->
-        <a href="<%= ctx %>/admin/rooms">Rooms</a>
-        
-        <!-- Chỉ ADMIN mới được xem menu Quản lý Users và Devices -->
+        <!-- Chỉ ADMIN mới được xem menu Quản lý Devices và Users -->
         <% if (isAdmin) { %>
-            <a href="<%= ctx %>/admin/users">Users</a>
             <a href="<%= ctx %>/admin/devices">Devices</a>
+            <a href="<%= ctx %>/admin/users">Users</a>
         <% } %>
-        
     </div>
 
     <div class="topbar-right">

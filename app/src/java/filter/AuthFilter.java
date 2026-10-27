@@ -24,6 +24,8 @@ public class AuthFilter implements Filter {
         ALLOWED.put("/admin/rooms/delete", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/rooms/lock", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/rooms/update-coords", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/measure/start", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/measure/status", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         
         ALLOWED.put("/admin/calibrations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/calibrations/edit", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
@@ -69,7 +71,7 @@ public class AuthFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) rp;
         String path = req.getRequestURI().substring(req.getContextPath().length());
 
-        if (path.startsWith("/api/") || path.startsWith("/login")
+        if (path.startsWith("/api/") || path.startsWith("/device/") || path.startsWith("/login")
             || path.startsWith("/assets/") || path.startsWith("/css/") || path.startsWith("/js/")) {
             chain.doFilter(rq, rp);
             return;
@@ -77,6 +79,12 @@ public class AuthFilter implements Filter {
 
         AppUser me = (AppUser) req.getSession().getAttribute("user");
         if (me == null) {
+            if (path.startsWith("/admin/rooms/measure/")) {
+                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write("{\"error\":\"UNAUTHORIZED\",\"message\":\"Session expired or not logged in\"}");
+                return;
+            }
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
@@ -92,6 +100,12 @@ public class AuthFilter implements Filter {
         }
 
         if (!matchedPath.isEmpty() && !isAllowed) {
+            if (path.startsWith("/admin/rooms/measure/")) {
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().write("{\"error\":\"FORBIDDEN\",\"message\":\"User role is not authorized for this action\"}");
+                return;
+            }
             req.setAttribute("neededPerm", matchedPath);
             req.getRequestDispatcher("/WEB-INF/views/denied.jsp").forward(req, resp);
             return;

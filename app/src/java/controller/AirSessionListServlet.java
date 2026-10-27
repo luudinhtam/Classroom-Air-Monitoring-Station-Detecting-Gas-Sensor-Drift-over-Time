@@ -27,7 +27,7 @@ import util.Web;
 
 public class AirSessionListServlet extends HttpServlet {
 
-    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_SIZE = 10;
     private final AirSessionDAO dao = new AirSessionDAO();
     private final dao.DeviceDAO deviceDAO = new dao.DeviceDAO();
     private final dao.LabelDAO labelDAO = new dao.LabelDAO();
@@ -52,23 +52,28 @@ public class AirSessionListServlet extends HttpServlet {
     
      private void showDetail(HttpServletRequest req, HttpServletResponse resp, AirSession session)
         throws ServletException, IOException {
-    req.setAttribute("detail", session);
-    req.setAttribute("device", deviceDAO.findById(session.getDeviceId()));
-    req.setAttribute("timeline", dao.findTimeline(session.getDeviceId(), 15));
-    req.setAttribute("labelHistory", labelDAO.findBySessionId(session.getSessionId()));
-    req.getRequestDispatcher("/WEB-INF/views/sessionDetail.jsp").forward(req, resp);
+        req.setAttribute("detail", session);
+        req.setAttribute("device", deviceDAO.findById(session.getDeviceId()));
+        req.setAttribute("timeline", dao.findTimeline(session.getDeviceId(), 15));
+        List<model.AirLabel> labelHistory = new java.util.ArrayList<>();
+        try {
+            labelHistory = labelDAO.findBySessionId(session.getSessionId());
+        } catch (Exception ignored) {}
+        req.setAttribute("labelHistory", labelHistory != null ? labelHistory : new java.util.ArrayList<>());
+        req.getRequestDispatcher("/WEB-INF/views/sessionDetail.jsp").forward(req, resp);
     }
     
     private void showList(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         String label = Web.trimmed(req, "label");
+        String deviceCode = Web.trimmed(req, "deviceCode");
         Integer deviceId = Web.optionalInt(req, "device");
         
         int page = Web.intParam(req, "page", 1);
         if (page < 1) page = 1;
 
-        List<AirSession> rows = dao.search(label, deviceId, page, PAGE_SIZE);
-        int total = dao.count(label, deviceId);
+        List<AirSession> rows = dao.search(label, deviceCode, deviceId, page, PAGE_SIZE);
+        int total = dao.count(label, deviceCode, deviceId);
         int pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
 
         req.setAttribute("rows", rows);
@@ -76,6 +81,8 @@ public class AirSessionListServlet extends HttpServlet {
         req.setAttribute("pages", Integer.valueOf(pages));
         req.setAttribute("total", Integer.valueOf(total));
         req.setAttribute("label", label);
+        req.setAttribute("deviceCode", deviceCode);
+        req.setAttribute("devices", dao.listDevices());
         
         req.getRequestDispatcher("/WEB-INF/views/sessionList.jsp").forward(req, resp);
     }
@@ -134,42 +141,56 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
     try {
         if ("/save".equals(action)) {
             int sessionId = Web.intParam(req, "sessionId", 0);
-            int gasARaw = Web.intParam(req, "gasARaw", 0);
-            int gasBRaw = Web.intParam(req, "gasBRaw", 0);
-            int gasABase = Web.intParam(req, "gasABase", 0);
             
-            // Lấy đúng deviceId do người dùng chọn từ form (<select name="deviceId">)
-            int deviceId = Web.intParam(req, "deviceId", 1);
+            // Đọc CO2: ưu tiên "co2", fallback "gasARaw"
+            int co2 = Web.intParam(req, "co2", -999999);
+            if (co2 == -999999) co2 = Web.intParam(req, "gasARaw", 0);
 
-            double tempC = 0.0;
-            double humidPct = 0.0;
-            try { tempC = Double.parseDouble(req.getParameter("tempC")); } catch (Exception ignored) {}
-            try { humidPct = Double.parseDouble(req.getParameter("humidPct")); } catch (Exception ignored) {}
-            
+            // Đọc CO: ưu tiên "co", fallback "gasBRaw"
+            int co = Web.intParam(req, "co", -999999);
+            if (co == -999999) co = Web.intParam(req, "gasBRaw", 0);
+
+            // Đọc Temperature: ưu tiên "temperature", fallback "tempC"
+            double temp = 0.0;
+            String tempParam = req.getParameter("temperature");
+            if (tempParam == null) tempParam = req.getParameter("tempC");
+            if (tempParam != null) {
+                try { temp = Double.parseDouble(tempParam.trim()); } catch (Exception ignored) {}
+            }
+
+            // Đọc Humid: ưu tiên "humid", fallback "humidPct"
+            double humid = 0.0;
+            String humidParam = req.getParameter("humid");
+            if (humidParam == null) humidParam = req.getParameter("humidPct");
+            if (humidParam != null) {
+                try { humid = Double.parseDouble(humidParam.trim()); } catch (Exception ignored) {}
+            }
+
+            int gasABase = Web.intParam(req, "gasABase", 0);
+            int deviceId = Web.intParam(req, "deviceId", 0);
             String labelCode = Web.trimmed(req, "labelCode");
 
             AirSession session = new AirSession();
             session.setSessionId(sessionId);
-            session.setGasARaw(gasARaw);
-            session.setGasBRaw(gasBRaw);
+            session.setCo2(co2);
+            session.setGasARaw(co2);
+            session.setCo(co);
+            session.setGasBRaw(co);
+            session.setTemperature(temp);
+            session.setTempC(temp);
+            session.setHumid(humid);
+            session.setHumidPct(humid);
             session.setGasABase(gasABase);
+            session.setGasADelta((double)(co2 - gasABase));
             
-            session.setGasADelta((double)(gasARaw - gasABase));
-            session.setTempC(tempC);
-            session.setHumidPct(humidPct);
-            
-            double baseShift = gasABase > 0 ? ((double)(gasARaw - gasABase) / gasABase) * 100 : 0.0;
+            double baseShift = gasABase > 0 ? ((double)(co2 - gasABase) / gasABase) * 100 : 0.0;
             session.setBaseShift(baseShift);
             session.setWarm(false);
-            session.setDeviceId(deviceId); // Truyền deviceId chính xác
+            session.setDeviceId(deviceId);
             session.setLabelCode(labelCode);
 
             if (sessionId == 0) {
                 // --- THAO TÁC THÊM MỚI ---
-                // Sử dụng timestamp làm device_seq để không bị trùng lặp khóa độc lập (tránh lỗi xung đột)
-                int uniqueSeq = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
-                session.setDeviceSeq(uniqueSeq);
-                
                 session.setMeasuredAt(Timestamp.valueOf(LocalDateTime.now())); 
                 session.setSample(true);
                 
@@ -182,17 +203,24 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             } else {
                 // --- THAO TÁC CHỈNH SỬA ---
                 AirSession oldSession = dao.findById(sessionId);
-                session.setDeviceSeq((int) (System.currentTimeMillis() % Integer.MAX_VALUE));
+                if (oldSession != null) {
+                    session.setDeviceSeq(oldSession.getDeviceSeq());
+                    session.setMeasuredAt(oldSession.getMeasuredAt());
+                    if (deviceId <= 0) {
+                        session.setDeviceId(oldSession.getDeviceId());
+                    }
+                }
+
                 String oldLabel = (oldSession != null && oldSession.getLabelCode() != null) ? oldSession.getLabelCode().trim() : "";
 
                 // CHỈ kiểm tra lý do KHI VÀ CHỈ KHI nhãn mới khác nhãn cũ
-                if (!labelCode.equals(oldLabel)) {
+                if (labelCode != null && !labelCode.isEmpty() && !labelCode.equals(oldLabel)) {
                     String editReason = Web.trimmed(req, "editReason");
 
                     // 1. CHỐT CHẶN BẮT BUỘC >= 5 KÝ TỰ
                     if (editReason == null || editReason.length() < 5) {
                         req.setAttribute("error", "A reason (at least 5 characters) is required when changing the classification label!");
-                        showForm(req, resp, oldSession);
+                        showForm(req, resp, oldSession != null ? oldSession : session);
                         return;
                     }
 
@@ -203,12 +231,8 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
                     String newHistoryLine = String.format("[%s] Changed from '%s' to '%s'.\nReason: %s\n--------------------------------\n", 
                                                            timeNow, oldLabel, labelCode, editReason);
 
-                    // Gắn lịch sử mới (cộng dồn lịch sử cũ) vào đối tượng đang chuẩn bị update
                     session.setNote(newHistoryLine + oldNote);
-
-                    System.out.println("Cập nhật phiên #" + sessionId + " | Đổi nhãn từ [" + oldLabel + "] sang [" + labelCode + "] | Lý do: " + editReason);
                 } else {
-                    // Nếu không đổi nhãn, vẫn phải giữ lại lịch sử cũ không cho nó bị mất
                     session.setNote(oldSession != null ? oldSession.getNote() : "");
                 }
 
@@ -237,10 +261,11 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 
     private void exportCsv(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String label = Web.trimmed(req, "label");
+        String deviceCode = Web.trimmed(req, "deviceCode");
         Integer deviceId = Web.optionalInt(req, "device");
         
         // Lấy toàn bộ dữ liệu (Để size là 999999 để lấy hết mà không cần viết hàm mới trong DAO)
-        List<AirSession> list = dao.search(label, deviceId, 1, 999999);
+        List<AirSession> list = dao.search(label, deviceCode, deviceId, 1, 999999);
         
         // Thiết lập header để trình duyệt hiểu đây là file tải về
         resp.setContentType("text/csv; charset=UTF-8");

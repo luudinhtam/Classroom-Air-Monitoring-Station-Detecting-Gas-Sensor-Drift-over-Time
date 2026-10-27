@@ -22,12 +22,23 @@ public class AlertServlet extends HttpServlet {
 
         String status = req.getParameter("status");
         if (status != null && status.trim().isEmpty()) status = null;
+        if ("OPEN".equalsIgnoreCase(status)) status = "OPENING";
+        else if ("ACKED".equalsIgnoreCase(status)) status = "APPROVED";
 
         String ruleCode = req.getParameter("ruleCode");
         if (ruleCode != null && ruleCode.trim().isEmpty()) ruleCode = null;
 
         String severity = req.getParameter("severity");
         if (severity != null && severity.trim().isEmpty()) severity = null;
+
+        Integer roomId = null;
+        try {
+            String rStr = req.getParameter("roomId");
+            if (rStr != null && !rStr.trim().isEmpty()) {
+                int parsed = Integer.parseInt(rStr.trim());
+                if (parsed > 0) roomId = parsed;
+            }
+        } catch (NumberFormatException ignored) {}
 
         int page = 1;
         try {
@@ -36,18 +47,22 @@ public class AlertServlet extends HttpServlet {
             if (page < 1) page = 1;
         } catch (NumberFormatException ignored) {}
 
-        int size = 20;
+        int size = 10;
 
-        List<AirAlert> alerts = alertDAO.search(status, ruleCode, severity, page, size);
-        int total = alertDAO.count(status, ruleCode, severity);
+        List<model.Room> roomList = dao.RoomDAO.getInstance().search(null, null);
+        req.setAttribute("roomList", roomList);
+        req.setAttribute("currentRoomId", roomId);
+
+        List<AirAlert> alerts = alertDAO.search(status, ruleCode, roomId, page, size);
+        int total = alertDAO.count(status, ruleCode, roomId);
         int totalPages = (int) Math.ceil((double) total / size);
         if (totalPages < 1) totalPages = 1;
 
-        // Thống kê nhanh số lượng theo trạng thái để hiển thị tabs
-        int openCount = alertDAO.count("OPEN", null, null);
-        int ackedCount = alertDAO.count("ACKED", null, null);
-        int rejectedCount = alertDAO.count("REJECTED", null, null);
-        int allCount = alertDAO.count(null, null, null);
+        // Thống kê số lượng theo trạng thái chuẩn trong database (theo phòng nếu có lọc)
+        int openCount = alertDAO.count("OPENING", null, roomId);
+        int ackedCount = alertDAO.count("APPROVED", null, roomId);
+        int rejectedCount = alertDAO.count("REJECTED", null, roomId);
+        int allCount = alertDAO.count(null, null, roomId);
 
         req.setAttribute("alerts", alerts);
         req.setAttribute("page", page);
@@ -87,23 +102,39 @@ public class AlertServlet extends HttpServlet {
         String action = req.getParameter("action");
         String idStr = req.getParameter("alertId");
         String note = req.getParameter("handledNote");
+        String statusParam = req.getParameter("status");
         if (note != null) note = note.trim();
 
-        if (idStr != null && action != null) {
+        if (idStr != null) {
             try {
                 int alertId = Integer.parseInt(idStr);
-                String newStatus = "ACKED";
-                String actionText = "acknowledged";
+                String newStatus = "APPROVED";
+                String actionText = "approved";
 
-                if ("reject".equalsIgnoreCase(action)) {
+                if (statusParam != null && !statusParam.trim().isEmpty()) {
+                    if ("REJECTED".equalsIgnoreCase(statusParam) || "reject".equalsIgnoreCase(statusParam)) {
+                        newStatus = "REJECTED";
+                        actionText = "rejected";
+                    } else if ("APPROVED".equalsIgnoreCase(statusParam) || "approve".equalsIgnoreCase(statusParam) || "ack".equalsIgnoreCase(statusParam)) {
+                        newStatus = "APPROVED";
+                        actionText = "approved";
+                    } else if ("OPENING".equalsIgnoreCase(statusParam) || "OPEN".equalsIgnoreCase(statusParam)) {
+                        newStatus = "OPENING";
+                        actionText = "updated to opening";
+                    }
+                } else if ("reject".equalsIgnoreCase(action)) {
                     newStatus = "REJECTED";
                     actionText = "rejected";
-                    if (note == null || note.isEmpty()) {
-                        note = "Rejected alert (False alarm / Noise)";
-                    }
                 } else {
-                    if (note == null || note.isEmpty()) {
-                        note = "Incident confirmed";
+                    newStatus = "APPROVED";
+                    actionText = "approved";
+                }
+
+                if (note == null || note.isEmpty()) {
+                    if ("REJECTED".equals(newStatus)) {
+                        note = "Rejected alert (False alarm / Noise)";
+                    } else if ("APPROVED".equals(newStatus)) {
+                        note = "Incident confirmed / Approved";
                     }
                 }
 
@@ -117,10 +148,18 @@ public class AlertServlet extends HttpServlet {
         }
 
         String backStatus = req.getParameter("backStatus");
-        String redirectUrl = req.getContextPath() + "/alerts";
+        String backRoomId = req.getParameter("backRoomId");
+        StringBuilder redirectUrl = new StringBuilder(req.getContextPath()).append("/alerts?");
         if (backStatus != null && !backStatus.isEmpty()) {
-            redirectUrl += "?status=" + backStatus;
+            redirectUrl.append("status=").append(backStatus).append("&");
         }
-        resp.sendRedirect(redirectUrl);
+        if (backRoomId != null && !backRoomId.isEmpty()) {
+            redirectUrl.append("roomId=").append(backRoomId).append("&");
+        }
+        String finalUrl = redirectUrl.toString();
+        if (finalUrl.endsWith("?") || finalUrl.endsWith("&")) {
+            finalUrl = finalUrl.substring(0, finalUrl.length() - 1);
+        }
+        resp.sendRedirect(finalUrl);
     }
 }

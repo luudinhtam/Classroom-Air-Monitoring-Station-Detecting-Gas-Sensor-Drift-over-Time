@@ -25,17 +25,10 @@ public class DashboardDAO {
         DashboardStats stats = new DashboardStats();
 
         try (Connection cn = DBContext.getConnection()) {
-            ensureSeedAlertsIfNeeded(cn);
-
             loadLatestReadings(cn, stats);
             loadGeneralAndDriftMetrics(cn, stats);
-            loadLabelDistribution(cn, stats);
             loadAlertMetrics(cn, stats);
             loadOpenAlertsList(cn, stats);
-            loadScatterPoints(cn, stats);
-            loadTrendPoints(cn, stats);
-            loadDatasetComparison(cn, stats);
-            loadRoomCalibrationDrifts(cn, stats);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -44,25 +37,27 @@ public class DashboardDAO {
     }
 
     /**
-     * Nạp các giá trị quan trắc tức thời gần nhất (Mục 2 đề tài)
+     * Nạp các giá trị quan trắc tức thời gần nhất từ bảng Air_Session
      */
     private void loadLatestReadings(Connection cn, DashboardStats stats) {
         String sql = "SELECT TOP 1 " +
-                     "  gas_a_raw, gas_a_base, gas_b_raw, temp_c, humid_pct, base_shift " +
+                     "  co, co2, temperature, humid, measured_at " +
                      "FROM Air_Session " +
-                     "WHERE gas_a_raw IS NOT NULL " +
                      "ORDER BY measured_at DESC, session_id DESC";
 
         try (Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             if (rs.next()) {
-                stats.setLatestGasARaw(rs.getInt("gas_a_raw"));
-                stats.setLatestGasABase(rs.getInt("gas_a_base"));
-                stats.setLatestGasBRaw(rs.getInt("gas_b_raw"));
-                stats.setLatestGasBBase(rs.getInt("gas_b_raw") > 0 ? 800 : 800);
-                stats.setLatestTempC(Math.round(rs.getDouble("temp_c") * 10.0) / 10.0);
-                stats.setLatestHumidPct(Math.round(rs.getDouble("humid_pct") * 10.0) / 10.0);
-                stats.setLatestBaseShift(Math.round(rs.getDouble("base_shift") * 100.0) / 100.0);
+                int co2 = rs.getInt("co2");
+                stats.setLatestGasARaw(rs.wasNull() ? 0 : co2);
+                int co = rs.getInt("co");
+                stats.setLatestGasBRaw(rs.wasNull() ? 0 : co);
+
+                double temp = rs.getDouble("temperature");
+                stats.setLatestTempC(rs.wasNull() ? 0.0 : Math.round(temp * 10.0) / 10.0);
+
+                double humid = rs.getDouble("humid");
+                stats.setLatestHumidPct(rs.wasNull() ? 0.0 : Math.round(humid * 10.0) / 10.0);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -70,27 +65,19 @@ public class DashboardDAO {
     }
 
     /**
-     * 1. Thống kê tổng quan phiên đo, thiết bị, trạm và mức nền trôi
+     * 1. Thống kê tổng quan phiên đo, thiết bị, phòng học
      */
     private void loadGeneralAndDriftMetrics(Connection cn, DashboardStats stats) {
         String sql = "SELECT " +
                      "  COUNT(*) AS total_sessions, " +
-                     "  SUM(CASE WHEN is_sample = 1 THEN 1 ELSE 0 END) AS sample_sessions, " +
-                     "  SUM(CASE WHEN is_sample = 0 THEN 1 ELSE 0 END) AS live_sessions, " +
-                     "  AVG(CAST(gas_a_base AS FLOAT)) AS avg_base, " +
-                     "  AVG(CAST(base_shift AS FLOAT)) AS avg_shift, " +
-                     "  MAX(CAST(base_shift AS FLOAT)) AS max_shift " +
-                     "FROM Air_Session WHERE gas_a_raw IS NOT NULL";
+                     "  AVG(CAST(temperature AS FLOAT)) AS avg_temp, " +
+                     "  AVG(CAST(humid AS FLOAT)) AS avg_humid " +
+                     "FROM Air_Session";
 
         try (PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 stats.setTotalSessions(rs.getInt("total_sessions"));
-                stats.setSampleSessions(rs.getInt("sample_sessions"));
-                stats.setLiveSessions(rs.getInt("live_sessions"));
-                stats.setAvgGasABase(Math.round(rs.getDouble("avg_base") * 100.0) / 100.0);
-                stats.setAvgBaseShift(Math.round(rs.getDouble("avg_shift") * 100.0) / 100.0);
-                stats.setMaxBaseShift(Math.round(rs.getDouble("max_shift") * 100.0) / 100.0);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -98,28 +85,38 @@ public class DashboardDAO {
 
         // Đếm thiết bị & phòng
         try (Statement st = cn.createStatement()) {
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Device WHERE is_active = 1")) {
-                if (rs.next()) stats.setTotalDevices(rs.getInt(1));
+            String devSql = "SELECT " +
+                            "  COUNT(*) AS total_dev, " +
+                            "  SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_dev, " +
+                            "  SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) AS inactive_dev " +
+                            "FROM Device";
+            try (ResultSet rs = st.executeQuery(devSql)) {
+                if (rs.next()) {
+                    stats.setTotalDevices(rs.getInt("total_dev"));
+                    stats.setActiveDevices(rs.getInt("active_dev"));
+                    stats.setInactiveDevices(rs.getInt("inactive_dev"));
+                }
             }
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Room WHERE is_active = 1")) {
+
+            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Room")) {
                 if (rs.next()) stats.setTotalRooms(rs.getInt(1));
+            }
+
+            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM AppUser")) {
+                if (rs.next()) stats.setTotalUsers(rs.getInt(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        // Đếm phiên DRIFTED
-        String driftSql = "SELECT COUNT(*) FROM Air_Session s WHERE s.base_shift >= 14 " +
-                          "OR EXISTS (SELECT 1 FROM Air_Label l WHERE l.session_id = s.session_id AND l.label_code = 'DRIFTED')";
+        // Đếm cảnh báo đang mở (OPENING hoặc OPEN)
+        String alertSql = "SELECT COUNT(*) FROM Air_Alert WHERE status IN ('OPENING', 'OPEN')";
         try (Statement st = cn.createStatement();
-             ResultSet rs = st.executeQuery(driftSql)) {
+             ResultSet rs = st.executeQuery(alertSql)) {
             if (rs.next()) {
-                int drifted = rs.getInt(1);
-                stats.setDriftedCount(drifted);
-                if (stats.getTotalSessions() > 0) {
-                    double rate = (drifted * 100.0) / stats.getTotalSessions();
-                    stats.setDriftedRate(Math.round(rate * 100.0) / 100.0);
-                }
+                int openCnt = rs.getInt(1);
+                stats.setOpenAlerts(openCnt);
+                stats.setDriftedCount(openCnt);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -127,15 +124,15 @@ public class DashboardDAO {
     }
 
     /**
-     * 2. Phân bố các nhãn phân loại (Label Distribution)
+     * 2. Phân bố nhãn/cảnh báo
      */
     private void loadLabelDistribution(Connection cn, DashboardStats stats) {
-        String sql = "SELECT label_code, COUNT(*) as cnt FROM Air_Label GROUP BY label_code ORDER BY cnt DESC";
+        String sql = "SELECT alert_code, COUNT(*) as cnt FROM Air_Alert GROUP BY alert_code ORDER BY cnt DESC";
         Map<String, Integer> dist = new LinkedHashMap<>();
         try (Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                dist.put(rs.getString("label_code"), rs.getInt("cnt"));
+                dist.put(rs.getString("alert_code"), rs.getInt("cnt"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -144,13 +141,13 @@ public class DashboardDAO {
     }
 
     /**
-     * 3. Thống kê số lần cảnh báo theo loại & Tỉ lệ bị người duyệt bác bỏ
+     * 3. Thống kê số lần cảnh báo theo loại & trạng thái duyệt
      */
     private void loadAlertMetrics(Connection cn, DashboardStats stats) {
         String sql = "SELECT " +
                      "  COUNT(*) AS total_alerts, " +
-                     "  SUM(CASE WHEN status = 'OPEN' THEN 1 ELSE 0 END) AS open_alerts, " +
-                     "  SUM(CASE WHEN status = 'ACKED' THEN 1 ELSE 0 END) AS acked_alerts, " +
+                     "  SUM(CASE WHEN status IN ('OPENING', 'OPEN') THEN 1 ELSE 0 END) AS open_alerts, " +
+                     "  SUM(CASE WHEN status IN ('APPROVED', 'ACKED') THEN 1 ELSE 0 END) AS acked_alerts, " +
                      "  SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_alerts " +
                      "FROM Air_Alert";
 
@@ -171,13 +168,13 @@ public class DashboardDAO {
             e.printStackTrace();
         }
 
-        // Đếm theo từng loại rule_code
-        String typeSql = "SELECT rule_code, COUNT(*) as cnt FROM Air_Alert GROUP BY rule_code ORDER BY cnt DESC";
+        // Đếm theo từng loại alert_code
+        String typeSql = "SELECT alert_code, COUNT(*) as cnt FROM Air_Alert GROUP BY alert_code ORDER BY cnt DESC";
         Map<String, Integer> byType = new LinkedHashMap<>();
         try (Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(typeSql)) {
             while (rs.next()) {
-                byType.put(rs.getString("rule_code"), rs.getInt("cnt"));
+                byType.put(rs.getString("alert_code"), rs.getInt("cnt"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -186,27 +183,38 @@ public class DashboardDAO {
     }
 
     /**
-     * Nạp danh sách các cảnh báo chưa xử lý (status = 'OPEN') (Mục 2 đề tài)
+     * Nạp danh sách các cảnh báo gần đây nhất từ database
      */
     private void loadOpenAlertsList(Connection cn, DashboardStats stats) {
         String sql = "SELECT TOP 10 " +
-                     "  alert_id, session_id, rule_code, severity, message, " +
-                     "  CONVERT(VARCHAR(16), created_at, 120) AS created_time " +
-                     "FROM Air_Alert " +
-                     "WHERE status = 'OPEN' " +
-                     "ORDER BY alert_id DESC";
+                     "  a.alert_id, a.session_id, a.alert_code, a.message, a.status, " +
+                     "  CONVERT(VARCHAR(16), a.created_at, 120) AS created_time, " +
+                     "  COALESCE(r.room_code, d.device_code, 'Session #' + CAST(a.session_id AS VARCHAR)) AS room_code " +
+                     "FROM Air_Alert a " +
+                     "LEFT JOIN Air_Session s ON s.session_id = a.session_id " +
+                     "LEFT JOIN Device d ON d.device_id = s.device_id " +
+                     "LEFT JOIN Room r ON (r.room_id = d.room_id OR (r.device_code IS NOT NULL AND r.device_code = d.device_code)) " +
+                     "ORDER BY a.created_at DESC, a.alert_id DESC";
 
         List<OpenAlertInfo> list = new ArrayList<>();
         try (Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
+                String alertCode = rs.getString("alert_code");
+                String severity = "WARNING";
+                if ("TEMPERATURE".equalsIgnoreCase(alertCode) || "CO".equalsIgnoreCase(alertCode)) {
+                    severity = "CRITICAL";
+                }
+                String stStr = rs.getString("status");
                 list.add(new OpenAlertInfo(
                     rs.getInt("alert_id"),
                     rs.getInt("session_id"),
-                    rs.getString("rule_code"),
-                    rs.getString("severity"),
+                    alertCode,
+                    severity,
                     rs.getString("message"),
-                    rs.getString("created_time")
+                    rs.getString("created_time"),
+                    rs.getString("room_code"),
+                    stStr != null ? stStr : "OPENING"
                 ));
             }
         } catch (SQLException e) {
@@ -216,285 +224,171 @@ public class DashboardDAO {
     }
 
     /**
-     * 4. Biểu đồ phân tán (Scatter Plot): Tương quan Khí và Nhiệt độ để tách ảnh hưởng của nhiệt
-     * TỐI ƯU: Dùng s.session_id % 45 = 0 để lấy mẫu ngay trên index, dùng OUTER APPLY thay cho correlated subquery,
-     * không tính toán biểu thức trong ORDER BY giúp tốc độ tăng gấp 50 lần.
+     * Nạp lịch sử đo tức thời từ bảng Air_Session phục vụ vẽ biểu đồ xu hướng thực tế
      */
-    private void loadScatterPoints(Connection cn, DashboardStats stats) {
-       String sql =
-            "SELECT TOP 250 temp_c, gas_a_raw, gas_a_delta, humid_pct, label_code FROM (" +
-            // Phần 1: Tất cả phiên có nhãn đặc biệt (tối đa 150 điểm)
-            "  SELECT TOP 150 " +
-            "    s.temp_c, s.gas_a_raw, s.gas_a_delta, s.humid_pct, " +
-            "    l.label_code " +
-            "  FROM Air_Session s " +
-            "  INNER JOIN ( " +
-            "    SELECT session_id, label_code FROM (" +
-            "      SELECT session_id, label_code, ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY label_id DESC) rn" +
-            "      FROM Air_Label WHERE label_code IN ('HIGH','DRIFTED','WARMUP','TEMP_EFFECT','RAISED')" +
-            "    ) x WHERE rn = 1" +
-            "  ) l ON l.session_id = s.session_id " +
-            "  WHERE s.temp_c IS NOT NULL AND s.gas_a_raw IS NOT NULL " +
-            "  ORDER BY s.session_id DESC " +
-            "  UNION ALL " +
-            // Phần 2: Sample phiên BASE (không có nhãn đặc biệt) để trải đều nền
-            "  SELECT TOP 100 " +
-            "    s.temp_c, s.gas_a_raw, s.gas_a_delta, s.humid_pct, " +
-            "    'BASE' AS label_code " +
-            "  FROM Air_Session s " +
-            "  WHERE s.session_id % 30 = 0 " +
-            "    AND s.temp_c IS NOT NULL AND s.gas_a_raw IS NOT NULL " +
-            "    AND NOT EXISTS (" +
-            "      SELECT 1 FROM Air_Label l2 WHERE l2.session_id = s.session_id" +
-            "        AND l2.label_code IN ('HIGH','DRIFTED','WARMUP','TEMP_EFFECT','RAISED')" +
-            "    ) " +
-            "  ORDER BY s.session_id DESC " +
-            ") combined ORDER BY NEWID()";
-
-
-        List<ScatterPoint> points = new ArrayList<>();
-        try (Statement st = cn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                ScatterPoint p = new ScatterPoint(
-                    rs.getDouble("temp_c"),
-                    rs.getInt("gas_a_raw"),
-                    rs.getDouble("gas_a_delta"),
-                    rs.getDouble("humid_pct"),
-                    rs.getString("label_code")
-                );
-                points.add(p);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        stats.setScatterPoints(points);
-    }
-
-    /**
-     * 5. Xu hướng Mức nền & Độ dịch theo thời gian (Timeline Trend)
-     * TỐI ƯU: Thay thế hàm FORMAT() chậm chạp bằng CONVERT(VARCHAR(7), ..., 120) siêu nhanh của SQL gốc.
-     */
-    private void loadTrendPoints(Connection cn, DashboardStats stats) {
+    public List<java.util.Map<String, Object>> getRecentSessions() {
+        List<java.util.Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT " +
-                     "  CONVERT(VARCHAR(7), measured_at, 120) AS month_label, " +
-                     "  AVG(CAST(gas_a_base AS FLOAT)) AS avg_base, " +
-                     "  AVG(CAST(base_shift AS FLOAT)) AS avg_shift " +
+                     "  temperature, humid, co, co2, " +
+                     "  SUBSTRING(CONVERT(VARCHAR(16), measured_at, 120), 12, 5) AS time_str " +
                      "FROM Air_Session " +
-                     "WHERE measured_at IS NOT NULL AND gas_a_base IS NOT NULL " +
-                     "GROUP BY CONVERT(VARCHAR(7), measured_at, 120) " +
-                     "ORDER BY month_label ASC";
-
-        List<TrendPoint> list = new ArrayList<>();
-        try (Statement st = cn.createStatement();
+                     "ORDER BY measured_at ASC, session_id ASC";
+        try (Connection cn = util.DBContext.getConnection();
+             Statement st = cn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                list.add(new TrendPoint(
-                    rs.getString("month_label"),
-                    Math.round(rs.getDouble("avg_base") * 10.0) / 10.0,
-                    Math.round(rs.getDouble("avg_shift") * 100.0) / 100.0
-                ));
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("time", rs.getString("time_str"));
+                Object t = rs.getObject("temperature");
+                m.put("temp", t != null ? Math.round(rs.getDouble("temperature") * 10.0) / 10.0 : null);
+                Object h = rs.getObject("humid");
+                m.put("humid", h != null ? Math.round(rs.getDouble("humid") * 10.0) / 10.0 : null);
+                Object co2 = rs.getObject("co2");
+                m.put("co2", co2 != null ? rs.getInt("co2") : null);
+                Object co = rs.getObject("co");
+                m.put("co", co != null ? Math.round(rs.getDouble("co") * 10.0) / 10.0 : null);
+                list.add(m);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // Nếu chỉ có 1-2 tháng, chia theo ngày (dùng CONVERT 103 dạng dd/mm)
-        if (list.size() <= 2) {
-            list.clear();
-            String dailySql = "SELECT TOP 15 " +
-                              "  CONVERT(VARCHAR(5), measured_at, 103) AS day_label, " +
-                              "  AVG(CAST(gas_a_base AS FLOAT)) AS avg_base, " +
-                              "  AVG(CAST(base_shift AS FLOAT)) AS avg_shift " +
-                              "FROM Air_Session " +
-                              "WHERE measured_at IS NOT NULL AND gas_a_base IS NOT NULL " +
-                              "GROUP BY CONVERT(VARCHAR(5), measured_at, 103), CAST(measured_at AS DATE) " +
-                              "ORDER BY CAST(measured_at AS DATE) ASC";
-            try (Statement st = cn.createStatement();
-                 ResultSet rs = st.executeQuery(dailySql)) {
-                while (rs.next()) {
-                    list.add(new TrendPoint(
-                        rs.getString("day_label"),
-                        Math.round(rs.getDouble("avg_base") * 10.0) / 10.0,
-                        Math.round(rs.getDouble("avg_shift") * 100.0) / 100.0
-                    ));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        stats.setTrendPoints(list);
+        return list;
     }
 
     /**
-     * 6. Bảng đối chiếu mức trôi: Dữ liệu tự thu (is_sample = 0) vs Bộ dữ liệu nền (is_sample = 1)
+     * Nạp danh sách các phòng học kèm nhiệt độ, độ ẩm mới nhất và lịch sử thực tế từ database
+     * phục vụ giao diện Dashboard.
      */
-    private void loadDatasetComparison(Connection cn, DashboardStats stats) {
-        DatasetComparison sample = queryDatasetStats(cn, 1, "Benchmark Dataset (UCI Benchmark)");
-        sample.setConclusion("Sensors in calibration test environment exhibit stable drift (+0.00% to +2.1%), maintaining calibration for over 90 days on average.");
-        stats.setSampleStats(sample);
+    public List<model.ClassroomTempInfo> getClassroomTempList() {
+        List<model.ClassroomTempInfo> list = new ArrayList<>();
+        String sql = 
+            "SELECT r.room_id, r.room_code, r.name, r.location, r.device_code, " +
+            "  r.temp_warning_threshold, r.humid_warning_threshold, r.co_warning_threshold, r.co2_warning_threshold, " +
+            "  latest.temperature, latest.humid, latest.co2, latest.co, latest.measured_at " +
+            "FROM Room r " +
+            "OUTER APPLY ( " +
+            "  SELECT TOP 1 s.temperature, s.humid, s.co2, s.co, s.measured_at " +
+            "  FROM Air_Session s " +
+            "  JOIN Device d ON d.device_id = s.device_id " +
+            "  WHERE d.room_id = r.room_id OR (r.device_code IS NOT NULL AND d.device_code = r.device_code) " +
+            "  ORDER BY s.measured_at DESC, s.session_id DESC " +
+            ") latest " +
+            "WHERE (r.is_active = 1 OR r.is_active IS NULL) " +
+            "ORDER BY r.room_id ASC";
 
-        DatasetComparison live = queryDatasetStats(cn, 0, "Field Collected Data (FPTU Classroom)");
-        if (live.getRecordCount() == 0) {
-            live.setRecordCount(180);
-            live.setAvgGasARaw(585.4);
-            live.setAvgGasABase(480.0);
-            live.setAvgBaseShift(8.45);
-            live.setMaxBaseShift(18.20);
-            live.setAvgTemp(28.6);
-            live.setAvgHumid(68.2);
-            live.setDriftCount(6);
-            live.setDriftRate(3.33);
-            live.setConclusion("Classroom environment with continuous AC cycles causes pronounced baseline drift (+8.45%), requiring a 30-45 day calibration cycle.");
-        } else {
-            live.setConclusion("Field collected data reflects significant thermo-hygrometric impacts, showing higher average drift than the benchmark dataset.");
-        }
-        stats.setLiveStats(live);
-    }
+        try (Connection cn = util.DBContext.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-    private DatasetComparison queryDatasetStats(Connection cn, int isSample, String title) {
-        DatasetComparison comp = new DatasetComparison();
-        comp.setDatasetName(title);
-
-        String sql = "SELECT " +
-                     "  COUNT(*) AS cnt, " +
-                     "  AVG(CAST(gas_a_raw AS FLOAT)) AS avg_raw, " +
-                     "  AVG(CAST(gas_a_base AS FLOAT)) AS avg_base, " +
-                     "  AVG(CAST(base_shift AS FLOAT)) AS avg_shift, " +
-                     "  MAX(CAST(base_shift AS FLOAT)) AS max_shift, " +
-                     "  AVG(CAST(temp_c AS FLOAT)) AS avg_temp, " +
-                     "  AVG(CAST(humid_pct AS FLOAT)) AS avg_humid, " +
-                     "  SUM(CASE WHEN base_shift >= 14 THEN 1 ELSE 0 END) AS drift_cnt " +
-                     "FROM Air_Session WHERE is_sample = ? AND gas_a_raw IS NOT NULL";
-
-        try (PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setInt(1, isSample);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next() && rs.getInt("cnt") > 0) {
-                    comp.setRecordCount(rs.getInt("cnt"));
-                    comp.setAvgGasARaw(Math.round(rs.getDouble("avg_raw") * 10.0) / 10.0);
-                    comp.setAvgGasABase(Math.round(rs.getDouble("avg_base") * 10.0) / 10.0);
-                    comp.setAvgBaseShift(Math.round(rs.getDouble("avg_shift") * 100.0) / 100.0);
-                    comp.setMaxBaseShift(Math.round(rs.getDouble("max_shift") * 100.0) / 100.0);
-                    comp.setAvgTemp(Math.round(rs.getDouble("avg_temp") * 10.0) / 10.0);
-                    comp.setAvgHumid(Math.round(rs.getDouble("avg_humid") * 10.0) / 10.0);
-                    comp.setDriftCount(rs.getInt("drift_cnt"));
-                    if (comp.getRecordCount() > 0) {
-                        double rate = (comp.getDriftCount() * 100.0) / comp.getRecordCount();
-                        comp.setDriftRate(Math.round(rate * 100.0) / 100.0);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return comp;
-    }
-
-    /**
-     * 7. Thời gian giữ được mức nền trong dung sai của mỗi lần hiệu chuẩn
-     * TỐI ƯU: Thay FORMAT bằng CONVERT định dạng ngày chuẩn SQL.
-     */
-    private void loadRoomCalibrationDrifts(Connection cn, DashboardStats stats) {
-        String sql = "SELECT " +
-                     "  r.code AS room_code, r.name AS room_name, " +
-                     "  r.max_baseline_drift, " +
-                     "  c.co_baseline, " +
-                     "  CONVERT(VARCHAR(16), c.calibrated_at, 120) AS cal_time, " +
-                     "  ISNULL(DATEDIFF(day, c.calibrated_at, SYSDATETIME()), 0) AS days_elapsed " +
-                     "FROM Room r " +
-                     "LEFT JOIN Air_Calibration c ON c.room_id = r.room_id " +
-                     "WHERE r.is_active = 1";
-
-        List<DashboardStats.RoomDriftInfo> list = new ArrayList<>();
-        double totalDays = 0;
-        int countWithCal = 0;
-
-        try (Statement st = cn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                DashboardStats.RoomDriftInfo info = new DashboardStats.RoomDriftInfo();
+                model.ClassroomTempInfo info = new model.ClassroomTempInfo();
+                int roomId = rs.getInt("room_id");
+                info.setRoomId(roomId);
                 info.setRoomCode(rs.getString("room_code"));
-                info.setRoomName(rs.getString("room_name"));
+                info.setRoomName(rs.getString("name"));
+                info.setDeviceCode(rs.getString("device_code"));
 
-                double maxDrift = rs.getDouble("max_baseline_drift");
-                if (maxDrift <= 0) maxDrift = 15.0; // Dung sai mặc định 15%
-                info.setToleranceDrift(maxDrift);
+                // Phân tích vị trí Tòa nhà và Tầng
+                String name = rs.getString("name");
+                String building = "Tòa A";
+                int floor = 1;
 
-                String calTime = rs.getString("cal_time");
-                if (calTime != null) {
-                    info.setLastCalibratedAt(calTime);
-                    info.setCoBaseline(rs.getDouble("co_baseline") > 0 ? rs.getDouble("co_baseline") : 1200.0);
-                    double days = rs.getDouble("days_elapsed");
-                    info.setDaysInTolerance(days);
-                    totalDays += days;
-                    countWithCal++;
-
-                    info.setCurrentShift(stats.getAvgBaseShift());
-                    if (stats.getAvgBaseShift() > maxDrift) {
-                        info.setStatus("DRIFTED_ALERT");
-                    } else {
-                        info.setStatus("ON_TRACK");
+                if (name != null) {
+                    if (name.contains("Tòa B") || name.contains("Hội trường B") || name.contains("Sân thượng B") || name.contains("20")) {
+                        building = "Tòa B";
+                    } else if (name.contains("Tòa C") || name.contains("30")) {
+                        building = "Tòa C";
                     }
-                } else {
-                    info.setLastCalibratedAt("Not calibrated yet");
-                    info.setCoBaseline(1200.0);
-                    info.setDaysInTolerance(0);
-                    info.setCurrentShift(0);
-                    info.setStatus("NEEDS_CALIBRATION");
+                    if (name.contains("tầng 2") || name.contains("Tầng 2") || name.contains("20")) {
+                        floor = 2;
+                    } else if (name.contains("tầng 3") || name.contains("Tầng 3") || name.contains("30")) {
+                        floor = 3;
+                    }
                 }
+                info.setBuilding(building);
+                info.setFloor(floor);
+                info.setLocation(building + " - Tầng " + floor);
+
+                Object tempObj = rs.getObject("temperature");
+                if (tempObj == null) {
+                    // Phòng chưa có dữ liệu đo từ cảm biến
+                    info.setHasData(false);
+                    info.setTemperature(null);
+                    info.setHumidity(null);
+                    info.setCo2(null);
+                    info.setCo(null);
+                    info.setStatus("NO_DATA");
+                    info.setTempHistory(new ArrayList<>());
+                } else {
+                    info.setHasData(true);
+                    double temp = Math.round(rs.getDouble("temperature") * 10.0) / 10.0;
+                    info.setTemperature(temp);
+
+                    double humid = Math.round(rs.getDouble("humid") * 10.0) / 10.0;
+                    info.setHumidity(humid);
+
+                    int co2 = rs.getInt("co2");
+                    info.setCo2(rs.wasNull() ? null : co2);
+
+                    double co = Math.round(rs.getDouble("co") * 10.0) / 10.0;
+                    info.setCo(rs.wasNull() ? null : co);
+
+                    // Ngưỡng cảnh báo theo cấu hình phòng
+                    double tempThresh = rs.getDouble("temp_warning_threshold");
+                    if (tempThresh <= 0) tempThresh = 32.0;
+
+                    double co2Thresh = rs.getDouble("co2_warning_threshold");
+                    if (co2Thresh <= 0) co2Thresh = 1000.0;
+
+                    if (temp > tempThresh) {
+                        info.setStatus("DANGER");
+                    } else if (temp >= 28.0 || (info.getCo2() != null && info.getCo2() > co2Thresh)) {
+                        info.setStatus("WARNING");
+                    } else {
+                        info.setStatus("NORMAL");
+                    }
+
+                    // Lịch sử nhiệt độ thực tế
+                    List<Double> history = getRoomTempHistory(cn, roomId, info.getDeviceCode());
+                    info.setTempHistory(history);
+                }
+
+                info.setImageUrl("assets/images/classroom_default.png");
                 list.add(info);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        stats.setRoomDrifts(list);
-        if (countWithCal > 0) {
-            stats.setAvgDaysInTolerance(Math.round((totalDays / countWithCal) * 10.0) / 10.0);
-        } else {
-            stats.setAvgDaysInTolerance(35.5);
-        }
+        return list;
     }
 
-    /**
-     * Tự động sinh dữ liệu cảnh báo nếu bảng Air_Alert đang rỗng.
-     */
-    private void ensureSeedAlertsIfNeeded(Connection cn) {
-        String checkSql = "SELECT COUNT(*) FROM Air_Alert";
-        try (Statement st = cn.createStatement();
-             ResultSet rs = st.executeQuery(checkSql)) {
-            if (rs.next() && rs.getInt(1) == 0) {
-                String seedSql = 
-                    "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 45 session_id, 'HIGH', 'CRITICAL', 'Gas concentration exceeds threshold (Poor Air Quality)', " +
-                    "  CASE WHEN session_id % 7 = 0 THEN 'REJECTED' WHEN session_id % 3 = 0 THEN 'OPEN' ELSE 'ACKED' END, " +
-                    "  measured_at " +
-                    "FROM Air_Session WHERE gas_a_raw >= 1400; " +
+    private List<Double> getRoomTempHistory(Connection cn, int roomId, String deviceCode) {
+        List<Double> list = new ArrayList<>();
+        String sql = 
+            "SELECT TOP 20 s.temperature " +
+            "FROM Air_Session s " +
+            "JOIN Device d ON d.device_id = s.device_id " +
+            "WHERE (d.room_id = ? OR (d.device_code = ? AND ? IS NOT NULL)) " +
+            "  AND s.temperature IS NOT NULL " +
+            "ORDER BY s.measured_at DESC, s.session_id DESC";
 
-                    "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 30 session_id, 'TEMP_EFFECT', 'WARN', 'Thermal effect: Gas readings rise in-phase with high temperature', " +
-                    "  CASE WHEN session_id % 5 = 0 THEN 'REJECTED' ELSE 'ACKED' END, " +
-                    "  measured_at " +
-                    "FROM Air_Session WHERE temp_c >= 30; " +
-
-                    "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 15 session_id, 'DRIFTED', 'CRITICAL', 'Sensor drift detected: Baseline shift exceeds tolerance', " +
-                    "  'ACKED', measured_at " +
-                    "FROM Air_Session WHERE base_shift >= 14; " +
-
-                    "INSERT INTO Air_Alert(session_id, rule_code, severity, message, status, created_at) " +
-                    "SELECT TOP 10 session_id, 'WARMUP', 'WARN', 'Device warming up (< 10 minutes from power-on)', " +
-                    "  CASE WHEN session_id % 4 = 0 THEN 'REJECTED' ELSE 'ACKED' END, " +
-                    "  measured_at " +
-                    "FROM Air_Session WHERE warm = 0;";
-
-                try (Statement seedSt = cn.createStatement()) {
-                    seedSt.execute(seedSql);
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            ps.setString(2, deviceCode);
+            ps.setString(3, deviceCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(Math.round(rs.getDouble(1) * 10.0) / 10.0);
                 }
             }
         } catch (SQLException e) {
-            // bỏ qua nếu đã có dữ liệu
+            // bỏ qua
         }
+
+        // Đảo ngược mảng để theo thứ tự thời gian từ cũ -> mới
+        Collections.reverse(list);
+        return list;
     }
 }
+

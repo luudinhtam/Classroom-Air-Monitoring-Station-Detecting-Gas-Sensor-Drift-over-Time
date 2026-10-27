@@ -9,8 +9,10 @@ public class Room {
     private String name;
     private String location;
 
-    private float coWarningThreshold;
-    private float co2WarningThreshold;
+    private float tempWarningThreshold = 32.0f;
+    private float humidWarningThreshold = 80.0f;
+    private float coWarningThreshold = 9.0f;
+    private float co2WarningThreshold = 1000.0f;
 
     private float maxBaselineDrift;
 
@@ -106,6 +108,22 @@ public class Room {
         this.location = location;
     }
 
+    public float getTempWarningThreshold() {
+        return tempWarningThreshold;
+    }
+
+    public void setTempWarningThreshold(float tempWarningThreshold) {
+        this.tempWarningThreshold = tempWarningThreshold;
+    }
+
+    public float getHumidWarningThreshold() {
+        return humidWarningThreshold;
+    }
+
+    public void setHumidWarningThreshold(float humidWarningThreshold) {
+        this.humidWarningThreshold = humidWarningThreshold;
+    }
+
     public float getCoWarningThreshold() {
         return coWarningThreshold;
     }
@@ -152,5 +170,69 @@ public class Room {
 
     public void setLongitude(Double longitude) {
         this.longitude = longitude;
+    }
+
+    private Double temp;
+    private Double humidity;
+    private Double co2;
+    private Double co;
+    private Boolean sensorOnline;
+    private Integer openAlertsCount;
+    private Timestamp lastMeasuredAt;
+
+    public Double getTemp() {
+        return temp;
+    }
+
+    public void setTemp(Double temp) {
+        this.temp = temp;
+    }
+
+    public Double getHumidity() {
+        return humidity;
+    }
+
+    public void setHumidity(Double humidity) {
+        this.humidity = humidity;
+    }
+
+    public Double getCo2() {
+        return co2;
+    }
+
+    public void setCo2(Double co2) {
+        this.co2 = co2;
+    }
+
+    public Double getCo() {
+        return co;
+    }
+
+    public void setCo(Double co) {
+        this.co = co;
+    }
+
+    public Boolean isSensorOnline() {
+        return sensorOnline;
+    }
+
+    public void setSensorOnline(Boolean sensorOnline) {
+        this.sensorOnline = sensorOnline;
+    }
+
+    public Integer getOpenAlertsCount() {
+        return openAlertsCount;
+    }
+
+    public void setOpenAlertsCount(Integer openAlertsCount) {
+        this.openAlertsCount = openAlertsCount;
+    }
+
+    public Timestamp getLastMeasuredAt() {
+        return lastMeasuredAt;
+    }
+
+    public void setLastMeasuredAt(Timestamp lastMeasuredAt) {
+        this.lastMeasuredAt = lastMeasuredAt;
     }
 }
