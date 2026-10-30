@@ -16,8 +16,8 @@ const char* cmdEndpoint    = "/Airroom/device/command";
 const char* dataEndpoint   = "/Airroom/device/data";
 
 // Thông tin định danh thiết bị (phải khớp chính xác trong Database AirRoomDB)
-const char* deviceCode = "D001";
-const char* apiKey     = "demo-key-d001";
+const char* deviceCode = "D133";
+const char* apiKey     = "key-d133-b45khsa2c7dc62wf";
 
 // ================= 3. CẤU HÌNH CHÂN CẮM & NGOẠI VI (KHÔNG ĐỔI) =================
 #define DHTPIN 15         // Chân DATA DHT22 cắm GPIO15
@@ -147,7 +147,7 @@ int checkForMeasureCommand() {
   return commandId;
 }
 
-// --- LUỒNG 2: THỰC HIỆN ĐO 5 GIÂY & GỬI DỮ LIỆU (/device/data) ---
+// --- LUỒNG 2: THỰC HIỆN ĐO 10 GIÂY & GỬI DỮ LIỆU (/device/data) ---
 void performMeasurementAndSend(int commandId) {
   Serial.printf("\n========================================\n");
   Serial.printf("BAT DAU PHIEN DO THU CONG - CMD #%d\n", commandId);
@@ -164,8 +164,8 @@ void performMeasurementAndSend(int commandId) {
   long sumMQ7 = 0;
   int sampleCount = 0;
 
-  // Đo trong 5 giây, lấy mẫu mỗi 1 giây (đếm ngược 5..4..3..2..1)
-  for (int sec = 5; sec >= 1; sec--) {
+  // Đo trong 10 giây, lấy mẫu mỗi 1 giây (đếm ngược 10..9..8..7..6..5..4..3..2..1)
+  for (int sec = 10; sec >= 1; sec--) {
     // Đổi màu LED nhấp nháy vàng khi đang lấy mẫu
     setRGB(180, 100, 0);
 
@@ -195,7 +195,7 @@ void performMeasurementAndSend(int commandId) {
     delay(500);
   }
 
-  // Tính giá trị trung bình sau 5 giây đo
+  // Tính giá trị trung bình sau 10 giây đo
   float avgTemp = sumTemp / sampleCount;
   float avgHumid = sumHumid / sampleCount;
   int avgRaw135 = sumMQ135 / sampleCount;
@@ -275,7 +275,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("Air Station D001");
+  lcd.print("Device ready");
   lcd.setCursor(0, 1);
   lcd.print("Connecting WiFi.");
 
@@ -326,7 +326,7 @@ void setup() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("D001 Online!");
+  lcd.print("Device Online!");
   lcd.setCursor(0, 1);
   lcd.print(WiFi.localIP());
   setRGB(0, 100, 0); // Xanh lá nhẹ: Sẵn sàng
@@ -346,7 +346,7 @@ void loop() {
   }
   
   lcd.setCursor(0, 0);
-  lcd.printf("D001: Ready CMD ");
+  lcd.printf("Device ready!");
   lcd.setCursor(0, 1);
   lcd.printf("T:%.1fC  H:%.1f%%  ", liveTemp, liveHumid);
   setRGB(0, 40, 100); // Xanh cyan dịu ở chế độ chờ
@@ -356,7 +356,7 @@ void loop() {
     lastPollTime = millis();
     int cmdId = checkForMeasureCommand();
 
-    // Nếu server có lệnh START -> tiến hành đo 5 giây và gửi kết quả
+    // Nếu server có lệnh START -> tiến hành đo 10 giây và gửi kết quả
     if (cmdId >= 0) {
       performMeasurementAndSend(cmdId);
     }
