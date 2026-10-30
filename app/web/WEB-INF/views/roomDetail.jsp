@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@page import="java.util.*, java.time.format.DateTimeFormatter, model.*, util.Web"%>
 <%
     Room item = (Room) request.getAttribute("detail");
@@ -20,11 +20,7 @@
     boolean canStartMeasure = "ADMIN".equals(userRole) || "STATION_MANAGER".equals(userRole) || "OPERATOR".equals(userRole);
     boolean hasActiveDevice = (activeDevice != null && activeDevice.isIsActive());
 
-    int openAlertCount = 6;
-    try {
-        dao.DashboardDAO dashDAO = dao.DashboardDAO.getInstance();
-        openAlertCount = dashDAO.getDashboardStats().getOpenAlerts();
-    } catch (Exception ignored) {}
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     java.time.ZonedDateTime nowZdt = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
     String jSidebarDateTime = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy, HH:mm", java.util.Locale.ENGLISH));
@@ -173,7 +169,7 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 <span>Alerts</span>
-                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount > 0 ? openAlertCount : 6 %></span>
+                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount %></span>
             </a>
 
             <!-- Devices -->
@@ -248,9 +244,9 @@
 
             <!-- Right: Actions, Notifications & User Profile -->
             <div class="top-bar-right">
-                <% if (roomId > 0 && canManageRoom) { %>
+                <% if (item != null && canManageRoom) { %>
                     <div class="top-action-group">
-                        <a href="<%= ctx %>/admin/rooms/edit?id=<%= roomId %>" class="btn-top-edit" title="Edit Classroom">
+                        <a href="<%= ctx %>/admin/rooms/edit?id=<%= Web.esc(roomCode) %>" class="btn-top-edit" title="Edit Classroom">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 20h9"/>
                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -273,7 +269,7 @@
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
-                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount > 0 ? openAlertCount : 6 %></span>
+                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount %></span>
                 </a>
 
                 <div class="user-profile-badge" id="userMenuToggle">
@@ -396,8 +392,8 @@
                 </div>
                 <div class="metric-data-body">
                     <span class="metric-label">Temperature</span>
-                    <span class="metric-big-val" id="valTemp"><%= (currentTemp != null) ? (currentTemp + "°C") : "--" %></span>
-                    <span class="metric-allowed-range">(20 – 28°C)</span>
+                    <span class="metric-big-val" id="valTemp"><%= (currentTemp != null) ? (currentTemp + "&deg;C") : "--" %></span>
+                    <span class="metric-allowed-range">(20 &ndash; 28&deg;C)</span>
                 </div>
             </div>
 
@@ -520,7 +516,7 @@
                                         <circle cx="11.5" cy="17.5" r="1.5" fill="#2563eb"/>
                                     </svg>
                                 </div>
-                                <h2 class="chart-header-title">Temperature (°C)</h2>
+                                <h2 class="chart-header-title">Temperature (&deg;C)</h2>
                             </div>
                             <div class="segmented-control" data-chart="temp">
                                 <button class="seg-btn" data-range="1h">1h</button>
@@ -534,7 +530,7 @@
 
                         <div class="chart-bottom-legend">
                             <span class="legend-dot-circle bg-primary-blue"></span>
-                            <span class="legend-name">Temperature (°C)</span>
+                            <span class="legend-name">Temperature (&deg;C)</span>
                         </div>
                     </div>
 
@@ -674,8 +670,8 @@
                         </div>
 
                         <div class="side-card-action-bar" style="gap: 8px;">
-                            <% if (roomId > 0 && canManageRoom) { %>
-                                <a href="<%= ctx %>/admin/rooms/edit?id=<%= roomId %>" class="btn-side-outline">
+                            <% if (item != null && canManageRoom) { %>
+                                <a href="<%= ctx %>/admin/rooms/edit?id=<%= Web.esc(roomCode) %>" class="btn-side-outline">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 20h9"/>
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -713,7 +709,7 @@
                                     </div>
                                     Temperature
                                 </span>
-                                <span class="item-value">≤ <%= (tempMax % 1 == 0 ? (int)tempMax : String.format(Locale.US, "%.1f", tempMax)) %>°C</span>
+                                <span class="item-value">&le; <%= (tempMax % 1 == 0 ? (int)tempMax : String.format(Locale.US, "%.1f", tempMax)) %>&deg;C</span>
                             </div>
                             <div class="side-info-item">
                                 <span class="item-label">
@@ -766,13 +762,26 @@
             <div class="measure-top-card">
                 <div class="measure-header-row">
                     <div class="measure-title-group">
-                        <h3>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                            </svg>
-                            Manual Measurement Station
-                        </h3>
-                        <p>Trigger an on-demand 5-second measurement packet from the assigned IoT sensor node and evaluate against thresholds.</p>
+                        <div class="measure-title-with-mode">
+                            <h3 id="measureStationTitle">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                                Measurement Station
+                            </h3>
+                            <!-- Mode Switcher -->
+                            <div class="measure-mode-toggle">
+                                <button type="button" id="btnModeManual" class="mode-btn active" title="Single On-Demand Measure">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                    Manual
+                                </button>
+                                <button type="button" id="btnModeAuto" class="mode-btn" title="Periodic Auto Measurement">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Auto
+                                </button>
+                            </div>
+                        </div>
+                        <p id="measureModeDesc">Trigger an on-demand 10-second measurement packet from the assigned IoT sensor node and evaluate against thresholds.</p>
                         
                         <div class="measure-device-meta">
                             <span class="device-meta-pill">
@@ -792,13 +801,47 @@
 
                     <div class="measure-action-group">
                         <% if (canStartMeasure) { %>
-                            <button type="button" id="btnStartMeasure" class="btn-measure-start" <%= !hasActiveDevice ? "disabled" : "" %>>
-                                <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                                    <polygon points="5 3 19 12 5 21 5 3"/>
-                                </svg>
-                                <span class="btn-text">Start Measurement</span>
-                                <span class="spinner-border" style="display: none;"></span>
-                            </button>
+                            <!-- Manual Group -->
+                            <div id="manualControlGroup" class="mode-control-group">
+                                <button type="button" id="btnStartMeasure" class="btn-measure-start" <%= !hasActiveDevice ? "disabled" : "" %>>
+                                    <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                        <polygon points="5 3 19 12 5 21 5 3"/>
+                                    </svg>
+                                    <span class="btn-text">Start Measurement</span>
+                                    <span class="spinner-border" style="display: none;"></span>
+                                </button>
+                            </div>
+
+                            <!-- Auto Group -->
+                            <div id="autoControlGroup" class="mode-control-group" style="display: none;">
+                                <div class="auto-interval-bar">
+                                    <span class="interval-label">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        Interval:
+                                    </span>
+                                    <div class="interval-input-wrap">
+                                        <input type="number" id="autoIntervalInput" class="auto-interval-input" value="30" min="10" max="3600" step="5" title="Interval in seconds (min 10s)">
+                                        <span class="interval-unit">sec</span>
+                                    </div>
+                                    <div class="interval-chips">
+                                        <button type="button" class="chip-interval" data-sec="15">15s</button>
+                                        <button type="button" class="chip-interval active" data-sec="30">30s</button>
+                                        <button type="button" class="chip-interval" data-sec="60">1m</button>
+                                        <button type="button" class="chip-interval" data-sec="300">5m</button>
+                                    </div>
+                                </div>
+                                <div class="auto-btn-row">
+                                    <button type="button" id="btnStartAuto" class="btn-auto-action btn-auto-start" <%= !hasActiveDevice ? "disabled" : "" %>>
+                                        <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                            <polygon points="5 3 19 12 5 21 5 3"/>
+                                        </svg>
+                                        <span class="btn-text">Start Auto</span>
+                                    </button>
+                                </div>
+                            </div>
                         <% } else { %>
                             <div class="measure-perm-notice">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
@@ -808,6 +851,23 @@
                                 <span>You do not have permission to start a measurement.</span>
                             </div>
                         <% } %>
+                    </div>
+                </div>
+
+                <!-- Auto Running Status Banner -->
+                <div id="autoStatusBanner" class="auto-status-banner" style="display: none;">
+                    <div class="auto-status-left">
+                        <span class="auto-pulse-dot" id="autoPulseDot"></span>
+                        <span class="auto-status-badge badge-idle" id="autoStatusBadge">Auto Idle</span>
+                        <span class="auto-status-text" id="autoStatusText">Ready to start periodic measurement</span>
+                    </div>
+                    <div class="auto-status-right">
+                        <div class="auto-countdown-wrap" id="autoCountdownWrap" style="display: none;">
+                            Next in: <strong id="autoCountdownVal">30</strong>s
+                        </div>
+                        <div class="auto-stat-pill">
+                            Auto Sessions: <strong id="autoSessionCount">0</strong>
+                        </div>
                     </div>
                 </div>
 
@@ -826,7 +886,7 @@
             </div>
 
             <!-- 2. Stepper Progress Card -->
-            <div class="measure-stepper-card">
+            <div id="measureStepperCard" class="measure-stepper-card">
                 <div class="stepper-header">
                     <span class="stepper-title">Measurement Workflow Status</span>
                     <span id="measureTimerBadge" class="stepper-timer-badge" style="display: none;">
@@ -853,7 +913,7 @@
                     <div id="stepNodeMeasuring" class="step-node">
                         <div class="step-circle">2</div>
                         <span class="step-label">Measuring</span>
-                        <span class="step-sub">Device acquiring (5s)</span>
+                        <span class="step-sub">Device acquiring</span>
                     </div>
 
                     <!-- Step 3: Done -->
@@ -880,7 +940,7 @@
                     </div>
                     <span class="measure-metric-label">Temperature</span>
                     <span class="measure-metric-val" id="measureValTemp">--</span>
-                    <span class="measure-metric-threshold" id="measureThreshTemp" style="display: none;">Threshold: ≤ <%= (tempMax % 1 == 0 ? (int)tempMax : String.format(Locale.US, "%.1f", tempMax)) %>°C</span>
+                    <span class="measure-metric-threshold" id="measureThreshTemp" style="display: none;">Threshold: &le; <%= (tempMax % 1 == 0 ? (int)tempMax : String.format(Locale.US, "%.1f", tempMax)) %>&deg;C</span>
                 </div>
 
                 <!-- Humidity -->
@@ -988,7 +1048,7 @@
                             %>
                             <tr>
                                 <td><%= Web.esc(sTime) %></td>
-                                <td><%= (sTemp != null ? sTemp + "°C" : "–") %></td>
+                                <td><%= (sTemp != null ? sTemp + "&deg;C" : "–") %></td>
                                 <td><%= (sHumid != null ? (int)sHumid.doubleValue() + "%" : "–") %></td>
                                 <td><%= (sCo2 != null ? sCo2 + " ppm" : "–") %></td>
                                 <td><%= (sCo != null ? (sCo % 1 == 0 ? (int)sCo.doubleValue() : sCo) + " ppm" : "–") %></td>
@@ -1041,7 +1101,7 @@
                                 %>
                                 <tr>
                                     <td><%= Web.esc(sTime) %></td>
-                                    <td><%= (sTemp != null ? sTemp + "°C" : "–") %></td>
+                                    <td><%= (sTemp != null ? sTemp + "&deg;C" : "–") %></td>
                                     <td><%= (sHumid != null ? (int)sHumid.doubleValue() + "%" : "–") %></td>
                                     <td><%= (sCo2 != null ? sCo2 + " ppm" : "–") %></td>
                                     <td><%= (sCo != null ? (sCo % 1 == 0 ? (int)sCo.doubleValue() : sCo) + " ppm" : "–") %></td>
@@ -1281,7 +1341,7 @@
                 This action will permanently delete the room and unassign any connected sensor devices.
             </p>
             <form method="post" action="<%= ctx %>/admin/rooms/delete" id="deleteRoomForm">
-                <input type="hidden" name="id" value="<%= roomId %>">
+                <input type="hidden" name="id" value="<%= Web.esc(roomCode) %>">
                 <div class="custom-modal-actions">
                     <button type="button" class="modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
                     <button type="submit" class="modal-btn-delete">Delete Classroom</button>
@@ -1306,7 +1366,7 @@
             }
         });
     </script>
-    <script src="<%= ctx %>/assets/js/room-detail.js?v=<%= System.currentTimeMillis() %>"></script>
-    <script src="<%= ctx %>/assets/js/room-measure.js?v=<%= System.currentTimeMillis() %>"></script>
+    <script src="<%= ctx %>/assets/js/room-detail.js?v=<%= System.currentTimeMillis() %>" charset="UTF-8"></script>
+    <script src="<%= ctx %>/assets/js/room-measure.js?v=<%= System.currentTimeMillis() %>" charset="UTF-8"></script>
 </body>
 </html>

@@ -101,8 +101,8 @@ function updateStatsCards() {
         if (statWarningPctEl) statWarningPctEl.innerText = `${pct}%`;
     }
 
-    // Top Bar Notification Badge & Sidebar Badge (Total abnormal count)
-    const alertCount = warningCount;
+    // Top Bar Notification Badge & Sidebar Badge (Total opening alerts count from DB)
+    const alertCount = (typeof window.OPEN_ALERT_COUNT !== "undefined") ? parseInt(window.OPEN_ALERT_COUNT, 10) : warningCount;
     const topBellBadge = document.getElementById("topBellBadge");
     const sidebarAlertBadge = document.getElementById("sidebarAlertBadge");
 
@@ -234,7 +234,7 @@ function renderRoomCard(room) {
                         </svg>
                     </div>
                     <div class="metric-col-data">
-                        <span class="metric-val">${room.temp != null ? room.temp + '°C' : '--'}</span>
+                        <span class="metric-val">${room.temp != null ? room.temp + '\u00B0C' : '--'}</span>
                         <span class="metric-name">Temp</span>
                     </div>
                 </div>

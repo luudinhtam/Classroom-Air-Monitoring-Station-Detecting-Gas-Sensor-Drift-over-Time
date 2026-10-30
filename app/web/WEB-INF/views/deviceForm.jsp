@@ -11,10 +11,7 @@
     String userRole = (me != null && me.getRoleCode() != null) ? me.getRoleCode() : "ADMIN";
     boolean isAdmin = "ADMIN".equals(userRole);
 
-    int openAlertCount = 0;
-    try {
-        openAlertCount = dao.DashboardDAO.getInstance().getDashboardStats().getOpenAlerts();
-    } catch (Exception ignored) {}
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     String flash = (String) session.getAttribute("flash");
     if (flash != null) session.removeAttribute("flash");
@@ -365,9 +362,7 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 <span>Alerts</span>
-                <% if (openAlertCount > 0) { %>
-                    <span class="sidebar-badge"><%= openAlertCount %></span>
-                <% } %>
+                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount %></span>
             </a>
 
             <a href="<%= ctx %>/admin/devices" class="menu-item active" title="Devices">
@@ -445,9 +440,7 @@
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
-                    <% if (openAlertCount > 0) { %>
-                        <span class="notif-badge" id="topBellBadge"><%= openAlertCount %></span>
-                    <% } %>
+                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount %></span>
                 </a>
 
                 <div class="user-profile-badge" id="userMenuToggle">

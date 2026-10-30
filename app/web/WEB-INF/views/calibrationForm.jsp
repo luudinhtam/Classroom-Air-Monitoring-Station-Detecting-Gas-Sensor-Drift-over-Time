@@ -2,7 +2,7 @@
 <%@page import="model.AppUser"%>
 <%@page import="util.Web"%>
 <%@page import="model.Calibration"%>
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%
     Calibration item = (Calibration) request.getAttribute("editCalibration");

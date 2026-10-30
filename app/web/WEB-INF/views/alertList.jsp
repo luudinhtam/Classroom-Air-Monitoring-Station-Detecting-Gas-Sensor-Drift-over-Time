@@ -1128,9 +1128,7 @@
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
-                    <% if (openCount > 0) { %>
                     <span class="notif-badge" id="topBellBadge"><%= openCount %></span>
-                    <% } %>
                 </a>
 
                 <div class="user-profile-badge" id="userMenuToggle">
@@ -1590,10 +1588,11 @@
                     </div>
 
                     <!-- Chọn Approve hoặc Reject -->
+                    <% if (canHandle) { %>
                     <div class="modal-section-title">Chọn trạng thái xử lý:</div>
                     <div class="status-choice-group">
                         <label class="status-choice-card approve-card" id="approveCard" onclick="selectChoice('APPROVED')">
-                            <input type="radio" name="status" value="APPROVED" id="modalOptApprove" <%= canHandle ? "" : "disabled" %>>
+                            <input type="radio" name="status" value="APPROVED" id="modalOptApprove">
                             <div class="choice-content">
                                 <div class="choice-icon-wrap approve-icon">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -1605,7 +1604,7 @@
                             </div>
                         </label>
                         <label class="status-choice-card reject-card" id="rejectCard" onclick="selectChoice('REJECTED')">
-                            <input type="radio" name="status" value="REJECTED" id="modalOptReject" <%= canHandle ? "" : "disabled" %>>
+                            <input type="radio" name="status" value="REJECTED" id="modalOptReject">
                             <div class="choice-content">
                                 <div class="choice-icon-wrap reject-icon">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1617,12 +1616,15 @@
                             </div>
                         </label>
                     </div>
+                    <% } %>
 
                     <!-- Ô để ghi chú (Note) -->
                     <div class="modal-note-section">
                         <label for="modalNoteText" class="detail-item-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <span>Ghi chú xử lý (Note):</span>
-                            <span style="font-weight: normal; color: #94a3b8; font-size: 11.5px;">Tùy chọn</span>
+                            <% if (canHandle) { %>
+                                <span style="font-weight: normal; color: #94a3b8; font-size: 11.5px;">Tùy chọn</span>
+                            <% } %>
                         </label>
                         <% if (canHandle) { %>
                             <div class="quick-reason-pills" style="margin-bottom: 6px;">
@@ -1631,8 +1633,10 @@
                                 <button type="button" class="reason-chip" onclick="setDetailNote('Nước rửa tay / cồn bay hơi tạm thời.')">Cồn sát khuẩn</button>
                                 <button type="button" class="reason-chip" onclick="setDetailNote('Nhiệt độ đã ổn định trở lại.')">Nhiệt độ ổn định</button>
                             </div>
+                            <textarea id="modalNoteText" name="handledNote" class="modal-textarea" placeholder="Nhập lý do hoặc hướng xử lý cảnh báo..." rows="3"></textarea>
+                        <% } else { %>
+                            <textarea id="modalNoteText" name="handledNote" class="modal-textarea" rows="3" readonly style="background-color: #f8fafc; cursor: default; resize: none;"></textarea>
                         <% } %>
-                        <textarea id="modalNoteText" name="handledNote" class="modal-textarea" placeholder="Nhập lý do hoặc hướng xử lý cảnh báo..." rows="3" <%= canHandle ? "" : "readonly" %>></textarea>
                     </div>
                 </div>
 

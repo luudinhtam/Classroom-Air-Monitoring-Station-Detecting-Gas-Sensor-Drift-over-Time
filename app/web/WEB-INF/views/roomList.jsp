@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8" %>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@page import="java.util.List, java.util.Locale, java.text.SimpleDateFormat, model.Room, model.AppUser, util.Web"
         %>
         <% List<Room> rows = (List<Room>) request.getAttribute("rows");
@@ -13,11 +13,7 @@
                 boolean canManageRoom = "ADMIN".equals(userRole) || "STATION_MANAGER".equals(userRole) ||
                 "OPERATOR".equals(userRole);
 
-                int openAlertCount = 6;
-                try {
-                dao.DashboardDAO dashDAO = dao.DashboardDAO.getInstance();
-                openAlertCount = dashDAO.getDashboardStats().getOpenAlerts();
-                } catch (Exception ignored) {}
+                int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
                 java.time.ZonedDateTime nowZdt = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
                 String jDateStr = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",
@@ -204,7 +200,7 @@
                                     </svg>
                                     <span>Alerts</span>
                                     <span class="sidebar-badge" id="sidebarAlertBadge">
-                                        <%= openAlertCount> 0 ? openAlertCount : 6 %>
+                                        <%= openAlertCount %>
                                     </span>
                                 </a>
 
@@ -284,14 +280,14 @@
 
                                 <!-- Right: Notifications & User Profile -->
                                 <div class="top-bar-right">
-                                    <a href="<%= ctx %>/alerts" class="icon-btn-round" title="Notifications">
+                                    <a href="javascript:void(0)" class="icon-btn-round" title="Notification" onclick="return false;" style="cursor: default;">
                                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563"
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                                         </svg>
                                         <span class="notif-badge" id="topBellBadge">
-                                            <%= openAlertCount> 0 ? openAlertCount : 6 %>
+                                            <%= openAlertCount %>
                                         </span>
                                     </a>
 
@@ -509,6 +505,7 @@
                         <!-- Pass context path & server data to JavaScript -->
                         <script>
                             window.APP_CTX = "<%= ctx %>";
+                            window.OPEN_ALERT_COUNT = <%= openAlertCount %>;
                             window.SERVER_CLASSROOMS_DATA = <%= roomsJson.toString() %>;
 
                             // Dynamic live clock for header
@@ -538,7 +535,7 @@
                                 setInterval(updateClock, 10000);
                             })();
                         </script>
-                        <script src="<%= ctx %>/assets/js/classrooms.js?v=<%= System.currentTimeMillis() %>"></script>
+                        <script src="<%= ctx %>/assets/js/classrooms.js?v=<%= System.currentTimeMillis() %>" charset="UTF-8"></script>
                     </body>
 
                     </html>

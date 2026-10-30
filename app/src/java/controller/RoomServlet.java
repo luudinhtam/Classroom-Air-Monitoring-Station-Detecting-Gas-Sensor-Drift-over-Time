@@ -37,7 +37,14 @@ public class RoomServlet extends HttpServlet {
         }
         
         if ("/edit".equals(action)) {
-            Room r = rooms.findById(Web.intParam(request, "id", 0));
+            String idStr = Web.trimmed(request, "id");
+            Room r = null;
+            try {
+                r = rooms.findById(Integer.parseInt(idStr));
+            } catch (Exception ignored) {}
+            if (r == null && !idStr.isEmpty()) {
+                r = rooms.findByCode(idStr);
+            }
             if (r == null) {
                 Web.flash(request, "Room not found");
                 response.sendRedirect(request.getContextPath() + "/admin/rooms");
@@ -154,10 +161,23 @@ public class RoomServlet extends HttpServlet {
         }
 
         if ("/save".equals(action)) {
-            int id = Web.intParam(request, "roomId", 0);
+            String isEditStr = Web.trimmed(request, "isEdit");
+            String idStr = Web.trimmed(request, "roomId");
+            int id = -1;
+            try {
+                id = Integer.parseInt(idStr);
+            } catch (Exception ignored) {}
+
+            String code = Web.trimmed(request, "code");
+            Room existing = rooms.findByCode(code);
+            boolean isEdit = "1".equals(isEditStr) || "true".equalsIgnoreCase(isEditStr) || (id >= 0) || (existing != null);
+            if (isEdit && id < 0 && existing != null) {
+                id = existing.getRoomId();
+            }
+
             Room r = new Room();
             r.setRoomId(id);
-            r.setCode(Web.trimmed(request, "code"));
+            r.setCode(code);
             r.setName(Web.trimmed(request, "name"));
             r.setLocation(Web.trimmed(request, "location"));
 
@@ -197,14 +217,14 @@ public class RoomServlet extends HttpServlet {
             r.setNote(Web.trimmed(request, "note"));
 
             DeviceDAO deviceDAO = new DeviceDAO();
-            if (id == 0) {
+            if (!isEdit) {
                 if (rooms.insert(r)) {
                     int effectiveRoomId = r.getRoomId();
-                    if (effectiveRoomId <= 0) {
+                    if (effectiveRoomId < 0) {
                         Room inserted = rooms.findByCode(r.getCode());
                         if (inserted != null) effectiveRoomId = inserted.getRoomId();
                     }
-                    if (effectiveRoomId > 0 && devCode != null && !devCode.isEmpty()) {
+                    if (effectiveRoomId >= 0 && devCode != null && !devCode.isEmpty()) {
                         deviceDAO.assignRoomToDevice(devCode, effectiveRoomId);
                     }
                     Web.flash(request, "Added room " + r.getName());
@@ -225,17 +245,31 @@ public class RoomServlet extends HttpServlet {
         }
         
         else if ("/lock".equals(action)) {
-            int id = Web.intParam(request, "id", 0);
-            Room r = rooms.findById(id);
+            String idStr = Web.trimmed(request, "id");
+            Room r = null;
+            try {
+                r = rooms.findById(Integer.parseInt(idStr));
+            } catch (Exception ignored) {}
+            if (r == null && !idStr.isEmpty()) {
+                r = rooms.findByCode(idStr);
+            }
             if (r != null) {
-                rooms.lock(id, !r.isActive());
+                rooms.lock(r.getRoomId(), !r.isActive());
                 Web.flash(request, "Successfully " + (r.isActive() ? "deactivated " : "activated ") + r.getName());
             }
         }
         
         else if ("/delete".equals(action)) {
-            int id = Web.intParam(request, "id", 0);
-            if (rooms.delete(id)) {
+            String idStr = Web.trimmed(request, "id");
+            Room r = null;
+            try {
+                r = rooms.findById(Integer.parseInt(idStr));
+            } catch (Exception ignored) {}
+            if (r == null && !idStr.isEmpty()) {
+                r = rooms.findByCode(idStr);
+            }
+            int effectiveId = (r != null) ? r.getRoomId() : -1;
+            if (effectiveId >= 0 && rooms.delete(effectiveId)) {
                 Web.flash(request, "Room deleted successfully");
             } else {
                 Web.flash(request, "Failed to delete room");

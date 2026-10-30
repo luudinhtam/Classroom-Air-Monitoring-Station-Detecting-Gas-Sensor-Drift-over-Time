@@ -25,6 +25,7 @@ public class AuthFilter implements Filter {
         ALLOWED.put("/admin/rooms/lock", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/rooms/update-coords", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/rooms/measure/start", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
+        ALLOWED.put("/admin/rooms/measure/stop", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
         ALLOWED.put("/admin/rooms/measure/status", roles("ADMIN", "STATION_MANAGER", "OPERATOR", "REVIEWER", "VIEWER"));
         
         ALLOWED.put("/admin/calibrations/create", roles("ADMIN", "STATION_MANAGER", "OPERATOR"));
@@ -66,10 +67,19 @@ public class AuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest rq, ServletResponse rp, FilterChain chain)
             throws IOException, ServletException {
+        rq.setCharacterEncoding("UTF-8");
+        rp.setCharacterEncoding("UTF-8");
 
         HttpServletRequest req = (HttpServletRequest) rq;
         HttpServletResponse resp = (HttpServletResponse) rp;
         String path = req.getRequestURI().substring(req.getContextPath().length());
+
+        if (!path.startsWith("/assets/") && !path.startsWith("/css/") && !path.startsWith("/js/")
+                && !path.startsWith("/api/") && !path.startsWith("/device/")
+                && !path.endsWith(".css") && !path.endsWith(".js") && !path.endsWith(".png")
+                && !path.endsWith(".jpg") && !path.endsWith(".ico") && !path.endsWith(".svg")) {
+            resp.setContentType("text/html;charset=UTF-8");
+        }
 
         if (path.startsWith("/api/") || path.startsWith("/device/") || path.startsWith("/login")
             || path.startsWith("/assets/") || path.startsWith("/css/") || path.startsWith("/js/")) {

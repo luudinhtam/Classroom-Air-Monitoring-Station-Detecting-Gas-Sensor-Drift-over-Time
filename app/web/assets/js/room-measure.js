@@ -30,12 +30,25 @@
     // DOM Elements
     let pane, ctx, roomCode, canStart, btnStart, btnText, btnSpinner;
     let statusMsgBox, timerBadge, timerVal;
-    let step1Node, step2Node, step3Node, line1, line2;
+    let stepperCard, step1Node, step2Node, step3Node, line1, line2;
     let cardTemp, valTemp, badgeTemp, threshTemp;
     let cardHumid, valHumid, badgeHumid, threshHumid;
     let cardCo, valCo, badgeCo, threshCo;
     let cardCo2, valCo2, badgeCo2, threshCo2;
     let alertsContainer, historyTbody;
+
+    // Auto Mode Elements
+    let btnModeManual, btnModeAuto, manualControlGroup, autoControlGroup, measureModeDesc, measureStationTitle;
+    let autoIntervalInput, chipIntervals, btnStartAuto;
+    let autoStatusBanner, autoPulseDot, autoStatusBadge, autoStatusText, autoCountdownWrap, autoCountdownVal, autoSessionCountEl;
+
+    // Auto Mode State
+    let currentMode = "manual"; // "manual" | "auto"
+    let isAutoRunning = false;
+    let autoIntervalSec = 30;
+    let autoCountdownTimerId = null;
+    let autoCountdownRemaining = 0;
+    let autoSessionCount = 0;
 
     function initMeasureTab() {
         pane = document.getElementById("tab-measure");
@@ -53,6 +66,7 @@
         timerVal = document.getElementById("measureTimer");
 
         // Stepper Nodes
+        stepperCard = document.getElementById("measureStepperCard");
         step1Node = document.getElementById("stepNodePending");
         step2Node = document.getElementById("stepNodeMeasuring");
         step3Node = document.getElementById("stepNodeDone");
@@ -83,7 +97,69 @@
         alertsContainer = document.getElementById("measureAlertsContainer");
         historyTbody = document.getElementById("measureHistoryTbody");
 
-        // Bind Start button
+        // Auto Mode DOM Queries
+        btnModeManual = document.getElementById("btnModeManual");
+        btnModeAuto = document.getElementById("btnModeAuto");
+        manualControlGroup = document.getElementById("manualControlGroup");
+        autoControlGroup = document.getElementById("autoControlGroup");
+        measureModeDesc = document.getElementById("measureModeDesc");
+        measureStationTitle = document.getElementById("measureStationTitle");
+
+        autoIntervalInput = document.getElementById("autoIntervalInput");
+        chipIntervals = document.querySelectorAll(".chip-interval");
+        btnStartAuto = document.getElementById("btnStartAuto");
+
+        autoStatusBanner = document.getElementById("autoStatusBanner");
+        autoPulseDot = document.getElementById("autoPulseDot");
+        autoStatusBadge = document.getElementById("autoStatusBadge");
+        autoStatusText = document.getElementById("autoStatusText");
+        autoCountdownWrap = document.getElementById("autoCountdownWrap");
+        autoCountdownVal = document.getElementById("autoCountdownVal");
+        autoSessionCountEl = document.getElementById("autoSessionCount");
+
+        // Bind Mode Switch buttons
+        if (btnModeManual) btnModeManual.addEventListener("click", () => switchMode("manual"));
+        if (btnModeAuto) btnModeAuto.addEventListener("click", () => switchMode("auto"));
+
+        // Bind Interval Chips
+        if (chipIntervals && chipIntervals.length > 0) {
+            chipIntervals.forEach(chip => {
+                chip.addEventListener("click", () => {
+                    const sec = parseInt(chip.dataset.sec, 10);
+                    if (!isNaN(sec) && sec >= 10) {
+                        autoIntervalSec = sec;
+                        if (autoIntervalInput) autoIntervalInput.value = sec;
+                        chipIntervals.forEach(c => c.classList.remove("active"));
+                        chip.classList.add("active");
+                    }
+                });
+            });
+        }
+
+        // Bind Interval Input
+        if (autoIntervalInput) {
+            autoIntervalInput.addEventListener("change", () => {
+                let sec = parseInt(autoIntervalInput.value, 10);
+                if (isNaN(sec) || sec < 10) sec = 10;
+                if (sec > 3600) sec = 3600;
+                autoIntervalInput.value = sec;
+                autoIntervalSec = sec;
+
+                if (chipIntervals) {
+                    chipIntervals.forEach(c => {
+                        if (parseInt(c.dataset.sec, 10) === sec) c.classList.add("active");
+                        else c.classList.remove("active");
+                    });
+                }
+            });
+        }
+
+        // Bind Auto Toggle Button (Start Auto / Stop Auto)
+        if (btnStartAuto && canStart) {
+            btnStartAuto.addEventListener("click", handleToggleAuto);
+        }
+
+        // Bind Manual Start button
         if (btnStart && canStart) {
             btnStart.addEventListener("click", handleStartClick);
         }
@@ -92,6 +168,7 @@
         window.addEventListener("beforeunload", () => {
             stopPolling();
             stopElapsedTimer();
+            stopAutoCountdown();
         });
 
         // Check if there is an in-flight command saved in sessionStorage
@@ -175,6 +252,7 @@
             if (!resp.ok) {
                 handleHttpError(resp.status, json);
                 setButtonState(false, "Start Measurement");
+                onMeasurementCycleFinished(false);
                 return;
             }
 
@@ -194,10 +272,12 @@
             } else {
                 showError("Invalid response received from server.");
                 setButtonState(false, "Start Measurement");
+                onMeasurementCycleFinished(false);
             }
         } catch (err) {
             showError("Network error: Unable to contact server. Please try again.");
             setButtonState(false, "Start Measurement");
+            onMeasurementCycleFinished(false);
         }
     }
 
@@ -280,6 +360,9 @@
         if (data.result) {
             prependHistoryRecord(data.result);
         }
+
+        // Notify auto runner
+        onMeasurementCycleFinished(true);
     }
 
     function handleTimeout(msg) {
@@ -288,6 +371,178 @@
         setStepperError(msg || "Measurement timed out.");
         showError(msg || "Measurement timed out. Device did not respond.");
         setButtonState(false, "Start Measurement");
+
+        // Notify auto runner
+        onMeasurementCycleFinished(false);
+    }
+
+    // =========================================================================
+    // AUTO MODE CONTROLLER (Periodic Measurement Loop)
+    // =========================================================================
+
+    function switchMode(mode) {
+        if (currentMode === mode) return;
+        currentMode = mode;
+
+        if (mode === "manual") {
+            if (isAutoRunning) {
+                handleToggleAuto();
+            }
+            if (btnModeManual) btnModeManual.classList.add("active");
+            if (btnModeAuto) btnModeAuto.classList.remove("active");
+            if (manualControlGroup) manualControlGroup.style.display = "flex";
+            if (autoControlGroup) autoControlGroup.style.display = "none";
+            if (autoStatusBanner) autoStatusBanner.style.display = "none";
+            if (stepperCard) stepperCard.style.display = "";
+            if (measureModeDesc) {
+                measureModeDesc.textContent = "Trigger an on-demand 10-second measurement packet from the assigned IoT sensor node and evaluate against thresholds.";
+            }
+        } else {
+            if (btnModeAuto) btnModeAuto.classList.add("active");
+            if (btnModeManual) btnModeManual.classList.remove("active");
+            if (manualControlGroup) manualControlGroup.style.display = "none";
+            if (autoControlGroup) autoControlGroup.style.display = "flex";
+            if (autoStatusBanner) autoStatusBanner.style.display = "flex";
+            if (stepperCard) stepperCard.style.display = "none";
+            if (measureModeDesc) {
+                measureModeDesc.textContent = "Continuously acquire periodic telemetry from the sensor node after every configured interval.";
+            }
+        }
+    }
+
+    function setAutoButtonState(running) {
+        if (!btnStartAuto) return;
+        if (running) {
+            btnStartAuto.className = "btn-auto-action btn-auto-stop";
+            btnStartAuto.innerHTML = `
+                <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="5" y="5" width="14" height="14" rx="2"/>
+                </svg>
+                <span class="btn-text">Stop Auto</span>
+            `;
+        } else {
+            btnStartAuto.className = "btn-auto-action btn-auto-start";
+            btnStartAuto.innerHTML = `
+                <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span class="btn-text">Start Auto</span>
+            `;
+        }
+    }
+
+    async function handleToggleAuto() {
+        if (!canStart) return;
+
+        if (!isAutoRunning) {
+            // --- 1. START AUTO ---
+            isAutoRunning = true;
+            setAutoButtonState(true);
+            updateAutoBanner("running", "Auto Running", "Active - periodic measurement running");
+
+            // If not measuring currently, trigger first cycle immediately
+            if (!isMeasuringInProgress) {
+                triggerAutoCycle();
+            }
+        } else {
+            // --- 2. STOP AUTO ---
+            isAutoRunning = false;
+            setAutoButtonState(false);
+            stopAutoCountdown();
+            if (autoCountdownWrap) autoCountdownWrap.style.display = "none";
+            updateAutoBanner("idle", "Auto Stopped", "Auto measurement stopped. Click Start Auto to begin.");
+
+            // Stop in-flight measurement on client
+            const cmdIdToStop = currentCommandId;
+            stopMeasurementProcess();
+            sessionStorage.removeItem(getStorageKey());
+            setButtonState(false, "Start Measurement");
+
+            // Request server to update active command status to DONE
+            try {
+                const formData = new URLSearchParams();
+                formData.append("id", roomCode);
+                if (cmdIdToStop !== null && cmdIdToStop !== undefined) {
+                    formData.append("commandId", cmdIdToStop);
+                }
+
+                await fetch(`${ctx}/admin/rooms/measure/stop`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Accept": "application/json"
+                    },
+                    body: formData.toString()
+                });
+            } catch (e) {
+                console.warn("Failed to notify stop to server:", e);
+            }
+        }
+    }
+
+    function triggerAutoCycle() {
+        if (!isAutoRunning) return;
+        if (isMeasuringInProgress) return;
+
+        updateAutoBanner("measuring", "Measuring...", "Acquiring telemetry from sensor node (10s)...");
+        if (autoCountdownWrap) autoCountdownWrap.style.display = "none";
+
+        handleStartClick();
+    }
+
+    function startAutoCountdown() {
+        stopAutoCountdown();
+        if (!isAutoRunning) return;
+
+        autoCountdownRemaining = autoIntervalSec;
+        if (autoCountdownWrap) autoCountdownWrap.style.display = "inline-flex";
+        if (autoCountdownVal) autoCountdownVal.textContent = autoCountdownRemaining;
+
+        updateAutoBanner("running", "Auto Running", "Cycle complete. Waiting for next measurement...");
+
+        autoCountdownTimerId = setInterval(() => {
+            if (!isAutoRunning) {
+                stopAutoCountdown();
+                return;
+            }
+
+            autoCountdownRemaining--;
+            if (autoCountdownVal) autoCountdownVal.textContent = autoCountdownRemaining;
+
+            if (autoCountdownRemaining <= 0) {
+                stopAutoCountdown();
+                if (autoCountdownWrap) autoCountdownWrap.style.display = "none";
+                triggerAutoCycle();
+            }
+        }, 1000);
+    }
+
+    function stopAutoCountdown() {
+        if (autoCountdownTimerId) {
+            clearInterval(autoCountdownTimerId);
+            autoCountdownTimerId = null;
+        }
+    }
+
+    function updateAutoBanner(state, badgeText, statusText) {
+        if (autoPulseDot) autoPulseDot.className = "auto-pulse-dot " + state;
+        if (autoStatusBadge) {
+            autoStatusBadge.className = "auto-status-badge badge-" + state;
+            autoStatusBadge.textContent = badgeText;
+        }
+        if (autoStatusText) autoStatusText.textContent = statusText;
+    }
+
+    function onMeasurementCycleFinished(success) {
+        if (success) {
+            autoSessionCount++;
+            if (autoSessionCountEl) autoSessionCountEl.textContent = autoSessionCount;
+        }
+
+        if (isAutoRunning) {
+            startAutoCountdown();
+        }
     }
 
     function stopMeasurementProcess() {
@@ -384,7 +639,7 @@
         // Temperature
         renderMetricCard(
             cardTemp, valTemp, badgeTemp, threshTemp,
-            result.temp, th.temp, "°C", "Temperature"
+            result.temp, th.temp, "\u00B0C", "Temperature"
         );
 
         // Humidity
@@ -584,7 +839,7 @@
 
         // Temp
         const tdTemp = document.createElement("td");
-        tdTemp.textContent = (result.temp !== null && result.temp !== undefined) ? (result.temp + "°C") : "–";
+        tdTemp.textContent = (result.temp !== null && result.temp !== undefined) ? (result.temp + "\u00B0C") : "–";
         tr.appendChild(tdTemp);
 
         // Humid

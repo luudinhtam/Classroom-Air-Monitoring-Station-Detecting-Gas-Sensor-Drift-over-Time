@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@page import="java.util.List, java.util.Locale, model.Room, model.Device, model.AppUser, util.Web"%>
 <%
     Room item = (Room) request.getAttribute("editRoom");
@@ -7,7 +7,7 @@
     }
     String error = (String) request.getAttribute("error");
     String ctx = request.getContextPath();
-    boolean isNew = (item == null || item.getRoomId() == 0);
+    boolean isNew = (item == null);
     List<Device> deviceList = (List<Device>) request.getAttribute("deviceList");
     String selectedDeviceCode = (item != null && item.getDeviceCode() != null) ? item.getDeviceCode().trim() : "";
 
@@ -16,11 +16,7 @@
     String userRole = (me != null && me.getRoleCode() != null) ? me.getRoleCode() : "ADMIN";
     boolean isAdmin = "ADMIN".equals(userRole);
 
-    int openAlertCount = 6;
-    try {
-        dao.DashboardDAO dashDAO = dao.DashboardDAO.getInstance();
-        openAlertCount = dashDAO.getDashboardStats().getOpenAlerts();
-    } catch (Exception ignored) {}
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     java.time.ZonedDateTime nowZdt = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
     String jDateStr = nowZdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", java.util.Locale.ENGLISH));
@@ -359,7 +355,7 @@
                 </svg>
                 <span>Alerts</span>
                 <span class="sidebar-badge" id="sidebarAlertBadge">
-                    <%= openAlertCount > 0 ? openAlertCount : 6 %>
+                    <%= openAlertCount %>
                 </span>
             </a>
 
@@ -453,7 +449,7 @@
                         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                     </svg>
                     <span class="notif-badge" id="topBellBadge">
-                        <%= openAlertCount > 0 ? openAlertCount : 6 %>
+                        <%= openAlertCount %>
                     </span>
                 </a>
 
@@ -567,7 +563,8 @@
             <!-- Main Room Form Card -->
             <div class="room-form-card">
                 <form method="post" action="<%= ctx %>/admin/rooms/save">
-                    <input type="hidden" name="roomId" value="<%= isNew ? 0 : item.getRoomId() %>">
+                    <input type="hidden" name="isEdit" value="<%= isNew ? "0" : "1" %>">
+                    <input type="hidden" name="roomId" value="<%= isNew ? -1 : item.getRoomId() %>">
                     <input type="hidden" name="latitude" value="<%= (item == null || item.getLatitude() == null) ? "10.841129" : item.getLatitude() %>">
                     <input type="hidden" name="longitude" value="<%= (item == null || item.getLongitude() == null) ? "106.809883" : item.getLongitude() %>">
 
@@ -607,14 +604,22 @@
 
                         <div class="divider-line"></div>
 
-                        <!-- Row 3: Thresholds (CO, CO2, Max Baseline Drift) -->
-                        <div class="grid-col-3">
+                        <!-- Row 3: Environmental Warning Thresholds (Temperature, Humidity, CO2, CO) -->
+                        <div class="grid-col-2">
                             <div class="form-group">
-                                <label for="coThreshold">CO Warning Threshold (ppm)</label>
-                                <input type="number" step="0.1" min="0" max="1000" id="coThreshold" name="coThreshold"
-                                       placeholder="10.0"
-                                       value="<%= (item != null && item.getCoWarningThreshold() > 0) ? String.format(Locale.US, "%.1f", item.getCoWarningThreshold()) : "10.0" %>">
-                                <span class="input-hint">Default 10.0 ppm.</span>
+                                <label for="tempThreshold">Temperature Warning Threshold (°C)</label>
+                                <input type="number" step="0.1" min="0" max="100" id="tempThreshold" name="tempThreshold"
+                                       placeholder="32.0"
+                                       value="<%= (item != null && item.getTempWarningThreshold() > 0) ? String.format(Locale.US, "%.1f", item.getTempWarningThreshold()) : "32.0" %>">
+                                <span class="input-hint">Default 32.0 °C.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="humidThreshold">Humidity Warning Threshold (%)</label>
+                                <input type="number" step="0.1" min="0" max="100" id="humidThreshold" name="humidThreshold"
+                                       placeholder="80.0"
+                                       value="<%= (item != null && item.getHumidWarningThreshold() > 0) ? String.format(Locale.US, "%.1f", item.getHumidWarningThreshold()) : "80.0" %>">
+                                <span class="input-hint">Default 80.0 %.</span>
                             </div>
 
                             <div class="form-group">
@@ -626,11 +631,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="maxBaselineDrift">Max Baseline Drift (%)</label>
-                                <input type="number" step="0.1" min="0" max="100" id="maxBaselineDrift" name="maxBaselineDrift"
-                                       placeholder="15.0"
-                                       value="<%= (item != null && item.getMaxBaselineDrift() > 0) ? String.format(Locale.US, "%.1f", item.getMaxBaselineDrift()) : "15.0" %>">
-                                <span class="input-hint">Default 15.0% tolerance.</span>
+                                <label for="coThreshold">CO Warning Threshold (ppm)</label>
+                                <input type="number" step="0.1" min="0" max="1000" id="coThreshold" name="coThreshold"
+                                       placeholder="9.0"
+                                       value="<%= (item != null && item.getCoWarningThreshold() > 0) ? String.format(Locale.US, "%.1f", item.getCoWarningThreshold()) : "9.0" %>">
+                                <span class="input-hint">Default 9.0 ppm.</span>
                             </div>
                         </div>
 

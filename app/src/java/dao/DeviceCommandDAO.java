@@ -125,6 +125,38 @@ public class DeviceCommandDAO {
     }
 
     /**
+     * Chuyen lenh dang PENDING hoac SENT cua thiet bi sang DONE khi nguoi dung bam Stop.
+     */
+    public boolean stopActiveCommand(int deviceId) {
+        String sql = "UPDATE Device_Command SET status = 'DONE', done_at = SYSDATETIME() " +
+                     "WHERE device_id = ? AND status IN ('PENDING', 'SENT')";
+        try (Connection cn = DBContext.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, deviceId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Chuyen lenh theo commandId sang DONE neu dang PENDING hoac SENT.
+     */
+    public boolean stopCommandById(int commandId) {
+        String sql = "UPDATE Device_Command SET status = 'DONE', done_at = SYSDATETIME() " +
+                     "WHERE command_id = ? AND status IN ('PENDING', 'SENT')";
+        try (Connection cn = DBContext.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, commandId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
      * Chuyen sang TIMEOUT cac lenh qua han (PENDING qua pendingSeconds, SENT qua sentSeconds).
      * Tra ve so dong da doi trang thai.
      */

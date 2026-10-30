@@ -221,6 +221,18 @@ public class AlertDAO {
         return count(status, alertCode, (Integer) null);
     }
 
+    public static int getOpeningAlertCount() {
+        String sql = "SELECT COUNT(*) FROM Air_Alert WHERE status = 'OPENING'";
+        try (Connection cn = DBContext.getConnection();
+             Statement st = cn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public int count(String status, String alertCode, String severity) {
         return count(status, alertCode, (Integer) null);
     }

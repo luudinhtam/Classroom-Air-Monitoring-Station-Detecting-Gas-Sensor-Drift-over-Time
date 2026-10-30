@@ -1,11 +1,12 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="java.util.*, model.AppUser, model.DashboardStats, model.ClassroomTempInfo, util.Web"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page import="java.util.*, model.AppUser, model.DashboardStats, model.ClassroomTempInfo, util.Web, dao.AlertDAO"%>
 <%
     String ctx = request.getContextPath();
     AppUser me = (AppUser) session.getAttribute("user");
     String userName = (me != null && me.getFullName() != null) ? me.getFullName() : "Admin";
     String userRole = (me != null && me.getRoleCode() != null) ? me.getRoleCode() : "ADMIN";
     boolean isAdmin = "ADMIN".equals(userRole);
+    int openAlertCount = AlertDAO.getOpeningAlertCount();
 
     DashboardStats stats = (DashboardStats) request.getAttribute("stats");
     if (stats == null) stats = new DashboardStats();
@@ -200,7 +201,7 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 <span>Alerts</span>
-                <span class="sidebar-badge" id="sidebarAlertBadge" style="<%= stats.getOpenAlerts() > 0 ? "" : "display:none;" %>"><%= stats.getOpenAlerts() %></span>
+                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount %></span>
             </a>
 
             <!-- Devices -->
@@ -276,12 +277,12 @@
 
             <!-- Right: Notifications & User Profile -->
             <div class="top-bar-right">
-                <a href="<%= ctx %>/alerts" class="icon-btn-round" title="Notifications">
+                <a href="javascript:void(0)" class="icon-btn-round" title="Notification" onclick="return false;" style="cursor: default;">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
-                    <span class="notif-badge" id="topBellBadge" style="<%= stats.getOpenAlerts() > 0 ? "" : "display:none;" %>"><%= stats.getOpenAlerts() %></span>
+                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount %></span>
                 </a>
 
                 <div class="user-profile-badge" id="userMenuToggle">
@@ -511,9 +512,9 @@
                             </div>
                             <div class="air-metric-val-wrap">
                                 <span class="air-metric-val" id="avgTempVal"><%= roomsWithDataCount > 0 ? String.format(Locale.US, "%.1f", sumTemp / roomsWithDataCount) : "--" %></span>
-                                <span class="air-metric-unit">°C</span>
+                                <span class="air-metric-unit">&deg;C</span>
                             </div>
-                            <span class="air-metric-range" id="avgTempRange">(20 – 28°C)</span>
+                            <span class="air-metric-range" id="avgTempRange">(20 &ndash; 28&deg;C)</span>
                         </div>
 
                         <!-- Metric 4: Humidity -->
@@ -669,7 +670,7 @@
             alertsUrl: "<%= ctx %>/alerts",
             stats: {
                 totalRooms: <%= displayTotalRooms %>,
-                openAlerts: <%= stats.getOpenAlerts() %>,
+                openAlerts: <%= openAlertCount %>,
                 activeDevices: <%= stats.getActiveDevices() %>,
                 inactiveDevices: <%= stats.getInactiveDevices() %>,
                 totalUsers: <%= stats.getTotalUsers() %>
@@ -679,7 +680,7 @@
             history: <%= historyJson.toString() %>
         };
     </script>
-    <script src="<%= ctx %>/assets/js/dashboard.js?v=<%= System.currentTimeMillis() %>"></script>
+    <script src="<%= ctx %>/assets/js/dashboard.js?v=<%= System.currentTimeMillis() %>" charset="UTF-8"></script>
     <script>
         (function() {
             function updateLiveClock() {

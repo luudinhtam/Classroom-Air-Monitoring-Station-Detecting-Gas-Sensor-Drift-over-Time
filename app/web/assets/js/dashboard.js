@@ -70,12 +70,12 @@ const METRICS_CONFIG = {
     },
     temp: {
         name: "Temperature",
-        unit: "°C",
-        yTitle: "Temperature (°C)",
+        unit: "\u00B0C",
+        yTitle: "Temperature (\u00B0C)",
         yMin: 15,
         yMax: 35,
         ySteps: [15, 20, 25, 30, 35],
-        allowedText: "Allowed: 20 – 28°C",
+        allowedText: "Allowed: 20 \u2013 28\u00B0C",
         color: "#2563eb",
         softBg: "#eff6ff",
         iconSvg: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="1.5" fill="#2563eb"/></svg>`,
@@ -223,17 +223,27 @@ function renderHeaderDate() {
 
 // 5. RENDER ALERT BADGES
 function renderAlertBadge() {
-    const activeCount = alerts.filter(a => a.status === "Active").length;
+    const serverStats = (window.DASHBOARD_DATA && window.DASHBOARD_DATA.stats) ? window.DASHBOARD_DATA.stats : {};
+    let openCount = (serverStats.openAlerts !== undefined) ? parseInt(serverStats.openAlerts, 10) : 0;
+
+    if (isNaN(openCount) || openCount < 0) {
+        if (Array.isArray(alerts)) {
+            openCount = alerts.filter(a => a.status === "OPENING" || a.status === "OPEN" || a.status === "Active").length;
+        } else {
+            openCount = 0;
+        }
+    }
+
     const topBellBadge = document.getElementById("topBellBadge");
     const sidebarAlertBadge = document.getElementById("sidebarAlertBadge");
 
     if (topBellBadge) {
-        topBellBadge.innerText = activeCount;
-        topBellBadge.style.display = activeCount > 0 ? "flex" : "none";
+        topBellBadge.innerText = openCount;
+        topBellBadge.style.display = openCount > 0 ? "flex" : "none";
     }
     if (sidebarAlertBadge) {
-        sidebarAlertBadge.innerText = activeCount;
-        sidebarAlertBadge.style.display = activeCount > 0 ? "inline-block" : "none";
+        sidebarAlertBadge.innerText = openCount;
+        sidebarAlertBadge.style.display = openCount > 0 ? "inline-block" : "none";
     }
 }
 
@@ -663,7 +673,7 @@ function renderClassroomOverview() {
                 statusBadge = `<span class="status-pill status-overheat"><span class="status-dot-sm"></span>Overheat</span>`;
             }
 
-            tempVal = room.temp !== null ? `${room.temp}°C` : "--";
+            tempVal = room.temp !== null ? `${room.temp}\u00B0C` : "--";
             humidVal = room.humidity !== null ? `${room.humidity}%` : "--";
             co2Val = room.co2 !== null ? `${room.co2} ppm` : "--";
             coVal = room.co !== null ? `${room.co} ppm` : "--";

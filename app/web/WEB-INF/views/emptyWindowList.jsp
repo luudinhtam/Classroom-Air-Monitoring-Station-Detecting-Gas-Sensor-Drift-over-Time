@@ -5,7 +5,7 @@
 <%@page import="model.EmptyWindow"%>
 <%@page import="java.util.List"%>
 <%@page import="model.AppUser"%>
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%
     List<EmptyWindow> rows = (List<EmptyWindow>) request.getAttribute("rows");

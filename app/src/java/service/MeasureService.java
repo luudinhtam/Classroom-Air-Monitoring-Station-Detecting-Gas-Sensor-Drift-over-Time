@@ -103,6 +103,29 @@ public class MeasureService {
     }
 
     /**
+     * Dung lenh do dang hoat dong cua phong (chuyen thanh DONE).
+     */
+    public boolean stopMeasureByRoomCode(String roomCode, Integer commandId) {
+        if (roomCode == null || roomCode.trim().isEmpty()) {
+            throw new MeasureException(MeasureException.ErrorCode.NOT_FOUND, "Mã phòng (room_code) không được rỗng");
+        }
+        Room r = roomDAO.findByCode(roomCode.trim());
+        if (r == null) {
+            throw new MeasureException(MeasureException.ErrorCode.NOT_FOUND, "Không tìm thấy phòng với mã: " + roomCode);
+        }
+        Device device = deviceDAO.findActiveByRoom(r.getRoomId());
+        if (device == null) {
+            return false;
+        }
+
+        if (commandId != null && commandId >= 0) {
+            commandDAO.stopCommandById(commandId);
+        }
+        // Đảm bảo cập nhật toàn bộ lệnh PENDING/SENT còn lại của thiết bị sang DONE
+        return commandDAO.stopActiveCommand(device.getDeviceId());
+    }
+
+    /**
      * 2. getCommandForDevice(device)
      * Thiet bi hoi lenh. Neu co lenh PENDING thi chuyen sang SENT va tra ve cho thiet bi.
      */

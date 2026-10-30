@@ -287,21 +287,7 @@
                     </button>
                 </form>
 
-                <!-- Divider -->
-                <div class="divider-row">
-                    <span class="divider-line"></span>
-                    <span class="divider-text">Or sign in with</span>
-                    <span class="divider-line"></span>
-                </div>
 
-                <!-- Administrator Quick Fill Button -->
-                <button type="button" class="btn-admin-quick" id="btnAdminQuick">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1d63ed" stroke="#1d63ed" stroke-width="1">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    <span>Administrator Account</span>
-                </button>
 
                 <!-- Footer Copyright -->
                 <footer class="form-footer">
@@ -327,7 +313,6 @@
         const eyeOnIcon = document.getElementById("eyeOnIcon");
         const rememberMeCheckbox = document.getElementById("rememberMeCheckbox");
         const forgotPasswordLink = document.getElementById("forgotPasswordLink");
-        const btnAdminQuick = document.getElementById("btnAdminQuick");
         const submitBtn = document.getElementById("submitBtn");
         const btnSpinner = document.getElementById("btnSpinner");
         const btnText = submitBtn.querySelector(".btn-text");
@@ -357,14 +342,6 @@
 
         usernameInput.addEventListener("input", () => clearFieldError(usernameContainer, usernameError));
         passwordInput.addEventListener("input", () => clearFieldError(passwordContainer, passwordError));
-
-        // Quick Fill Administrator
-        btnAdminQuick.addEventListener("click", () => {
-            usernameInput.value = "admin";
-            clearFieldError(usernameContainer, usernameError);
-            passwordInput.value = "";
-            passwordInput.focus();
-        });
 
         // Forgot password notice
         forgotPasswordLink.addEventListener("click", (e) => {

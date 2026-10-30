@@ -12,11 +12,7 @@
     String userRole = (me != null && me.getRoleCode() != null) ? me.getRoleCode() : "ADMIN";
     boolean isAdmin = "ADMIN".equals(userRole);
 
-    int openAlertCount = 6;
-    try {
-        openAlertCount = dao.DashboardDAO.getInstance().getDashboardStats().getOpenAlerts();
-        if (openAlertCount <= 0) openAlertCount = 6;
-    } catch (Exception ignored) {}
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     String flash = (String) session.getAttribute("flash");
     if (flash != null) session.removeAttribute("flash");
@@ -372,7 +368,7 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 <span>Alerts</span>
-                <span class="sidebar-badge"><%= openAlertCount %></span>
+                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount %></span>
             </a>
 
             <a href="<%= ctx %>/admin/devices" class="menu-item" title="Devices">
@@ -559,7 +555,7 @@
                 </div>
 
                 <!-- Form Body -->
-                <form class="card-body-form" method="post" action="<%= ctx %>/admin/users/save">
+                <form class="card-body-form" method="post" action="<%= ctx %>/admin/users/save" accept-charset="UTF-8">
                     <input type="hidden" name="userId" value="<%= isNew ? 0 : item.getUserId() %>">
 
                     <!-- Default Password Notice (New User only) -->

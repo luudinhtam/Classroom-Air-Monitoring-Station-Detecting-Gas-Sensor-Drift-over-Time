@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@page import="java.util.*, java.text.SimpleDateFormat, model.Device, model.AppUser, util.Web"%>
 <%
     String ctx = request.getContextPath();
@@ -20,8 +20,7 @@
         allDevices = new ArrayList<>();
     }
 
-    Integer openAlertObj = (Integer) request.getAttribute("openAlertCount");
-    int openAlertCount = (openAlertObj != null && openAlertObj >= 0) ? openAlertObj : 0;
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     int totalDev = allDevices.size();
     int activeCount = 0;

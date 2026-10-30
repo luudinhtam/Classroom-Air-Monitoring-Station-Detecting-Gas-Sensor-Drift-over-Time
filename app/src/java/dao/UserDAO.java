@@ -110,8 +110,8 @@ public class UserDAO {
             int i = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
-                ps.setString(i++, kw);
-                ps.setString(i++, kw);
+                ps.setNString(i++, kw);
+                ps.setNString(i++, kw);
             }
             if (roleId != null) ps.setInt(i++, roleId);
             ps.setInt(i++, offset);
@@ -144,8 +144,8 @@ public class UserDAO {
             int i = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
-                ps.setString(i++, kw);
-                ps.setString(i++, kw);
+                ps.setNString(i++, kw);
+                ps.setNString(i++, kw);
             }
             if (roleId != null) ps.setInt(i++, roleId);
             rs = ps.executeQuery();
@@ -163,7 +163,7 @@ public class UserDAO {
             ps = cn.prepareStatement(sql);
             ps.setString(1, u.getUsername());
             ps.setString(2, u.getPassHash());
-            ps.setString(3, u.getFullName());
+            ps.setNString(3, u.getFullName());
             ps.setInt(4, u.getRoleId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
@@ -177,7 +177,7 @@ public class UserDAO {
         try {
             cn = DBContext.getConnection();
             ps = cn.prepareStatement(sql);
-            ps.setString(1, u.getFullName());
+            ps.setNString(1, u.getFullName());
             ps.setInt(2, u.getRoleId());
             ps.setInt(3, u.getUserId());
             return ps.executeUpdate() > 0;

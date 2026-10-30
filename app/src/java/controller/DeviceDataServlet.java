@@ -14,7 +14,7 @@ import service.MeasureException;
 import service.MeasureService;
 
 /**
- * Servlet tiếp nhận dữ liệu đo gửi về từ thiết bị IoT sau 5 giây đo.
+ * Servlet tiếp nhận dữ liệu đo gửi về từ thiết bị IoT sau 10 giây đo.
  * URL: POST /device/data
  * Header xác thực: X-Device-Code, X-API-Key
  */

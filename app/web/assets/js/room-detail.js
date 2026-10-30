@@ -23,7 +23,7 @@ const roomTelemetry = {
         temp: {
             value: (sData.temp !== undefined && sData.temp !== null) ? sData.temp : null,
             max: sData.tempMax || 32.0,
-            unit: "°C",
+            unit: "\u00B0C",
             label: "Temperature",
             color: "#2563eb",
             yMin: 15,
@@ -137,7 +137,8 @@ function updateRoomHeaderAndCards() {
         const badgeEl = document.getElementById(item.badgeId);
 
         if (valEl) {
-            valEl.innerText = (m.value !== null && m.value !== undefined) ? `${m.value} ${m.unit}` : "--";
+            const sep = (item.key === "temp" || item.key === "humid") ? "" : " ";
+            valEl.innerText = (m.value !== null && m.value !== undefined) ? `${m.value}${sep}${m.unit}` : "--";
         }
         if (badgeEl) {
             if (status === true) {
@@ -376,7 +377,8 @@ function renderSvgChart(type) {
                 guideCircle.setAttribute("opacity", "1");
 
                 tooltipTime.innerText = pt.time;
-                tooltipVal.innerText = `${pt.val} ${chartConfig.unit}`;
+                const tooltipSep = (chartConfig.unit === "\u00B0C" || chartConfig.unit === "%") ? "" : " ";
+                tooltipVal.innerText = `${pt.val}${tooltipSep}${chartConfig.unit}`;
                 tooltipVal.style.color = chartConfig.color;
 
                 tooltip.style.left = `${pt.x}px`;
@@ -605,7 +607,7 @@ function setupActionButtons() {
     const btnConfig = document.getElementById("btnConfigThresholds");
     if (btnConfig) {
         btnConfig.addEventListener("click", () => {
-            alert("Configure Safety Alert Thresholds:\n- Temperature Limit: ≤ " + roomTelemetry.metrics.temp.max + "°C\n- Humidity Limit: ≤ " + roomTelemetry.metrics.humid.max + "%\n- CO₂ Warning Limit: ≤ " + roomTelemetry.metrics.co2.max + " ppm\n- CO Warning Limit: ≤ " + roomTelemetry.metrics.co.max + " ppm\n\n(Threshold configuration settings dialog)");
+            alert("Configure Safety Alert Thresholds:\n- Temperature Limit: \u2264 " + roomTelemetry.metrics.temp.max + "\u00B0C\n- Humidity Limit: \u2264 " + roomTelemetry.metrics.humid.max + "%\n- CO\u2082 Warning Limit: \u2264 " + roomTelemetry.metrics.co2.max + " ppm\n- CO Warning Limit: \u2264 " + roomTelemetry.metrics.co.max + " ppm\n\n(Threshold configuration settings dialog)");
         });
     }
 }

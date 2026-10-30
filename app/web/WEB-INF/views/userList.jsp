@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@page import="java.util.List, java.text.SimpleDateFormat, model.AppUser, model.AppRole, util.Web"%>
 <%
     List<AppUser> rows = (List<AppUser>) request.getAttribute("rows");
@@ -33,8 +33,7 @@
     Integer adminCountObj = (Integer) request.getAttribute("adminCount");
     int adminCount = (adminCountObj != null) ? adminCountObj : 1;
 
-    Integer openAlertObj = (Integer) request.getAttribute("openAlertCount");
-    int openAlertCount = (openAlertObj != null && openAlertObj > 0) ? openAlertObj : 6;
+    int openAlertCount = dao.AlertDAO.getOpeningAlertCount();
 
     String qs = "keyword=" + Web.esc(keyword)
               + "&roleId=" + (roleId == null ? "" : roleId.toString())
@@ -352,7 +351,7 @@
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 <span>Alerts</span>
-                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount > 0 ? openAlertCount : 6 %></span>
+                <span class="sidebar-badge" id="sidebarAlertBadge"><%= openAlertCount %></span>
             </a>
 
             <!-- Devices -->
@@ -426,7 +425,7 @@
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
-                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount > 0 ? openAlertCount : 6 %></span>
+                    <span class="notif-badge" id="topBellBadge"><%= openAlertCount %></span>
                 </a>
 
                 <div class="user-profile-badge" id="userMenuToggle">
@@ -559,7 +558,7 @@
 
         <!-- 5. FILTER BAR CARD -->
         <section class="filter-card">
-            <form class="filter-form" method="get" action="<%= ctx %>/admin/users" id="usersFilterForm">
+            <form class="filter-form" method="get" action="<%= ctx %>/admin/users" id="usersFilterForm" accept-charset="UTF-8">
                 <!-- Search Box -->
                 <div class="search-input-group">
                     <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1028,7 +1027,7 @@
                 <button type="button" class="modal-close-btn" onclick="closeUserDetailModal()" title="Close">&times;</button>
             </div>
 
-            <form method="post" action="<%= ctx %>/admin/users/save">
+            <form method="post" action="<%= ctx %>/admin/users/save" accept-charset="UTF-8">
                 <input type="hidden" name="userId" id="modalDetailUserId" value="">
 
                 <div class="user-modal-body">
